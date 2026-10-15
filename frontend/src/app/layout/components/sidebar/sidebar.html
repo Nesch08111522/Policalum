@@ -5,19 +5,38 @@
     <span class="brand-name"><strong>POLICALUM</strong><br /><span class="text-xs">ERP</span></span>
   </div>
   <nav class="sidebar-scroll">
-    <section *ngFor="let section of sections">
-      <div class="nav-section">{{ section.label }}</div>
-      <a
-        *ngFor="let item of section.items"
-        class="nav-link"
-        [routerLink]="item.path"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: item.path === '/inicio' }"
-        [title]="item.label"
-        (click)="layout.closeMobile()">
-        <app-icon [name]="item.icon"></app-icon>
-        <span class="nav-label">{{ item.label }}</span>
-      </a>
+    <section *ngFor="let section of sections" class="nav-group">
+      <button
+        type="button"
+        class="nav-section nav-section-btn"
+        (click)="toggleGroup(section.id)"
+        [attr.aria-expanded]="isOpen(section.id)">
+        <span>{{ section.label }}</span>
+        <app-icon [name]="isOpen(section.id) ? 'chevronDown' : 'chevron'"></app-icon>
+      </button>
+      <div class="nav-items" *ngIf="isOpen(section.id) || layout.collapsed()">
+        <a
+          *ngFor="let item of section.items"
+          class="nav-link"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: item.path === '/inicio' }"
+          [title]="item.label"
+          (click)="layout.closeMobile()">
+          <app-icon [name]="item.icon"></app-icon>
+          <span class="nav-label">{{ item.label }}</span>
+        </a>
+      </div>
     </section>
   </nav>
+  <footer class="sidebar-user">
+    <span class="avatar" [title]="userName">{{ initials }}</span>
+    <span class="nav-label sidebar-user-meta">
+      <strong>{{ userName }}</strong>
+      <span>{{ userRole }}</span>
+    </span>
+    <button type="button" class="nav-link sidebar-logout" title="Cerrar sesión" aria-label="Cerrar sesión" (click)="logout()">
+      <app-icon name="logout"></app-icon>
+    </button>
+  </footer>
 </aside>

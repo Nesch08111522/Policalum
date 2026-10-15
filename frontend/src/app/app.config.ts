@@ -1,8 +1,8 @@
 import { registerLocaleData } from '@angular/common';
 import localeEsPe from '@angular/common/locales/es-PE';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { ApplicationConfig, LOCALE_ID } from '@angular/core';
-import { provideRouter, TitleStrategy } from '@angular/router';
+import { ApplicationConfig, LOCALE_ID, provideZoneChangeDetection } from '@angular/core';
+import { PreloadAllModules, provideRouter, TitleStrategy, withPreloading } from '@angular/router';
 import { routes } from './app.routes';
 import { ErpTitleStrategy } from './core/erp-title.strategy';
 import { apiErrorInterceptor } from './core/interceptors/api-error.interceptor';
@@ -12,7 +12,8 @@ registerLocaleData(localeEsPe);
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes),
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter(routes, withPreloading(PreloadAllModules)),
     provideHttpClient(withInterceptors([authInterceptor, apiErrorInterceptor])),
     { provide: LOCALE_ID, useValue: 'es-PE' },
     { provide: TitleStrategy, useClass: ErpTitleStrategy },

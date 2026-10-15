@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import { QueryMap } from '../../core/api/backend-api.service';
 
 export class PageState<T> {
@@ -10,6 +11,20 @@ export class PageState<T> {
   loading = false;
   error: string | null = null;
   status: number | null = null;
+  private generation = 0;
+
+  /** Marca una consulta nueva. Las respuestas de consultas anteriores se descartan. */
+  begin(): number {
+    this.generation += 1;
+    this.loading = true;
+    this.error = null;
+    this.status = null;
+    return this.generation;
+  }
+
+  isCurrent(token: number): boolean {
+    return token === this.generation;
+  }
 
   reset(): void {
     this.rows = [];
@@ -29,9 +44,10 @@ export class PageState<T> {
 
   fail(message: string, status: number | null): void {
     this.loading = false;
-    this.rows = [];
-    this.totalElements = 0;
-    this.totalPages = 0;
+    if (!this.rows.length) {
+      this.totalElements = 0;
+      this.totalPages = 0;
+    }
     this.error = message;
     this.status = status;
   }
@@ -43,4 +59,24 @@ export class PageState<T> {
     }
     return params;
   }
+}
+
+/** Ignora la respuesta si otra consulta del mismo listado se inició después. */
+export function ignoreStale<T>(state: PageState<unknown>) {
+  return (source: Observable<T>) =>
+    new Observable<T>((subscriber) => {
+      const token = state.begin();
+      const subscription = source.subscribe({
+        next: (value) => {
+          if (state.isCurrent(token)) subscriber.next(value);
+          else subscriber.complete();
+        },
+        error: (error: unknown) => {
+          if (state.isCurrent(token)) subscriber.error(error);
+          else subscriber.complete();
+        },
+        complete: () => subscriber.complete(),
+      });
+      return () => subscription.unsubscribe();
+    });
 }

@@ -58,7 +58,14 @@ export const NAV_SECTIONS: NavSection[] = [
       { id: 'finanzas', label: 'Finanzas', path: '/modules/finanzas', icon: 'chart', roles: admin },
     ],
   },
-  { id: 'rrhh', label: 'Personas', items: [{ id: 'rrhh', label: 'Recursos humanos', path: '/modules/rrhh', icon: 'people' }] },
+  {
+    id: 'rrhh',
+    label: 'Recursos humanos',
+    items: [
+      { id: 'rrhh', label: 'Personas', path: '/modules/rrhh', icon: 'people' },
+      { id: 'asistencias', label: 'Asistencias', path: '/asistencias', icon: 'check', roles: ['ROLE_ADMIN', 'ROLE_MULTIFUNCIONAL'] },
+    ],
+  },
   {
     id: 'analisis',
     label: 'Análisis',

@@ -18,7 +18,7 @@
   </app-data-table>
 </section>
 
-<app-modal [open]="modal" title="Registrar venta" size="lg" (closed)="modal = false">
+<app-modal [closable]="!guardando" [open]="modal" title="Registrar venta" size="lg" (closed)="modal = false">
   <form class="form-grid" [formGroup]="form">
     <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
     <app-form-field label="Sede" inputId="ven-f-sede" [required]="true" [error]="errorDe('sedeId')"><app-select inputId="ven-f-sede" [options]="sedes" placeholder="Sede" formControlName="sedeId" [clearable]="false"></app-select></app-form-field>
@@ -51,7 +51,7 @@
   </form>
   <div modalFooter>
     <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="form.invalid || guardando">{{ guardando ? 'Guardando…' : 'Registrar' }}</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Registrar' }}</button>
   </div>
 </app-modal>
 

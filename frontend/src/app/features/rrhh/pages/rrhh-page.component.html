@@ -63,7 +63,7 @@
   </app-data-table>
 </section>
 
-<app-modal [open]="modal" [title]="tituloAccion()" (closed)="modal = false; legajoForm.controls.empleadoId.enable()">
+<app-modal [closable]="!guardando" [open]="modal" [title]="tituloAccion()" (closed)="modal = false; legajoForm.controls.empleadoId.enable()">
   <div *ngIf="errorFormulario" class="alert alert-error">{{ errorFormulario }}</div>
   <form *ngIf="tab === 'legajos'" class="form-grid" [formGroup]="legajoForm">
     <app-form-field label="Empleado" inputId="lg-emp" [required]="true" [error]="errorDe('empleadoId')"><app-select inputId="lg-emp" [options]="usuarios" placeholder="Empleado" formControlName="empleadoId" [clearable]="false"></app-select></app-form-field>

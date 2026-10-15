@@ -11,7 +11,7 @@
     </ng-template>
   </app-data-table>
 </section>
-<app-modal [open]="modal" [title]="editando ? 'Editar usuario' : 'Nuevo usuario'" size="lg" (closed)="modal = false">
+<app-modal [closable]="!guardando" [open]="modal" [title]="editando ? 'Editar usuario' : 'Nuevo usuario'" size="lg" (closed)="modal = false">
   <form class="form-grid" [formGroup]="form">
     <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
     <app-form-field label="Usuario" inputId="user-login" [required]="true" [error]="errorDe('nombreUsuario')"><input id="user-login" class="input" formControlName="nombreUsuario" /></app-form-field>
@@ -26,7 +26,7 @@
   </form>
   <div modalFooter>
     <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="form.invalid || guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
   </div>
 </app-modal>
 <app-confirm-dialog [open]="confirmar" title="Eliminar usuario" [message]="'Se eliminará a ' + (seleccionado?.nombreUsuario || 'este usuario') + '.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>

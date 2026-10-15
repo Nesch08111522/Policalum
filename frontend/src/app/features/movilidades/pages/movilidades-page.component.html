@@ -21,7 +21,7 @@
     </ng-template>
   </app-data-table>
 </section>
-<app-modal [open]="modal" [title]="editando ? 'Editar movilidad' : 'Nueva movilidad'" (closed)="modal = false">
+<app-modal [closable]="!guardando" [open]="modal" [title]="editando ? 'Editar movilidad' : 'Nueva movilidad'" (closed)="modal = false">
   <form class="form-grid" [formGroup]="form">
     <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
     <app-form-field label="Placa" inputId="mov-placa" [required]="true" [error]="errorDe('placa')"><input id="mov-placa" class="input" formControlName="placa" /></app-form-field>
@@ -33,7 +33,7 @@
   </form>
   <div modalFooter>
     <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="form.invalid || guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
   </div>
 </app-modal>
 <app-modal [open]="conductorModal" title="Asignar conductor" size="sm" (closed)="conductorModal = false">
