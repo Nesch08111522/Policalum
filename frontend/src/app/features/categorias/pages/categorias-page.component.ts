@@ -12,6 +12,7 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { ColumnDef, SelectOption } from '../../../shared/models/ui.models';
+import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { PageState } from '../../../shared/utils/page-state';
@@ -26,6 +27,7 @@ import { CategoriasApiService } from '../data-access/categorias.api';
 })
 export class CategoriasPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly lookup = inject(LookupService);
   readonly state = new PageState<Api.CategoriaResponseDTO>();
   readonly columns: ColumnDef[] = [
     { key: 'nombre', label: 'Categoría', sortable: true },
@@ -101,7 +103,7 @@ export class CategoriasPageComponent implements OnInit, OnDestroy {
     this.guardando = true;
     const request = this.editando && value.id ? this.api.PutApiV1CategoriasId({ id: value.id }, body) : this.api.PostApiV1Categorias({}, body);
     request.pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = false; this.toast.success(this.editando ? 'Categoría actualizada.' : 'Categoría creada.'); this.cargar(); this.cargarPadres(); },
+      next: () => { this.guardando = false; this.modal = false; this.lookup.categorias = []; this.toast.success(this.editando ? 'Categoría actualizada.' : 'Categoría creada.'); this.cargar(); this.cargarPadres(); },
       error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
     });
   }
@@ -110,7 +112,7 @@ export class CategoriasPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1CategoriasId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.toast.success('Categoría eliminada.'); this.cargar(); this.cargarPadres(); },
+      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.categorias = []; this.toast.success('Categoría eliminada.'); this.cargar(); this.cargarPadres(); },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
   }
