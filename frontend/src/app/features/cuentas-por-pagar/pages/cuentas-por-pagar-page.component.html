@@ -1,1 +1,35 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Cuentas por pagar" subtitle="Las deudas nacen de las compras. Aquí se registran los pagos."></app-page-header>
+  <div class="stats-grid" *ngIf="resumen">
+    <app-stat-card label="Por pagar" [value]="(resumen.montoTotalPorPagar | pen)" icon="card"></app-stat-card>
+    <app-stat-card label="Vencido" [value]="(resumen.montoTotalVencido | pen)" icon="alert"></app-stat-card>
+    <app-stat-card label="Pendientes" [value]="resumen.pendientes ?? 0" icon="file"></app-stat-card>
+    <app-stat-card label="Pagadas" [value]="resumen.pagadas ?? 0" icon="check"></app-stat-card>
+  </div>
+  <app-filter-bar>
+    <app-form-field label="Sede" inputId="cxp-sede"><app-select inputId="cxp-sede" [options]="sedes" placeholder="Todas" [formControl]="filtros.controls.sedeId"></app-select></app-form-field>
+    <app-form-field label="Proveedor" inputId="cxp-prov"><app-select inputId="cxp-prov" [options]="proveedores" placeholder="Todos" [formControl]="filtros.controls.proveedorId"></app-select></app-form-field>
+    <app-form-field label="Estado" inputId="cxp-estado"><select id="cxp-estado" class="select" [formControl]="filtros.controls.estado"><option value="">Todos</option><option>PENDIENTE</option><option>PAGADO_PARCIAL</option><option>PAGADO</option></select></app-form-field>
+    <app-form-field label="Vencidas" inputId="cxp-venc"><select id="cxp-venc" class="select" [formControl]="filtros.controls.soloVencidas"><option value="">Todas</option><option value="true">Solo vencidas</option></select></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" emptyTitle="No hay cuentas por pagar" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-primary btn-sm" (click)="abrirPago(row)" [disabled]="row.estado === 'PAGADO'">Pagar</button>
+    </ng-template>
+  </app-data-table>
+</section>
+<app-modal [open]="modal" title="Registrar pago" (closed)="modal = false">
+  <p class="text-sm text-muted mb-2">Saldo de {{ seleccionado?.proveedorNombre }}: {{ seleccionado?.saldoPendiente | pen }}</p>
+  <form class="form-grid" [formGroup]="pago">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field label="Monto" inputId="cxp-monto" [required]="true"><input id="cxp-monto" class="input" type="number" min="0.01" step="0.01" formControlName="monto" /></app-form-field>
+    <app-form-field label="Método" inputId="cxp-metodo" [required]="true"><select id="cxp-metodo" class="select" formControlName="metodoPago"><option>EFECTIVO</option><option>YAPE</option><option>PLIN</option><option>TARJETA</option><option>TRANSFERENCIA</option><option>SIP_AGORA</option></select></app-form-field>
+    <app-form-field label="Referencia" inputId="cxp-ref"><input id="cxp-ref" class="input" formControlName="referencia" /></app-form-field>
+    <app-form-field class="span-2" label="Observaciones" inputId="cxp-obs"><textarea id="cxp-obs" class="textarea" formControlName="observaciones"></textarea></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="pagar()" [disabled]="pago.invalid || guardando">Registrar pago</button>
+  </div>
+</app-modal>

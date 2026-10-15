@@ -3,9 +3,16 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>POLICALUM</title>
+    <title>POLICALUM ERP</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="POLICALUM ERP: ventas, inventario, compras, finanzas y recursos humanos." />
+    <script>
+      try {
+        var theme = localStorage.getItem('erp-theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    </script>
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 

@@ -1,66 +1,78 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Component, HostListener, OnInit } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
-import { interval, Subscription } from 'rxjs';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { LayoutService } from '../../../shared/services/layout.service';
+import { ThemeService } from '../../../shared/services/theme.service';
+import { NAV_SECTIONS, NavItem } from '../../navigation';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, IconComponent],
   templateUrl: './header.html',
-  styleUrls: ['./header.css']
+  styleUrls: ['./header.css'],
 })
-export class HeaderComponent implements OnInit, OnDestroy {
-  currentTime: string = '';
-  currentDate: string = '';
-  userEmail: string = 'admin@policalum.com';
-  userRole: string = 'Administrador';
-  isProfileMenuOpen = false;
+export class HeaderComponent implements OnInit {
+  query = '';
+  results: NavItem[] = [];
+  menuOpen = false;
+  userName = 'Usuario';
+  userEmail = '';
+  userRole = '';
+  initials = 'P';
+  private items: NavItem[] = [];
 
-  private timerSubscription!: Subscription;
-
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    readonly theme: ThemeService,
+    private readonly layout: LayoutService,
+    private readonly auth: AuthService,
+    private readonly router: Router,
+  ) {}
 
   ngOnInit(): void {
-    const user = this.authService.getCurrentUser();
-    if (user) {
-      this.userEmail = user.email;
-      this.userRole = user.rol;
-    }
-
-    this.timerSubscription = interval(1000).subscribe(() => {
-      this.updateDateTime();
-    });
-    this.updateDateTime();
+    const user = this.auth.getCurrentUser();
+    const role = user?.rol ?? '';
+    this.userEmail = user?.email ?? '';
+    this.userName = user?.nombre ?? this.userEmail;
+    this.userRole = role === 'ROLE_ADMIN' ? 'Administrador' : 'Multifuncional';
+    this.initials = (this.userName || 'P').slice(0, 2).toUpperCase();
+    this.items = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => !item.roles || item.roles.includes(role));
   }
 
-  ngOnDestroy(): void {
-    this.timerSubscription?.unsubscribe();
+  onQuery(event: Event): void {
+    this.query = (event.target as HTMLInputElement).value;
+    const term = this.query.trim().toLowerCase();
+    this.results = term ? this.items.filter((item) => item.label.toLowerCase().includes(term)).slice(0, 6) : [];
   }
 
-  private updateDateTime(): void {
-    const now = new Date();
-    this.currentTime = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    this.currentDate = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  goFirst(): void {
+    const target = this.results[0];
+    if (!target) return;
+    void this.router.navigateByUrl(target.path);
+    this.clear();
   }
 
-  toggleProfileMenu(): void {
-    this.isProfileMenuOpen = !this.isProfileMenuOpen;
+  clear(): void {
+    this.query = '';
+    this.results = [];
   }
 
-  closeProfileMenu(): void {
-    this.isProfileMenuOpen = false;
+  toggleMenu(): void {
+    if (window.innerWidth <= 900) this.layout.toggleMobile();
+    else this.layout.toggleCollapsed();
   }
 
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
-    this.closeProfileMenu();
+    this.auth.logout();
+    this.menuOpen = false;
   }
 
-  goToProfile(): void {
-    this.router.navigate(['/perfil']);
-    this.closeProfileMenu();
+  @HostListener('document:click', ['$event'])
+  closeMenus(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.dropdown')) this.menuOpen = false;
+    if (!target.closest('.search-shell')) this.results = [];
   }
 }

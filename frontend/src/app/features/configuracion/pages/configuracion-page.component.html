@@ -1,1 +1,47 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Configuración" subtitle="Datos de la empresa, parámetros operativos y series de comprobante."></app-page-header>
+  <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
+  <div *ngIf="error && tab === 'empresa'" class="alert alert-error"><div><strong>No se cargó la empresa</strong><p>{{ error }}</p></div><button type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button></div>
+
+  <form *ngIf="tab === 'empresa'" class="card card-body form-grid" [formGroup]="empresa" (ngSubmit)="guardarEmpresa()">
+    <app-form-field label="Razón social" inputId="emp-razon" [required]="true" [error]="errorEmpresa('razonSocial')"><input id="emp-razon" class="input" formControlName="razonSocial" /></app-form-field>
+    <app-form-field label="Nombre comercial" inputId="emp-nom"><input id="emp-nom" class="input" formControlName="nombreComercial" /></app-form-field>
+    <app-form-field label="RUC" inputId="emp-ruc" [required]="true" [error]="errorEmpresa('ruc')"><input id="emp-ruc" class="input" formControlName="ruc" inputmode="numeric" /></app-form-field>
+    <app-form-field label="Ubigeo" inputId="emp-ubi" [required]="true" [error]="errorEmpresa('ubigeo')"><input id="emp-ubi" class="input" formControlName="ubigeo" inputmode="numeric" /></app-form-field>
+    <app-form-field class="span-2" label="Dirección fiscal" inputId="emp-dir" [required]="true" [error]="errorEmpresa('direccionFiscal')"><input id="emp-dir" class="input" formControlName="direccionFiscal" /></app-form-field>
+    <app-form-field label="Correo" inputId="emp-mail" [error]="errorEmpresa('email')"><input id="emp-mail" class="input" type="email" formControlName="email" /></app-form-field>
+    <app-form-field label="Teléfono" inputId="emp-tel"><input id="emp-tel" class="input" formControlName="telefono" /></app-form-field>
+    <app-form-field class="span-2" label="Logo" inputId="emp-logo"><input id="emp-logo" class="input" formControlName="logoUrl" /></app-form-field>
+    <div class="filter-actions span-2"><button type="submit" class="btn btn-primary" [disabled]="empresa.invalid || guardando">Guardar empresa</button></div>
+  </form>
+
+  <form *ngIf="tab === 'parametros'" class="card card-body form-grid" [formGroup]="parametros" (ngSubmit)="guardarParametros()">
+    <h2 class="span-2">Finanzas</h2>
+    <app-form-field label="Meses históricos" inputId="par-hist"><input id="par-hist" class="input" type="number" min="1" formControlName="mesesHistoricosProyeccion" /></app-form-field>
+    <app-form-field label="Proyección por defecto" inputId="par-def"><input id="par-def" class="input" type="number" min="1" formControlName="mesesProyeccionDefault" /></app-form-field>
+    <app-form-field label="Proyección máxima" inputId="par-max"><input id="par-max" class="input" type="number" min="1" formControlName="mesesProyeccionMax" /></app-form-field>
+    <h2 class="span-2">Inventario</h2>
+    <app-form-field label="Mínimo de justificación" inputId="par-jus"><input id="par-jus" class="input" type="number" min="0" formControlName="minCaracteresJustificacion" /></app-form-field>
+    <app-form-field label="Umbral de ajuste" inputId="par-umb"><input id="par-umb" class="input" type="number" min="0" step="0.01" formControlName="umbralJustificacionAjuste" /></app-form-field>
+    <h2 class="span-2">Ventas y reportes</h2>
+    <app-form-field label="Vigencia de cotización (días)" inputId="par-vig"><input id="par-vig" class="input" type="number" min="1" formControlName="vigenciaCotizacionDias" /></app-form-field>
+    <app-form-field label="Preforma por defecto (min)" inputId="par-pre"><input id="par-pre" class="input" type="number" min="1" formControlName="preformaMinutosDefault" /></app-form-field>
+    <app-form-field label="Preforma mínima" inputId="par-pmin"><input id="par-pmin" class="input" type="number" min="1" formControlName="preformaMinutosMin" /></app-form-field>
+    <app-form-field label="Preforma máxima" inputId="par-pmax"><input id="par-pmax" class="input" type="number" min="1" formControlName="preformaMinutosMax" /></app-form-field>
+    <app-form-field label="Máximo de filas al exportar" inputId="par-exp"><input id="par-exp" class="input" type="number" min="1" formControlName="maxFilasExportacion" /></app-form-field>
+    <div class="filter-actions span-2"><button type="submit" class="btn btn-primary" [disabled]="parametros.invalid || guardando">Guardar parámetros</button></div>
+  </form>
+
+  <ng-container *ngIf="tab === 'series'">
+    <form class="card card-body form-grid" [formGroup]="serie">
+      <app-form-field label="Sede" inputId="ser-sede" [required]="true"><app-select inputId="ser-sede" [options]="sedes" placeholder="Sede" formControlName="sedeId" [clearable]="false"></app-select></app-form-field>
+      <app-form-field label="Serie" inputId="ser-cod" [required]="true" [error]="errorSerie()" hint="4 caracteres alfanuméricos."><input id="ser-cod" class="input" formControlName="serie" maxlength="4" /></app-form-field>
+      <app-form-field label="Comprobante" inputId="ser-tipo"><select id="ser-tipo" class="select" formControlName="tipoComprobante"><option value="BOLETA">Boleta</option><option value="FACTURA">Factura</option><option value="TICKET">Ticket</option></select></app-form-field>
+      <label class="check-row"><input class="checkbox" type="checkbox" formControlName="activa" /> Activa</label>
+      <div class="filter-actions"><button type="button" class="btn btn-ghost" (click)="agregarSerie()" [disabled]="serie.invalid">Agregar</button><button type="button" class="btn btn-primary" (click)="guardarSeries()" [disabled]="guardando">Guardar series</button></div>
+    </form>
+    <app-data-table [columns]="columnas" [rows]="series" [loading]="cargando" [totalElements]="series.length" [totalPages]="series.length ? 1 : 0" emptyTitle="Sin series" emptyMessage="Agrega una serie por sede y tipo de comprobante.">
+      <ng-template #rowActions let-row><button type="button" class="btn btn-danger btn-sm" (click)="quitarSerie(row)">Quitar</button></ng-template>
+    </app-data-table>
+  </ng-container>
+</section>

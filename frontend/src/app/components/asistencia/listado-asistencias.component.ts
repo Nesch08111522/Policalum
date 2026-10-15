@@ -55,15 +55,12 @@ export class ListadoAsistenciasComponent implements OnInit, AfterViewInit {
     const user = this.tokenService.getUser();
     this.isAdmin = user?.rol === 'ROLE_ADMIN';
     this.empleadoId = user?.id || '';
-    console.log('👤 ListadoAsistencias - isAdmin:', this.isAdmin);
   }
 
   ngOnInit(): void {
-    console.log('🔄 ngOnInit - ListadoAsistencias');
   }
 
   ngAfterViewInit(): void {
-    console.log('🔄 ngAfterViewInit - ListadoAsistencias, cargando datos...');
     setTimeout(() => {
       this.cargarAsistencias();
       if (this.isAdmin) {
@@ -76,7 +73,6 @@ export class ListadoAsistenciasComponent implements OnInit, AfterViewInit {
   cargarEmpleados(): void {
     if (this.empleadosCargados) return;
 
-    console.log('🔄 Cargando empleados...');
     const token = this.tokenService.getToken();
     if (!token) {
       console.warn('⚠️ No hay token para empleados');
@@ -88,7 +84,6 @@ export class ListadoAsistenciasComponent implements OnInit, AfterViewInit {
       next: (data) => {
         this.empleados = data;
         this.empleadosCargados = true;
-        console.log('✅ Empleados cargados:', this.empleados.length);
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -100,7 +95,6 @@ export class ListadoAsistenciasComponent implements OnInit, AfterViewInit {
   }
 
   cargarAsistencias(): void {
-    console.log('🔍 Cargando asistencias...');
     this.isLoading = true;
     this.error = null;
 
@@ -128,7 +122,6 @@ export class ListadoAsistenciasComponent implements OnInit, AfterViewInit {
       filtroEnvio.empleadoId = this.empleadoId;
     }
 
-    console.log('📋 Filtro a enviar:', filtroEnvio);
 
     const metodo = this.isAdmin
       ? this.asistenciaService.listarAsistencias(filtroEnvio, this.page, this.size)
@@ -136,13 +129,11 @@ export class ListadoAsistenciasComponent implements OnInit, AfterViewInit {
 
     metodo.subscribe({
       next: (response) => {
-        console.log('✅ Asistencias recibidas:', response);
         this.asistencias = response.content || [];
         this.totalElements = response.totalElements || 0;
         this.totalPages = response.totalPages || 0;
         this.isLoading = false;
         this.cdr.detectChanges();
-        console.log('✅ Asistencias actualizadas en UI:', this.asistencias.length);
       },
       error: (err) => {
         console.error('❌ Error cargando asistencias:', err);
@@ -155,19 +146,16 @@ export class ListadoAsistenciasComponent implements OnInit, AfterViewInit {
   }
 
   onEmpleadoChange(): void {
-    console.log('🔄 Empleado seleccionado:', this.filtro.empleadoId);
     this.page = 0;
     this.cargarAsistencias();
   }
 
   aplicarFiltros(): void {
-    console.log('🔄 Aplicando filtros...');
     this.page = 0;
     this.cargarAsistencias();
   }
 
   limpiarFiltros(): void {
-    console.log('🔄 Limpiando filtros...');
     this.filtro = {};
     this.page = 0;
     this.cargarAsistencias();
@@ -205,7 +193,6 @@ export class ListadoAsistenciasComponent implements OnInit, AfterViewInit {
   // ============================================
 
   abrirModalManual(): void {
-    console.log('🔄 Abriendo modal de registro manual...');
     this.mostrarModalManual = true;
     this.manualData = {
       empleadoId: '',
@@ -260,14 +247,12 @@ export class ListadoAsistenciasComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    console.log('📝 Registrando asistencia manual:', this.manualData);
     this.isLoading = true;
     this.mensajeExito = null;
     this.error = null;
 
     this.asistenciaService.registrarManual(this.manualData).subscribe({
       next: (response) => {
-        console.log('✅ Asistencia manual registrada:', response);
         this.mensajeExito = '✅ Asistencia registrada correctamente';
         this.isLoading = false;
         this.cdr.detectChanges();

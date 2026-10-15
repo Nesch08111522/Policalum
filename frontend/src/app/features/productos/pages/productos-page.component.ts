@@ -1,361 +1,131 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Routes } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
-import { ApiProblem } from '../../../core/api/openapi.types';
-import { ProductosApiService } from '../data-access/productos.api';
-import { CategoriasApiService } from '../../categorias/data-access/categorias.api';
-import { ProveedoresApiService } from '../../proveedores/data-access/proveedores.api';
 import * as Api from '../../../core/api/openapi.types';
-
-interface Filtros {
-  searchTerm: string;
-  categoriaId: string;
-  tipo: string;
-  activo: string;
-  esFraccionable: string;
-}
-
-interface ProductoForm {
-  id?: string;
-  nombre: string;
-  codigoSku: string;
-  descripcion: string;
-  categoriaId: string;
-  proveedorId: string;
-  tipo: 'FISICO' | 'SERVICIO';
-  unidad: string;
-  precioCompra: number | null;
-  precioVentaBase: number | null;
-  activo: boolean;
-  esFraccionable: boolean;
-  incluyeIgv: boolean;
-}
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
+import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { SelectComponent } from '../../../shared/components/select/select.component';
+import { ColumnDef, SelectOption } from '../../../shared/models/ui.models';
+import { LookupService } from '../../../shared/services/lookup.service';
+import { ToastService } from '../../../shared/services/toast.service';
+import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
+import { PageState } from '../../../shared/utils/page-state';
+import { ProductosApiService } from '../data-access/productos.api';
 
 @Component({
   selector: 'app-productos-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent],
   templateUrl: './productos-page.component.html',
   styleUrls: ['./productos-page.component.css'],
 })
 export class ProductosPageComponent implements OnInit, OnDestroy {
-  productos: Api.ProductoResponseDTO[] = [];
-  totalElementos = 0;
-  totalPaginas = 0;
-  page = 0;
-  size = 20;
-  sort = 'nombre,asc';
-  loading = false;
-  error: ApiProblem | null = null;
-  exito: string | null = null;
-
-  filtros: Filtros = {
-    searchTerm: '',
-    categoriaId: '',
-    tipo: '',
-    activo: '',
-    esFraccionable: '',
-  };
-  categorias: Api.CategoriaResponseDTO[] = [];
-  proveedores: Api.ProveedorResponseDTO[] = [];
-
-  private readonly searchSubject = new Subject<string>();
-  private readonly destroy$ = new Subject<void>();
-
-  mostrarFormulario = false;
-  modoEdicion = false;
+  private readonly fb = inject(FormBuilder);
+  readonly state = new PageState<Api.ProductoResponseDTO>();
+  readonly columns: ColumnDef[] = [
+    { key: 'nombre', label: 'Producto', sortable: true },
+    { key: 'codigoSku', label: 'SKU' },
+    { key: 'categoria.nombre', label: 'Categoría' },
+    { key: 'proveedor.razonSocial', label: 'Proveedor' },
+    { key: 'tipo', label: 'Tipo', kind: 'badge', badge: { FISICO: 'info', SERVICIO: 'neutral' } },
+    { key: 'precioVentaBase', label: 'Precio', kind: 'money', align: 'end' },
+    { key: 'activo', label: 'Activo', kind: 'bool' },
+  ];
+  readonly filtros = this.fb.nonNullable.group({ searchTerm: [''], categoriaId: [''], tipo: [''], activo: [''], esFraccionable: [''] });
+  readonly form = this.fb.nonNullable.group({
+    id: [''],
+    nombre: ['', [Validators.required, Validators.maxLength(200)]],
+    codigoSku: [''],
+    descripcion: [''],
+    categoriaId: [''],
+    proveedorId: [''],
+    tipo: ['FISICO' as Api.ProductoRequestDTO['tipo'], Validators.required],
+    unidad: ['UNIDAD'],
+    precioCompra: [0, [Validators.required, Validators.min(0)]],
+    precioVentaBase: [0, [Validators.required, Validators.min(0)]],
+    activo: [true],
+    esFraccionable: [false],
+    incluyeIgv: [true],
+  });
+  categorias: SelectOption[] = [];
+  proveedores: SelectOption[] = [];
+  modal = false;
+  editando = false;
   guardando = false;
   errorFormulario: string | null = null;
-  form: ProductoForm = this.formVacio();
-
-  mostrarConfirmacion = false;
-  productoAEliminar: Api.ProductoResponseDTO | null = null;
+  confirmar = false;
   eliminando = false;
+  seleccionado: Api.ProductoResponseDTO | null = null;
+  private readonly buscar$ = new Subject<string>();
+  private readonly destroy$ = new Subject<void>();
 
-  constructor(
-    private readonly productosApi: ProductosApiService,
-    private readonly categoriasApi: CategoriasApiService,
-    private readonly proveedoresApi: ProveedoresApiService,
-  ) {}
-
+  constructor(private readonly api: ProductosApiService, private readonly lookup: LookupService, private readonly toast: ToastService) { this.state.sort = 'nombre,asc'; }
   ngOnInit(): void {
-    this.cargarProductos();
-    this.cargarCatalogos();
-
-    this.searchSubject
-      .pipe(debounceTime(400), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe((termino) => {
-        this.filtros.searchTerm = termino;
-        this.page = 0;
-        this.cargarProductos();
-      });
+    this.cargar();
+    this.lookup.loadCategorias().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.categorias = this.lookup.options(rows, (row) => (row as Api.CategoriaResponseDTO).nombre ?? 'Categoría'); });
+    this.lookup.loadProveedores().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.proveedores = this.lookup.options(rows, (row) => (row as Api.ProveedorResponseDTO).nombreRazon ?? 'Proveedor'); });
+    this.buscar$.pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$)).subscribe((valor) => { this.filtros.controls.searchTerm.setValue(valor); this.filtrar(); });
   }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  cargarProductos(): void {
-    this.loading = true;
-    this.error = null;
-    const params = this.construirParams();
-    this.productosApi.GetApiV1Productos(params).subscribe({
-      next: (respuesta) => {
-        this.productos = respuesta.content ?? [];
-        this.totalElementos = respuesta.totalElements ?? 0;
-        this.totalPaginas = respuesta.totalPages ?? 0;
-        this.page = respuesta.number ?? 0;
-        this.loading = false;
-      },
-      error: (err: ApiProblem) => {
-        this.error = err;
-        this.productos = [];
-        this.totalElementos = 0;
-        this.totalPaginas = 0;
-        this.loading = false;
-      },
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+  cargar(): void {
+    this.state.loading = true;
+    this.api.GetApiV1Productos(this.state.query(this.filtros.getRawValue())).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (page) => this.state.apply(page),
+      error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
   }
-
-  private construirParams(): Record<string, string | number> {
-    const params: Record<string, string | number> = {
-      page: this.page,
-      size: this.size,
-      sort: this.sort,
-    };
-    if (this.filtros.searchTerm.trim()) params['searchTerm'] = this.filtros.searchTerm.trim();
-    if (this.filtros.categoriaId) params['categoriaId'] = this.filtros.categoriaId;
-    if (this.filtros.tipo) params['tipo'] = this.filtros.tipo;
-    if (this.filtros.activo !== '') params['activo'] = this.filtros.activo;
-    if (this.filtros.esFraccionable !== '') params['esFraccionable'] = this.filtros.esFraccionable;
-    return params;
-  }
-
-  private cargarCatalogos(): void {
-    this.categoriasApi.GetApiV1Categorias({ page: 0, size: 500 }).subscribe({
-      next: (respuesta) => (this.categorias = respuesta.content ?? []),
-      error: () => (this.categorias = []),
+  filtrar(): void { this.state.page = 0; this.cargar(); }
+  limpiar(): void { this.filtros.reset({ searchTerm: '', categoriaId: '', tipo: '', activo: '', esFraccionable: '' }); this.filtrar(); }
+  onBuscar(event: Event): void { this.buscar$.next((event.target as HTMLInputElement).value); }
+  cambiarPagina(page: number): void { this.state.page = page; this.cargar(); }
+  cambiarTamano(size: number): void { this.state.size = size; this.state.page = 0; this.cargar(); }
+  ordenar(event: { key: string; direction: 'asc' | 'desc' }): void { this.state.sort = `${event.key},${event.direction}`; this.cargar(); }
+  abrirCrear(): void { this.editando = false; this.errorFormulario = null; this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, incluyeIgv: true }); this.modal = true; }
+  abrirEditar(row: unknown): void {
+    const item = row as Api.ProductoResponseDTO;
+    this.editando = true;
+    this.errorFormulario = null;
+    this.form.reset({
+      id: item.id ?? '', nombre: item.nombre ?? '', codigoSku: item.codigoSku ?? '', descripcion: item.descripcion ?? '',
+      categoriaId: item.categoria?.id ?? '', proveedorId: item.proveedor?.id ?? '', tipo: item.tipo ?? 'FISICO', unidad: item.unidad ?? 'UNIDAD',
+      precioCompra: item.precioCompra ?? 0, precioVentaBase: item.precioVentaBase ?? 0, activo: item.activo ?? true, esFraccionable: item.esFraccionable ?? false, incluyeIgv: item.incluyeIgv ?? true,
     });
-    this.proveedoresApi.GetApiV1Proveedores({ page: 0, size: 500 }).subscribe({
-      next: (respuesta) => (this.proveedores = respuesta.content ?? []),
-      error: () => (this.proveedores = []),
-    });
+    this.modal = true;
   }
-
-  onBuscarInput(valor: string): void {
-    this.searchSubject.next(valor);
-  }
-
-  aplicarFiltros(): void {
-    this.page = 0;
-    this.cargarProductos();
-  }
-
-  limpiarFiltros(): void {
-    this.filtros = {
-      searchTerm: '',
-      categoriaId: '',
-      tipo: '',
-      activo: '',
-      esFraccionable: '',
-    };
-    this.page = 0;
-    this.cargarProductos();
-  }
-
-  cambiarPage(nuevaPage: number): void {
-    if (nuevaPage < 0 || nuevaPage >= this.totalPaginas) return;
-    this.page = nuevaPage;
-    this.cargarProductos();
-  }
-
-  cambiarSize(nuevoSize: number): void {
-    this.size = Number(nuevoSize);
-    this.page = 0;
-    this.cargarProductos();
-  }
-
-  abrirFormularioNuevo(): void {
-    this.form = this.formVacio();
-    this.modoEdicion = false;
-    this.errorFormulario = null;
-    this.mostrarFormulario = true;
-  }
-
-  abrirFormularioEditar(producto: Api.ProductoResponseDTO): void {
-    this.form = {
-      id: producto.id,
-      nombre: producto.nombre ?? '',
-      codigoSku: producto.codigoSku ?? '',
-      descripcion: producto.descripcion ?? '',
-      categoriaId: producto.categoria?.id ?? '',
-      proveedorId: producto.proveedor?.id ?? '',
-      tipo: producto.tipo ?? 'FISICO',
-      unidad: producto.unidad ?? 'UNIDAD',
-      precioCompra: producto.precioCompra ?? 0,
-      precioVentaBase: producto.precioVentaBase ?? 0,
-      activo: producto.activo ?? true,
-      esFraccionable: producto.esFraccionable ?? false,
-      incluyeIgv: producto.incluyeIgv ?? true,
-    };
-    this.modoEdicion = true;
-    this.errorFormulario = null;
-    this.mostrarFormulario = true;
-  }
-
-  cerrarFormulario(): void {
-    if (this.guardando) return;
-    this.mostrarFormulario = false;
-  }
-
-  guardarProducto(): void {
-    this.errorFormulario = null;
-
-    if (!this.form.nombre.trim()) {
-      this.errorFormulario = 'El nombre es obligatorio.';
-      return;
-    }
-    if (this.form.precioCompra === null || this.form.precioCompra < 0) {
-      this.errorFormulario = 'El precio de compra debe ser mayor o igual a 0.';
-      return;
-    }
-    if (this.form.precioVentaBase === null || this.form.precioVentaBase < 0) {
-      this.errorFormulario = 'El precio de venta debe ser mayor o igual a 0.';
-      return;
-    }
-
+  guardar(): void {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+    const value = this.form.getRawValue();
     const body: Api.ProductoRequestDTO = {
-      nombre: this.form.nombre.trim(),
-      codigoSku: this.form.codigoSku.trim() || undefined,
-      descripcion: this.form.descripcion.trim() || undefined,
-      categoriaId: this.form.categoriaId || undefined,
-      proveedorId: this.form.proveedorId || undefined,
-      tipo: this.form.tipo,
-      unidad: this.form.unidad.trim() || undefined,
-      precioCompra: this.form.precioCompra,
-      precioVentaBase: this.form.precioVentaBase,
-      activo: this.form.activo,
-      esFraccionable: this.form.esFraccionable,
-      incluyeIgv: this.form.incluyeIgv,
+      nombre: value.nombre.trim(), codigoSku: value.codigoSku.trim() || undefined, descripcion: value.descripcion.trim() || undefined,
+      categoriaId: value.categoriaId || undefined, proveedorId: value.proveedorId || undefined, tipo: value.tipo, unidad: value.unidad.trim() || undefined,
+      precioCompra: Number(value.precioCompra), precioVentaBase: Number(value.precioVentaBase), activo: value.activo, esFraccionable: value.esFraccionable, incluyeIgv: value.incluyeIgv,
     };
-
     this.guardando = true;
-    if (this.modoEdicion && this.form.id) {
-      this.productosApi.PutApiV1ProductosId({ id: this.form.id }, body).subscribe({
-        next: () => {
-          this.guardando = false;
-          this.mostrarFormulario = false;
-          this.mostrarExito('Producto actualizado correctamente.');
-          this.cargarProductos();
-        },
-        error: (err: ApiProblem) => {
-          this.guardando = false;
-          this.errorFormulario = this.mensajeError(err);
-        },
-      });
-    } else {
-      this.productosApi.PostApiV1Productos({}, body).subscribe({
-        next: () => {
-          this.guardando = false;
-          this.mostrarFormulario = false;
-          this.mostrarExito('Producto creado correctamente.');
-          this.cargarProductos();
-        },
-        error: (err: ApiProblem) => {
-          this.guardando = false;
-          this.errorFormulario = this.mensajeError(err);
-        },
-      });
-    }
-  }
-
-  confirmarEliminar(producto: Api.ProductoResponseDTO): void {
-    this.productoAEliminar = producto;
-    this.mostrarConfirmacion = true;
-  }
-
-  cerrarConfirmacion(): void {
-    if (this.eliminando) return;
-    this.mostrarConfirmacion = false;
-    this.productoAEliminar = null;
-  }
-
-  eliminarProducto(): void {
-    if (!this.productoAEliminar?.id) return;
-    this.eliminando = true;
-    this.productosApi.DeleteApiV1ProductosId({ id: this.productoAEliminar.id }).subscribe({
-      next: () => {
-        this.eliminando = false;
-        this.mostrarConfirmacion = false;
-        this.productoAEliminar = null;
-        this.mostrarExito('Producto eliminado correctamente.');
-        this.cargarProductos();
-      },
-      error: (err: ApiProblem) => {
-        this.eliminando = false;
-        this.mostrarConfirmacion = false;
-        this.error = err;
-      },
+    const request = this.editando && value.id ? this.api.PutApiV1ProductosId({ id: value.id }, body) : this.api.PostApiV1Productos({}, body);
+    request.pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.guardando = false; this.modal = false; this.lookup.productos = []; this.toast.success(this.editando ? 'Producto actualizado.' : 'Producto creado.'); this.cargar(); },
+      error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
     });
   }
-
-  private formVacio(): ProductoForm {
-    return {
-      nombre: '',
-      codigoSku: '',
-      descripcion: '',
-      categoriaId: '',
-      proveedorId: '',
-      tipo: 'FISICO',
-      unidad: 'UNIDAD',
-      precioCompra: 0,
-      precioVentaBase: 0,
-      activo: true,
-      esFraccionable: false,
-      incluyeIgv: true,
-    };
+  pedirEliminar(row: unknown): void { this.seleccionado = row as Api.ProductoResponseDTO; this.confirmar = true; }
+  eliminar(): void {
+    if (!this.seleccionado?.id) return;
+    this.eliminando = true;
+    this.api.DeleteApiV1ProductosId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.productos = []; this.toast.success('Producto eliminado.'); this.cargar(); },
+      error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
+    });
   }
-
-  private mostrarExito(mensaje: string): void {
-    this.exito = mensaje;
-    setTimeout(() => (this.exito = null), 4000);
-  }
-
-  private mensajeError(err: ApiProblem): string {
-    if (err.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
-      return Object.entries(err.fieldErrors)
-        .map(([campo, mensaje]) => `${campo}: ${mensaje}`)
-        .join(' · ');
-    }
-    return err.message ?? 'No se pudo completar la operación.';
-  }
-
-  formatearPrecio(valor?: number | null): string {
-    if (valor === null || valor === undefined) return '—';
-    return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(valor);
-  }
-
-  rangoMostrado(): string {
-    if (this.totalElementos === 0) return '0';
-    const inicio = this.page * this.size + 1;
-    const fin = Math.min((this.page + 1) * this.size, this.totalElementos);
-    return `${inicio}–${fin} de ${this.totalElementos}`;
-  }
-
-  paginasVisibles(): number[] {
-    const total = this.totalPaginas;
-    const actual = this.page;
-    const rango: number[] = [];
-    const inicio = Math.max(0, actual - 2);
-    const fin = Math.min(total - 1, actual + 2);
-    for (let i = inicio; i <= fin; i++) rango.push(i);
-    return rango;
-  }
-
-  // ✅ NUEVO: método trackBy que faltaba en el HTML
-  trackById(_index: number, item: { id?: string }): string {
-    return item.id ?? String(_index);
-  }
+  errorDe(nombre: 'nombre' | 'precioCompra' | 'precioVentaBase'): string | null { return fieldError(this.form.controls[nombre]); }
 }
+
+export const PRODUCTOS_ROUTES: Routes = [
+  { path: '', component: ProductosPageComponent, title: 'Productos', data: { section: 'Inventario', breadcrumb: 'Productos' } },
+];

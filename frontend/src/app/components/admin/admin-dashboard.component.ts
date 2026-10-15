@@ -55,7 +55,6 @@ export class AdminDashboardComponent implements OnInit {
   cargarDashboard(): void {
     this.asistenciaService.obtenerDashboard().subscribe({
       next: (data: DashboardAsistenciaDTO) => {
-        console.log('📊 Datos del dashboard:', data);
         
         this.totalEmpleados = data.totalEmpleados;
         this.presentesHoy = data.presentesHoy;

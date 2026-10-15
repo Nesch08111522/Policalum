@@ -1,277 +1,128 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Routes } from '@angular/router';
+import { RoleGuard } from '../../../guards/role.guard';
 import { Subject, takeUntil } from 'rxjs';
-import { ApiProblem } from '../../../core/api/openapi.types';
-import { SedesApiService } from '../data-access/sedes.api';
 import * as Api from '../../../core/api/openapi.types';
-
-interface Filtros {
-  activa: string;
-}
-
-interface SedeForm {
-  id?: string;
-  nombre: string;
-  direccion: string;
-  ciudad: string;
-  pais: string;
-  moneda: string;
-  celularSede: string;
-  activa: boolean;
-}
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
+import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { ColumnDef } from '../../../shared/models/ui.models';
+import { ToastService } from '../../../shared/services/toast.service';
+import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
+import { PageState } from '../../../shared/utils/page-state';
+import { SedesApiService } from '../data-access/sedes.api';
 
 @Component({
   selector: 'app-sedes-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent],
   templateUrl: './sedes-page.component.html',
   styleUrls: ['./sedes-page.component.css'],
 })
 export class SedesPageComponent implements OnInit, OnDestroy {
-  sedes: Api.SedeResponseDTO[] = [];
-  totalElementos = 0;
-  totalPaginas = 0;
-  page = 0;
-  size = 20;
-  sort = 'nombre,asc';
-  loading = false;
-  error: ApiProblem | null = null;
-  exito: string | null = null;
-
-  filtros: Filtros = {
-    activa: '',
-  };
-
-  private readonly destroy$ = new Subject<void>();
-
-  mostrarFormulario = false;
-  modoEdicion = false;
+  private readonly fb = inject(FormBuilder);
+  readonly state = new PageState<Api.SedeResponseDTO>();
+  readonly columns: ColumnDef[] = [
+    { key: 'nombre', label: 'Sede', sortable: true },
+    { key: 'ciudad', label: 'Ciudad' },
+    { key: 'direccion', label: 'Dirección' },
+    { key: 'celularSede', label: 'Celular' },
+    { key: 'moneda', label: 'Moneda' },
+    { key: 'activa', label: 'Activa', kind: 'bool' },
+  ];
+  readonly filtros = this.fb.nonNullable.group({ texto: [''], activa: [''] });
+  readonly form = this.fb.nonNullable.group({
+    id: [''],
+    nombre: ['', [Validators.required, Validators.maxLength(100)]],
+    pais: ['Perú', Validators.maxLength(100)],
+    ciudad: ['', Validators.maxLength(100)],
+    direccion: ['', Validators.maxLength(255)],
+    celularSede: ['', [Validators.maxLength(20), Validators.pattern(/^[0-9+\-() ]*$/)]],
+    moneda: ['PEN', Validators.maxLength(10)],
+    activa: [true],
+  });
+  private todos: Api.SedeResponseDTO[] = [];
+  modal = false;
+  editando = false;
   guardando = false;
   errorFormulario: string | null = null;
-  form: SedeForm = this.formVacio();
-
-  mostrarConfirmacion = false;
-  sedeAEliminar: Api.SedeResponseDTO | null = null;
+  confirmar = false;
   eliminando = false;
+  seleccionado: Api.SedeResponseDTO | null = null;
+  private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly sedesApi: SedesApiService) {}
+  constructor(private readonly api: SedesApiService, private readonly toast: ToastService) { this.state.sort = 'nombre,asc'; }
+  ngOnInit(): void { this.cargar(); }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
-  ngOnInit(): void {
-    this.cargarSedes();
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  cargarSedes(): void {
-    this.loading = true;
-    this.error = null;
-    const params: Record<string, string | number> = {
-      page: this.page,
-      size: this.size,
-      sort: this.sort,
-    };
-
-    // Si hay filtro por activa, usamos el endpoint específico;
-    // si no, usamos el listado completo.
-    const peticion$ = this.filtros.activa !== ''
-      ? this.sedesApi.GetApiV1SedesEstado({ ...params, activa: this.filtros.activa })
-      : this.sedesApi.GetApiV1Sedes(params);
-
-    peticion$.pipe(takeUntil(this.destroy$)).subscribe({
-      next: (respuesta) => {
-        this.sedes = respuesta.content ?? [];
-        this.totalElementos = respuesta.totalElements ?? 0;
-        this.totalPaginas = respuesta.totalPages ?? 0;
-        this.page = respuesta.number ?? 0;
-        this.loading = false;
-      },
-      error: (err: ApiProblem) => {
-        this.error = err;
-        this.sedes = [];
-        this.totalElementos = 0;
-        this.totalPaginas = 0;
-        this.loading = false;
-      },
+  cargar(): void {
+    this.state.loading = true;
+    this.state.error = null;
+    const activa = this.filtros.controls.activa.value;
+    const request = activa === ''
+      ? this.api.GetApiV1Sedes({ page: 0, size: 200, sort: this.state.sort })
+      : this.api.GetApiV1SedesEstado({ activa, page: 0, size: 200, sort: this.state.sort });
+    request.pipe(takeUntil(this.destroy$)).subscribe({
+      next: (page) => { this.todos = page.content ?? []; this.state.loading = false; this.paginar(); },
+      error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
   }
-
-  aplicarFiltros(): void {
-    this.page = 0;
-    this.cargarSedes();
+  paginar(): void {
+    const texto = this.filtros.controls.texto.value.trim().toLowerCase();
+    const filtradas = this.todos.filter((sede) => !texto || `${sede.nombre ?? ''} ${sede.ciudad ?? ''} ${sede.direccion ?? ''}`.toLowerCase().includes(texto));
+    this.state.totalElements = filtradas.length;
+    this.state.totalPages = filtradas.length ? Math.ceil(filtradas.length / this.state.size) : 0;
+    if (this.state.totalPages > 0 && this.state.page >= this.state.totalPages) this.state.page = 0;
+    this.state.rows = filtradas.slice(this.state.page * this.state.size, (this.state.page + 1) * this.state.size);
+    this.state.error = null;
   }
+  filtrar(): void { this.state.page = 0; this.cargar(); }
+  limpiar(): void { this.filtros.reset({ texto: '', activa: '' }); this.filtrar(); }
+  cambiarPagina(page: number): void { this.state.page = page; this.paginar(); }
+  cambiarTamano(size: number): void { this.state.size = size; this.state.page = 0; this.paginar(); }
+  ordenar(event: { key: string; direction: 'asc' | 'desc' }): void { this.state.sort = `${event.key},${event.direction}`; this.cargar(); }
 
-  limpiarFiltros(): void {
-    this.filtros = { activa: '' };
-    this.page = 0;
-    this.cargarSedes();
-  }
-
-  cambiarPage(nuevaPage: number): void {
-    if (nuevaPage < 0 || nuevaPage >= this.totalPaginas) return;
-    this.page = nuevaPage;
-    this.cargarSedes();
-  }
-
-  cambiarSize(nuevoSize: number): void {
-    this.size = Number(nuevoSize);
-    this.page = 0;
-    this.cargarSedes();
-  }
-
-  abrirFormularioNuevo(): void {
-    this.form = this.formVacio();
-    this.modoEdicion = false;
+  abrirCrear(): void { this.editando = false; this.errorFormulario = null; this.form.reset({ id: '', nombre: '', pais: 'Perú', ciudad: '', direccion: '', celularSede: '', moneda: 'PEN', activa: true }); this.modal = true; }
+  abrirEditar(row: unknown): void {
+    const sede = row as Api.SedeResponseDTO;
+    this.editando = true;
     this.errorFormulario = null;
-    this.mostrarFormulario = true;
+    this.form.reset({ id: sede.id ?? '', nombre: sede.nombre ?? '', pais: sede.pais ?? '', ciudad: sede.ciudad ?? '', direccion: sede.direccion ?? '', celularSede: sede.celularSede ?? '', moneda: sede.moneda ?? 'PEN', activa: sede.activa ?? true });
+    this.modal = true;
   }
-
-  abrirFormularioEditar(sede: Api.SedeResponseDTO): void {
-    this.form = {
-      id: sede.id,
-      nombre: sede.nombre ?? '',
-      direccion: sede.direccion ?? '',
-      ciudad: sede.ciudad ?? '',
-      pais: sede.pais ?? 'Perú',
-      moneda: sede.moneda ?? 'PEN',
-      celularSede: sede.celularSede ?? '',
-      activa: sede.activa ?? true,
-    };
-    this.modoEdicion = true;
-    this.errorFormulario = null;
-    this.mostrarFormulario = true;
-  }
-
-  cerrarFormulario(): void {
-    if (this.guardando) return;
-    this.mostrarFormulario = false;
-  }
-
-  guardarSede(): void {
-    this.errorFormulario = null;
-
-    if (!this.form.nombre.trim()) {
-      this.errorFormulario = 'El nombre es obligatorio.';
-      return;
-    }
-
-    const body: Api.SedeRequestDTO = {
-      nombre: this.form.nombre.trim(),
-      direccion: this.form.direccion.trim() || undefined,
-      ciudad: this.form.ciudad.trim() || undefined,
-      pais: this.form.pais.trim() || 'Perú',
-      moneda: this.form.moneda.trim() || 'PEN',
-      celularSede: this.form.celularSede.trim() || undefined,
-      activa: this.form.activa,
-    };
-
+  guardar(): void {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+    const value = this.form.getRawValue();
+    const body: Api.SedeRequestDTO = { nombre: value.nombre.trim(), pais: value.pais.trim() || undefined, ciudad: value.ciudad.trim() || undefined, direccion: value.direccion.trim() || undefined, celularSede: value.celularSede.trim() || undefined, moneda: value.moneda.trim() || undefined, activa: value.activa };
     this.guardando = true;
-    if (this.modoEdicion && this.form.id) {
-      this.sedesApi.PutApiV1SedesId({ id: this.form.id }, body).subscribe({
-        next: () => {
-          this.guardando = false;
-          this.mostrarFormulario = false;
-          this.mostrarExito('Sede actualizada correctamente.');
-          this.cargarSedes();
-        },
-        error: (err: ApiProblem) => {
-          this.guardando = false;
-          this.errorFormulario = this.mensajeError(err);
-        },
-      });
-    } else {
-      this.sedesApi.PostApiV1Sedes({}, body).subscribe({
-        next: () => {
-          this.guardando = false;
-          this.mostrarFormulario = false;
-          this.mostrarExito('Sede creada correctamente.');
-          this.cargarSedes();
-        },
-        error: (err: ApiProblem) => {
-          this.guardando = false;
-          this.errorFormulario = this.mensajeError(err);
-        },
-      });
-    }
-  }
-
-  confirmarEliminar(sede: Api.SedeResponseDTO): void {
-    this.sedeAEliminar = sede;
-    this.mostrarConfirmacion = true;
-  }
-
-  cerrarConfirmacion(): void {
-    if (this.eliminando) return;
-    this.mostrarConfirmacion = false;
-    this.sedeAEliminar = null;
-  }
-
-  eliminarSede(): void {
-    if (!this.sedeAEliminar?.id) return;
-    this.eliminando = true;
-    this.sedesApi.DeleteApiV1SedesId({ id: this.sedeAEliminar.id }).subscribe({
-      next: () => {
-        this.eliminando = false;
-        this.mostrarConfirmacion = false;
-        this.sedeAEliminar = null;
-        this.mostrarExito('Sede eliminada correctamente.');
-        this.cargarSedes();
-      },
-      error: (err: ApiProblem) => {
-        this.eliminando = false;
-        this.mostrarConfirmacion = false;
-        this.error = err;
-      },
+    const request = this.editando && value.id ? this.api.PutApiV1SedesId({ id: value.id }, body) : this.api.PostApiV1Sedes({}, body);
+    request.pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.guardando = false; this.modal = false; this.toast.success(this.editando ? 'Sede actualizada.' : 'Sede creada.'); this.cargar(); },
+      error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
     });
   }
-
-  private formVacio(): SedeForm {
-    return {
-      nombre: '',
-      direccion: '',
-      ciudad: '',
-      pais: 'Perú',
-      moneda: 'PEN',
-      celularSede: '',
-      activa: true,
-    };
+  pedirEliminar(row: unknown): void { this.seleccionado = row as Api.SedeResponseDTO; this.confirmar = true; }
+  eliminar(): void {
+    if (!this.seleccionado?.id) return;
+    this.eliminando = true;
+    this.api.DeleteApiV1SedesId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.eliminando = false; this.confirmar = false; this.toast.success('Sede eliminada.'); this.cargar(); },
+      error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
+    });
   }
-
-  private mostrarExito(mensaje: string): void {
-    this.exito = mensaje;
-    setTimeout(() => (this.exito = null), 4000);
-  }
-
-  private mensajeError(err: ApiProblem): string {
-    if (err.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
-      return Object.entries(err.fieldErrors)
-        .map(([campo, mensaje]) => `${campo}: ${mensaje}`)
-        .join(' · ');
-    }
-    return err.message ?? 'No se pudo completar la operación.';
-  }
-
-  rangoMostrado(): string {
-    if (this.totalElementos === 0) return '0';
-    const inicio = this.page * this.size + 1;
-    const fin = Math.min((this.page + 1) * this.size, this.totalElementos);
-    return `${inicio}–${fin} de ${this.totalElementos}`;
-  }
-
-  paginasVisibles(): number[] {
-    const total = this.totalPaginas;
-    const actual = this.page;
-    const rango: number[] = [];
-    const inicio = Math.max(0, actual - 2);
-    const fin = Math.min(total - 1, actual + 2);
-    for (let i = inicio; i <= fin; i++) rango.push(i);
-    return rango;
-  }
-
-  trackById(_index: number, item: { id?: string }): string {
-    return item.id ?? String(_index);
-  }
+  errorDe(nombre: 'nombre' | 'celularSede'): string | null { return fieldError(this.form.controls[nombre], { pattern: 'Usa solo números, espacios y + - ( ).' }); }
 }
+
+export const SEDES_ROUTES: Routes = [{
+  path: '',
+  component: SedesPageComponent,
+  canActivate: [RoleGuard],
+  title: 'Sedes',
+  data: { expectedRoles: ['ROLE_ADMIN'], section: 'Configuración', breadcrumb: 'Sedes' },
+}];

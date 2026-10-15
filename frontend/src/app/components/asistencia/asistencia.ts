@@ -34,16 +34,13 @@ export class AsistenciaComponent implements OnInit, AfterViewInit {
     const user = this.tokenService.getUser();
     this.isAdmin = user?.rol === 'ROLE_ADMIN';
     this.adminName = user?.nombre || 'Administrador';
-    console.log('👤 Usuario:', user?.email, 'Rol:', user?.rol);
   }
 
   ngOnInit(): void {
-    console.log('🔄 ngOnInit - Iniciando AsistenciaComponent');
   }
 
   // ✅ USAR NGAFTERVIEWINIT (después de que la vista esté lista)
   ngAfterViewInit(): void {
-    console.log('🔄 ngAfterViewInit - Vista lista, cargando datos...');
 
     // ✅ Dar tiempo para que el token esté disponible
     setTimeout(() => {
@@ -57,7 +54,6 @@ export class AsistenciaComponent implements OnInit, AfterViewInit {
   // ✅ DASHBOARD CON FORZADO DE ACTUALIZACIÓN
   // ============================================
   cargarDashboard(): void {
-    console.log('📡 Cargando dashboard...');
 
     // ✅ Verificar token antes de hacer la petición
     const token = this.tokenService.getToken();
@@ -69,7 +65,6 @@ export class AsistenciaComponent implements OnInit, AfterViewInit {
 
     this.asistenciaService.obtenerDashboard().subscribe({
       next: (data) => {
-        console.log('✅ Dashboard recibido:', data);
         this.totalEmpleados = data.totalEmpleados || 0;
         this.presentesHoy = data.presentesHoy || 0;
         this.tardanzasHoy = data.tardanzasHoy || 0;
@@ -77,7 +72,6 @@ export class AsistenciaComponent implements OnInit, AfterViewInit {
 
         // ✅ FORZAR ACTUALIZACIÓN
         this.cdr.detectChanges();
-        console.log('✅ Dashboard actualizado en UI');
       },
       error: (err) => {
         console.error('❌ Error cargando dashboard:', err);

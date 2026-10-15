@@ -1,272 +1,39 @@
-<section class="productos-shell">
-  <!-- ============ Header ============ -->
-  <header class="page-header">
-    <div>
-      <p class="eyebrow">Catálogo</p>
-      <h1>📦 Productos</h1>
-      <p class="subtitle">Gestiona productos, precios, SKU y fracciones del catálogo.</p>
-    </div>
-    <button class="btn btn-primary" type="button" (click)="abrirFormularioNuevo()">
-      <span class="btn-icon">＋</span> Nuevo producto
-    </button>
-  </header>
-
-  <!-- ============ Mensajes ============ -->
-  <div class="alert alert-success" *ngIf="exito">
-    ✅ {{ exito }}
-    <button class="alert-close" type="button" (click)="exito = null">×</button>
-  </div>
-  <div class="alert alert-error" *ngIf="error">
-    ⚠️ <strong>Error{{ error.status ? ' ' + error.status : '' }}:</strong>
-    {{ error.message || 'No se pudo cargar la información.' }}
-    <button class="alert-close" type="button" (click)="error = null">×</button>
-  </div>
-
-  <!-- ============ Filtros ============ -->
-  <div class="filtros-card">
-    <div class="filtro-busqueda">
-      <span class="search-icon">🔍</span>
-      <input
-        type="text"
-        placeholder="Buscar por nombre o SKU..."
-        [ngModel]="filtros.searchTerm"
-        (ngModelChange)="onBuscarInput($event)"
-      />
-    </div>
-
-    <select class="filtro-select" [(ngModel)]="filtros.categoriaId" (change)="aplicarFiltros()">
-      <option value="">Todas las categorías</option>
-      <option *ngFor="let c of categorias" [value]="c.id">{{ c.nombre }}</option>
-    </select>
-
-    <select class="filtro-select" [(ngModel)]="filtros.tipo" (change)="aplicarFiltros()">
-      <option value="">Todos los tipos</option>
-      <option value="FISICO">Físico</option>
-      <option value="SERVICIO">Servicio</option>
-    </select>
-
-    <select class="filtro-select" [(ngModel)]="filtros.activo" (change)="aplicarFiltros()">
-      <option value="">Activo / Inactivo</option>
-      <option value="true">Solo activos</option>
-      <option value="false">Solo inactivos</option>
-    </select>
-
-    <select class="filtro-select" [(ngModel)]="filtros.esFraccionable" (change)="aplicarFiltros()">
-      <option value="">Fraccionable</option>
-      <option value="true">Solo fraccionables</option>
-      <option value="false">No fraccionables</option>
-    </select>
-
-    <button class="btn btn-ghost" type="button" (click)="limpiarFiltros()">Limpiar</button>
-  </div>
-
-  <!-- ============ Tabla ============ -->
-  <div class="tabla-card">
-    <div class="tabla-header">
-      <span>{{ rangoMostrado() }} productos</span>
-      <select class="size-select" [(ngModel)]="size" (change)="cambiarSize($any($event.target).value)">
-        <option [ngValue]="10">10 por página</option>
-        <option [ngValue]="20">20 por página</option>
-        <option [ngValue]="50">50 por página</option>
-        <option [ngValue]="100">100 por página</option>
-      </select>
-    </div>
-
-    <div class="tabla-loading" *ngIf="loading">
-      <div class="spinner"></div>
-      <p>Cargando productos…</p>
-    </div>
-
-    <div class="tabla-empty" *ngIf="!loading && productos.length === 0">
-      <p class="empty-icon">📭</p>
-      <p>No hay productos que coincidan con los filtros.</p>
-      <button class="btn btn-primary" type="button" (click)="abrirFormularioNuevo()">
-        Crear el primero
-      </button>
-    </div>
-
-    <div class="tabla-wrap" *ngIf="!loading && productos.length > 0">
-      <table>
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Nombre</th>
-            <th>Categoría</th>
-            <th>Proveedor</th>
-            <th class="num">P. Compra</th>
-            <th class="num">P. Venta</th>
-            <th>Estado</th>
-            <th class="acciones">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let p of productos; trackBy: trackById">
-            <td><code class="sku">{{ p.codigoSku || '—' }}</code></td>
-            <td>
-              <div class="nombre-cell">
-                <strong>{{ p.nombre }}</strong>
-                <small *ngIf="p.descripcion">{{ p.descripcion }}</small>
-              </div>
-            </td>
-            <td>
-              <span class="badge badge-categoria" *ngIf="p.categoria">
-                {{ p.categoria.nombre }}
-              </span>
-              <span class="muted" *ngIf="!p.categoria">—</span>
-            </td>
-            <td>{{ p.proveedor?.razonSocial || '—' }}</td>
-            <td class="num">{{ formatearPrecio(p.precioCompra) }}</td>
-            <td class="num">{{ formatearPrecio(p.precioVentaBase) }}</td>
-            <td>
-              <span class="badge" [class.badge-activo]="p.activo" [class.badge-inactivo]="!p.activo">
-                {{ p.activo ? 'Activo' : 'Inactivo' }}
-              </span>
-              <span class="badge badge-fraccion" *ngIf="p.esFraccionable">Fracción</span>
-            </td>
-            <td class="acciones">
-              <button class="icon-btn" type="button" title="Editar" (click)="abrirFormularioEditar(p)">
-                ✏️
-              </button>
-              <button class="icon-btn icon-btn-danger" type="button" title="Eliminar" (click)="confirmarEliminar(p)">
-                🗑️
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- ============ Paginación ============ -->
-    <div class="paginacion" *ngIf="!loading && totalPaginas > 1">
-      <button class="btn btn-ghost" type="button" [disabled]="page === 0" (click)="cambiarPage(page - 1)">
-        ← Anterior
-      </button>
-      <button
-        class="page-btn"
-        type="button"
-        *ngFor="let n of paginasVisibles()"
-        [class.active]="n === page"
-        (click)="cambiarPage(n)"
-      >
-        {{ n + 1 }}
-      </button>
-      <button
-        class="btn btn-ghost"
-        type="button"
-        [disabled]="page >= totalPaginas - 1"
-        (click)="cambiarPage(page + 1)"
-      >
-        Siguiente →
-      </button>
-    </div>
-  </div>
-
-  <!-- ============ Modal Crear / Editar ============ -->
-  <div class="modal-backdrop" *ngIf="mostrarFormulario" (click)="cerrarFormulario()">
-    <div class="modal" (click)="$event.stopPropagation()">
-      <header class="modal-header">
-        <h2>{{ modoEdicion ? 'Editar producto' : 'Nuevo producto' }}</h2>
-        <button class="modal-close" type="button" (click)="cerrarFormulario()">×</button>
-      </header>
-
-      <div class="modal-body">
-        <div class="form-alert" *ngIf="errorFormulario">⚠️ {{ errorFormulario }}</div>
-
-        <div class="form-grid">
-          <label class="form-field form-field-full">
-            <span>Nombre *</span>
-            <input type="text" [(ngModel)]="form.nombre" placeholder="Ej: Plancha de policarbonato 4mm" />
-          </label>
-
-          <label class="form-field">
-            <span>SKU</span>
-            <input type="text" [(ngModel)]="form.codigoSku" placeholder="Ej: POL-4MM" />
-          </label>
-
-          <label class="form-field">
-            <span>Unidad</span>
-            <input type="text" [(ngModel)]="form.unidad" placeholder="UNIDAD, M2, KG…" />
-          </label>
-
-          <label class="form-field form-field-full">
-            <span>Descripción</span>
-            <textarea rows="2" [(ngModel)]="form.descripcion" placeholder="Detalle opcional del producto"></textarea>
-          </label>
-
-          <label class="form-field">
-            <span>Categoría</span>
-            <select [(ngModel)]="form.categoriaId">
-              <option value="">Sin categoría</option>
-              <option *ngFor="let c of categorias" [value]="c.id">{{ c.nombre }}</option>
-            </select>
-          </label>
-
-          <label class="form-field">
-            <span>Proveedor</span>
-            <select [(ngModel)]="form.proveedorId">
-              <option value="">Sin proveedor</option>
-              <option *ngFor="let pv of proveedores" [value]="pv.id">{{ pv.nombreRazon }}</option>
-            </select>
-          </label>
-
-          <label class="form-field">
-            <span>Tipo *</span>
-            <select [(ngModel)]="form.tipo">
-              <option value="FISICO">Físico</option>
-              <option value="SERVICIO">Servicio</option>
-            </select>
-          </label>
-
-          <label class="form-field">
-            <span>Precio compra *</span>
-            <input type="number" step="0.01" min="0" [(ngModel)]="form.precioCompra" />
-          </label>
-
-          <label class="form-field">
-            <span>Precio venta *</span>
-            <input type="number" step="0.01" min="0" [(ngModel)]="form.precioVentaBase" />
-          </label>
-
-          <div class="form-checks form-field-full">
-            <label class="check"><input type="checkbox" [(ngModel)]="form.activo" /> Activo</label>
-            <label class="check"><input type="checkbox" [(ngModel)]="form.esFraccionable" /> Fraccionable</label>
-            <label class="check"><input type="checkbox" [(ngModel)]="form.incluyeIgv" /> Incluye IGV</label>
-          </div>
-        </div>
-      </div>
-
-      <footer class="modal-footer">
-        <button class="btn btn-ghost" type="button" (click)="cerrarFormulario()" [disabled]="guardando">
-          Cancelar
-        </button>
-        <button class="btn btn-primary" type="button" (click)="guardarProducto()" [disabled]="guardando">
-          {{ guardando ? 'Guardando…' : (modoEdicion ? 'Actualizar' : 'Crear producto') }}
-        </button>
-      </footer>
-    </div>
-  </div>
-
-  <!-- ============ Modal Eliminar ============ -->
-  <div class="modal-backdrop" *ngIf="mostrarConfirmacion" (click)="cerrarConfirmacion()">
-    <div class="modal modal-sm" (click)="$event.stopPropagation()">
-      <header class="modal-header">
-        <h2>Eliminar producto</h2>
-        <button class="modal-close" type="button" (click)="cerrarConfirmacion()">×</button>
-      </header>
-      <div class="modal-body">
-        <p>
-          ¿Seguro que quieres eliminar <strong>{{ productoAEliminar?.nombre }}</strong>?
-        </p>
-        <p class="muted">Esta acción no se puede deshacer.</p>
-      </div>
-      <footer class="modal-footer">
-        <button class="btn btn-ghost" type="button" (click)="cerrarConfirmacion()" [disabled]="eliminando">
-          Cancelar
-        </button>
-        <button class="btn btn-danger" type="button" (click)="eliminarProducto()" [disabled]="eliminando">
-          {{ eliminando ? 'Eliminando…' : 'Sí, eliminar' }}
-        </button>
-      </footer>
-    </div>
-  </div>
+<section class="module-page">
+  <app-page-header title="Productos" subtitle="Catálogo físico y de servicio, con precios y fraccionamiento." actionLabel="Nuevo producto" (action)="abrirCrear()"></app-page-header>
+  <app-filter-bar>
+    <app-form-field label="Buscar" inputId="prod-buscar"><input id="prod-buscar" class="input" type="search" [value]="filtros.controls.searchTerm.value" (input)="onBuscar($event)" placeholder="Nombre o SKU" /></app-form-field>
+    <app-form-field label="Categoría" inputId="prod-cat"><app-select inputId="prod-cat" [options]="categorias" placeholder="Todas" [formControl]="filtros.controls.categoriaId"></app-select></app-form-field>
+    <app-form-field label="Tipo" inputId="prod-tipo"><select id="prod-tipo" class="select" [formControl]="filtros.controls.tipo"><option value="">Todos</option><option value="FISICO">Físico</option><option value="SERVICIO">Servicio</option></select></app-form-field>
+    <app-form-field label="Activo" inputId="prod-activo"><select id="prod-activo" class="select" [formControl]="filtros.controls.activo"><option value="">Todos</option><option value="true">Sí</option><option value="false">No</option></select></app-form-field>
+    <app-form-field label="Fraccionable" inputId="prod-frac"><select id="prod-frac" class="select" [formControl]="filtros.controls.esFraccionable"><option value="">Todos</option><option value="true">Sí</option><option value="false">No</option></select></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" [sortField]="state.sort.split(',')[0]" [sortDirection]="state.sort.endsWith('desc') ? 'desc' : 'asc'" emptyTitle="No hay productos" emptyAction="Nuevo producto" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (sortChange)="ordenar($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(row)">Editar</button>
+      <button type="button" class="btn btn-danger btn-sm" (click)="pedirEliminar(row)">Eliminar</button>
+    </ng-template>
+  </app-data-table>
 </section>
+<app-modal [open]="modal" [title]="editando ? 'Editar producto' : 'Nuevo producto'" size="lg" (closed)="modal = false">
+  <form class="form-grid" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field label="Nombre" inputId="prod-nombre" [required]="true" [error]="errorDe('nombre')"><input id="prod-nombre" class="input" formControlName="nombre" /></app-form-field>
+    <app-form-field label="SKU" inputId="prod-sku"><input id="prod-sku" class="input" formControlName="codigoSku" /></app-form-field>
+    <app-form-field label="Categoría" inputId="prod-categoria"><app-select inputId="prod-categoria" [options]="categorias" placeholder="Sin categoría" formControlName="categoriaId"></app-select></app-form-field>
+    <app-form-field label="Proveedor" inputId="prod-prov"><app-select inputId="prod-prov" [options]="proveedores" placeholder="Sin proveedor" formControlName="proveedorId"></app-select></app-form-field>
+    <app-form-field label="Tipo" inputId="prod-tipo-f" [required]="true"><select id="prod-tipo-f" class="select" formControlName="tipo"><option value="FISICO">Físico</option><option value="SERVICIO">Servicio</option></select></app-form-field>
+    <app-form-field label="Unidad" inputId="prod-unidad"><input id="prod-unidad" class="input" formControlName="unidad" /></app-form-field>
+    <app-form-field label="Precio de compra" inputId="prod-compra" [required]="true" [error]="errorDe('precioCompra')"><input id="prod-compra" class="input" type="number" min="0" step="0.01" formControlName="precioCompra" /></app-form-field>
+    <app-form-field label="Precio de venta" inputId="prod-venta" [required]="true" [error]="errorDe('precioVentaBase')"><input id="prod-venta" class="input" type="number" min="0" step="0.01" formControlName="precioVentaBase" /></app-form-field>
+    <app-form-field class="span-2" label="Descripción" inputId="prod-desc"><textarea id="prod-desc" class="textarea" formControlName="descripcion"></textarea></app-form-field>
+    <app-form-field label="Activo" inputId="prod-act"><input id="prod-act" class="switch" type="checkbox" formControlName="activo" /></app-form-field>
+    <app-form-field label="Fraccionable" inputId="prod-esfrac"><input id="prod-esfrac" class="switch" type="checkbox" formControlName="esFraccionable" /></app-form-field>
+    <app-form-field label="Incluye IGV" inputId="prod-igv"><input id="prod-igv" class="switch" type="checkbox" formControlName="incluyeIgv" /></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="form.invalid || guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+  </div>
+</app-modal>
+<app-confirm-dialog [open]="confirmar" title="Eliminar producto" [message]="'Se eliminará ' + (seleccionado?.nombre || 'este producto') + '.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>

@@ -1,0 +1,43 @@
+<section class="module-page">
+  <app-page-header title="Panel" subtitle="Indicadores del día, alertas de stock y actividad reciente."></app-page-header>
+  <div *ngIf="cargando" class="card card-body">Cargando indicadores…</div>
+  <div *ngIf="error" class="alert alert-error"><div><strong>Indicadores incompletos</strong><p>{{ error }}</p></div><button type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button></div>
+  <div class="stats-grid">
+    <app-stat-card label="Ventas de hoy" [value]="ventasHoy?.total | pen" icon="cart" [trend]="(ventasHoy?.cantidad ?? 0) + ' comprobantes'"></app-stat-card>
+    <app-stat-card label="Stock crítico" [value]="stock?.alertasBajoMinimo ?? '—'" icon="alert" [trend]="(stock?.agotados ?? 0) + ' agotados'" direction="down"></app-stat-card>
+    <app-stat-card label="CxP vencidas" [value]="cxp?.montoTotalVencido | pen" icon="card" [trend]="(cxp?.vencidas ?? 0) + ' cuentas'"></app-stat-card>
+    <app-stat-card label="Utilidad neta" [value]="esAdmin ? (kpis?.utilidadNeta | pen) : '—'" icon="chart" [trend]="esAdmin ? 'Últimos 30 días' : 'Visible para administración'"></app-stat-card>
+  </div>
+  <div class="stats-grid" *ngIf="esAdmin && patrimonio">
+    <app-stat-card label="Patrimonio" [value]="patrimonio.patrimonioNeto | pen" icon="building"></app-stat-card>
+    <app-stat-card label="Inventario valorizado" [value]="patrimonio.inventarioValorizado | pen" icon="box"></app-stat-card>
+    <app-stat-card label="Disponible" [value]="patrimonio.disponible | pen" icon="cash"></app-stat-card>
+    <app-stat-card label="Valor de inventario hoy" [value]="stock?.valorInventario | pen" icon="layers"></app-stat-card>
+  </div>
+  <div class="dashboard-grid">
+    <article class="card card-body">
+      <h2>Ventas de los últimos 30 días</h2>
+      <app-bar-chart [points]="puntos" label="Ventas diarias"></app-bar-chart>
+    </article>
+    <article class="card card-body">
+      <h2>Accesos rápidos</h2>
+      <div class="quick-grid">
+        <a *ngFor="let acceso of accesos" class="btn btn-ghost" [routerLink]="acceso.path">{{ acceso.label }}</a>
+      </div>
+    </article>
+    <article class="card card-body">
+      <h2>Últimas ventas</h2>
+      <p *ngIf="!ventas.length" class="text-muted">Sin ventas recientes.</p>
+      <ul class="plain-list">
+        <li *ngFor="let venta of ventas"><span>{{ venta.serieCorrelativo || 'Venta' }} · {{ venta.clienteNombre || 'Sin cliente' }}</span><strong>{{ venta.total | pen }}</strong></li>
+      </ul>
+    </article>
+    <article class="card card-body">
+      <h2>Últimas compras</h2>
+      <p *ngIf="!compras.length" class="text-muted">Sin compras recientes.</p>
+      <ul class="plain-list">
+        <li *ngFor="let compra of compras"><span>{{ compra.numeroOrdenCompra || 'Compra' }} · {{ compra.proveedorNombre || 'Proveedor' }}</span><strong>{{ compra.total | pen }}</strong></li>
+      </ul>
+    </article>
+  </div>
+</section>

@@ -1,1 +1,35 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Proveedores" subtitle="Maestro usado por compras, cuentas por pagar y productos." actionLabel="Nuevo proveedor" (action)="abrirCrear()"></app-page-header>
+  <app-filter-bar>
+    <app-form-field label="Buscar" inputId="prov-buscar"><input id="prov-buscar" class="input" type="search" [value]="filtros.controls.searchTerm.value" (input)="onBuscar($event)" placeholder="Razón social o documento" /></app-form-field>
+    <app-form-field label="Estado" inputId="prov-activo"><select id="prov-activo" class="select" [formControl]="filtros.controls.activo"><option value="">Todos</option><option value="true">Activos</option><option value="false">Inactivos</option></select></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" [sortField]="state.sort.split(',')[0]" [sortDirection]="state.sort.endsWith('desc') ? 'desc' : 'asc'" emptyTitle="No hay proveedores" emptyAction="Nuevo proveedor" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (sortChange)="ordenar($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(row)">Editar</button>
+      <button type="button" class="btn btn-danger btn-sm" (click)="pedirEliminar(row)">Eliminar</button>
+    </ng-template>
+  </app-data-table>
+</section>
+<app-modal [open]="modal" [title]="editando ? 'Editar proveedor' : 'Nuevo proveedor'" size="lg" (closed)="modal = false">
+  <form class="form-grid" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field class="span-2" label="Razón social" inputId="prov-nombre" [required]="true" [error]="errorDe('nombreRazon')"><input id="prov-nombre" class="input" formControlName="nombreRazon" /></app-form-field>
+    <app-form-field label="Tipo de documento" inputId="prov-tipo" [required]="true"><select id="prov-tipo" class="select" formControlName="tipoDocumento"><option value="RUC">RUC</option><option value="DNI">DNI</option><option value="CE">CE</option></select></app-form-field>
+    <app-form-field label="Número" inputId="prov-doc" [required]="true" [error]="errorDe('numeroDocumento')"><input id="prov-doc" class="input" formControlName="numeroDocumento" /></app-form-field>
+    <app-form-field label="Celular" inputId="prov-cel"><input id="prov-cel" class="input" formControlName="celular" /></app-form-field>
+    <app-form-field label="Correo" inputId="prov-email" [error]="errorDe('email')"><input id="prov-email" class="input" type="email" formControlName="email" /></app-form-field>
+    <app-form-field class="span-2" label="Dirección" inputId="prov-dir"><input id="prov-dir" class="input" formControlName="direccion" /></app-form-field>
+    <app-form-field label="Banco" inputId="prov-banco"><input id="prov-banco" class="input" formControlName="banco" /></app-form-field>
+    <app-form-field label="Cuenta" inputId="prov-cuenta"><input id="prov-cuenta" class="input" formControlName="cuentaBancaria" /></app-form-field>
+    <app-form-field label="Condiciones de pago" inputId="prov-cond"><input id="prov-cond" class="input" formControlName="condicionesPago" /></app-form-field>
+    <app-form-field label="Días de crédito" inputId="prov-dias" [error]="errorDe('diasCredito')"><input id="prov-dias" class="input" type="number" min="0" formControlName="diasCredito" /></app-form-field>
+    <app-form-field label="Activo" inputId="prov-act"><input id="prov-act" class="switch" type="checkbox" formControlName="activo" /></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="form.invalid || guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+  </div>
+</app-modal>
+<app-confirm-dialog [open]="confirmar" title="Eliminar proveedor" [message]="'Se eliminará ' + (seleccionado?.nombreRazon || 'este proveedor') + '.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>
