@@ -1,0 +1,222 @@
+<section class="crud-shell">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Configuración</p>
+      <h1>📍 Sedes</h1>
+      <p class="subtitle">Administra las sedes operativas, direcciones y monedas.</p>
+    </div>
+    <button class="btn btn-primary" type="button" (click)="abrirFormularioNuevo()">
+      <span class="btn-icon">＋</span> Nueva sede
+    </button>
+  </header>
+
+  <div class="alert alert-success" *ngIf="exito">
+    ✅ {{ exito }}
+    <button class="alert-close" type="button" (click)="exito = null">×</button>
+  </div>
+  <div class="alert alert-error" *ngIf="error">
+    ⚠️ <strong>Error{{ error.status ? ' ' + error.status : '' }}:</strong>
+    {{ error.message || 'No se pudo cargar la información.' }}
+    <button class="alert-close" type="button" (click)="error = null">×</button>
+  </div>
+
+  <div class="filtros-card">
+    <select class="filtro-select" [(ngModel)]="filtros.activa" (change)="aplicarFiltros()">
+      <option value="">Todas las sedes</option>
+      <option value="true">Solo activas</option>
+      <option value="false">Solo inactivas</option>
+    </select>
+
+    <button class="btn btn-ghost" type="button" (click)="limpiarFiltros()">Limpiar</button>
+  </div>
+
+  <div class="tabla-card">
+    <div class="tabla-header">
+      <span>{{ rangoMostrado() }} sedes</span>
+      <select class="size-select" [(ngModel)]="size" (change)="cambiarSize($any($event.target).value)">
+        <option [ngValue]="10">10 por página</option>
+        <option [ngValue]="20">20 por página</option>
+        <option [ngValue]="50">50 por página</option>
+        <option [ngValue]="100">100 por página</option>
+      </select>
+    </div>
+
+    <div class="tabla-loading" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Cargando sedes…</p>
+    </div>
+
+    <div class="tabla-empty" *ngIf="!loading && sedes.length === 0">
+      <p class="empty-icon">📭</p>
+      <p>No hay sedes que coincidan con los filtros.</p>
+      <button class="btn btn-primary" type="button" (click)="abrirFormularioNuevo()">
+        Crear la primera
+      </button>
+    </div>
+
+    <div class="tabla-wrap" *ngIf="!loading && sedes.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Dirección</th>
+            <th>Ciudad</th>
+            <th>País</th>
+            <th>Moneda</th>
+            <th>Celular</th>
+            <th>Estado</th>
+            <th class="acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of sedes; trackBy: trackById">
+            <td><strong class="nombre-cell">{{ s.nombre }}</strong></td>
+            <td>
+              <span *ngIf="s.direccion">{{ s.direccion }}</span>
+              <span class="muted" *ngIf="!s.direccion">—</span>
+            </td>
+            <td>
+              <span *ngIf="s.ciudad">{{ s.ciudad }}</span>
+              <span class="muted" *ngIf="!s.ciudad">—</span>
+            </td>
+            <td>
+              <span *ngIf="s.pais">{{ s.pais }}</span>
+              <span class="muted" *ngIf="!s.pais">—</span>
+            </td>
+            <td>
+              <span class="badge badge-categoria" *ngIf="s.moneda">{{ s.moneda }}</span>
+              <span class="muted" *ngIf="!s.moneda">—</span>
+            </td>
+            <td>
+              <span *ngIf="s.celularSede">{{ s.celularSede }}</span>
+              <span class="muted" *ngIf="!s.celularSede">—</span>
+            </td>
+            <td>
+              <span class="badge" [class.badge-activo]="s.activa" [class.badge-inactivo]="!s.activa">
+                {{ s.activa ? 'Activa' : 'Inactiva' }}
+              </span>
+            </td>
+            <td class="acciones">
+              <button class="icon-btn" type="button" title="Editar" (click)="abrirFormularioEditar(s)">
+                ✏️
+              </button>
+              <button class="icon-btn icon-btn-danger" type="button" title="Eliminar" (click)="confirmarEliminar(s)">
+                🗑️
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="paginacion" *ngIf="!loading && totalPaginas > 1">
+      <button class="btn btn-ghost" type="button" [disabled]="page === 0" (click)="cambiarPage(page - 1)">
+        ← Anterior
+      </button>
+      <button
+        class="page-btn"
+        type="button"
+        *ngFor="let n of paginasVisibles()"
+        [class.active]="n === page"
+        (click)="cambiarPage(n)"
+      >
+        {{ n + 1 }}
+      </button>
+      <button
+        class="btn btn-ghost"
+        type="button"
+        [disabled]="page >= totalPaginas - 1"
+        (click)="cambiarPage(page + 1)"
+      >
+        Siguiente →
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ Modal Crear / Editar ============ -->
+  <div class="modal-backdrop" *ngIf="mostrarFormulario" (click)="cerrarFormulario()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>{{ modoEdicion ? 'Editar sede' : 'Nueva sede' }}</h2>
+        <button class="modal-close" type="button" (click)="cerrarFormulario()">×</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="form-alert" *ngIf="errorFormulario">⚠️ {{ errorFormulario }}</div>
+
+        <div class="form-grid">
+          <label class="form-field form-field-full">
+            <span>Nombre *</span>
+            <input type="text" [(ngModel)]="form.nombre" placeholder="Ej: Sede Principal Lima" />
+          </label>
+
+          <label class="form-field form-field-full">
+            <span>Dirección</span>
+            <input type="text" [(ngModel)]="form.direccion" placeholder="Ej: Av. Los Álamos 123" />
+          </label>
+
+          <label class="form-field">
+            <span>Ciudad</span>
+            <input type="text" [(ngModel)]="form.ciudad" placeholder="Ej: Lima" />
+          </label>
+
+          <label class="form-field">
+            <span>País</span>
+            <input type="text" [(ngModel)]="form.pais" placeholder="Ej: Perú" />
+          </label>
+
+          <label class="form-field">
+            <span>Moneda</span>
+            <select [(ngModel)]="form.moneda">
+              <option value="PEN">Soles (PEN)</option>
+              <option value="USD">Dólares (USD)</option>
+              <option value="EUR">Euros (EUR)</option>
+            </select>
+          </label>
+
+          <label class="form-field">
+            <span>Celular</span>
+            <input type="text" [(ngModel)]="form.celularSede" placeholder="Ej: 999888777" />
+          </label>
+
+          <div class="form-checks form-field-full">
+            <label class="check"><input type="checkbox" [(ngModel)]="form.activa" /> Activa</label>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button class="btn btn-ghost" type="button" (click)="cerrarFormulario()" [disabled]="guardando">
+          Cancelar
+        </button>
+        <button class="btn btn-primary" type="button" (click)="guardarSede()" [disabled]="guardando">
+          {{ guardando ? 'Guardando…' : (modoEdicion ? 'Actualizar' : 'Crear sede') }}
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ============ Modal Eliminar ============ -->
+  <div class="modal-backdrop" *ngIf="mostrarConfirmacion" (click)="cerrarConfirmacion()">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>Eliminar sede</h2>
+        <button class="modal-close" type="button" (click)="cerrarConfirmacion()">×</button>
+      </header>
+      <div class="modal-body">
+        <p>
+          ¿Seguro que quieres eliminar <strong>{{ sedeAEliminar?.nombre }}</strong>?
+        </p>
+        <p class="muted">Esta acción no se puede deshacer.</p>
+      </div>
+      <footer class="modal-footer">
+        <button class="btn btn-ghost" type="button" (click)="cerrarConfirmacion()" [disabled]="eliminando">
+          Cancelar
+        </button>
+        <button class="btn btn-danger" type="button" (click)="eliminarSede()" [disabled]="eliminando">
+          {{ eliminando ? 'Eliminando…' : 'Sí, eliminar' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+</section>

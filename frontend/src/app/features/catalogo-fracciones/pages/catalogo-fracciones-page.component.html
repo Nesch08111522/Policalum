@@ -1,0 +1,226 @@
+<section class="crud-shell">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Catálogo</p>
+      <h1>◫ Fracciones</h1>
+      <p class="subtitle">Administra las fracciones de productos fraccionables y sus precios.</p>
+    </div>
+    <button class="btn btn-primary" type="button" (click)="abrirFormularioNuevo()">
+      <span class="btn-icon">＋</span> Nueva fracción
+    </button>
+  </header>
+
+  <div class="alert alert-success" *ngIf="exito">
+    ✅ {{ exito }}
+    <button class="alert-close" type="button" (click)="exito = null">×</button>
+  </div>
+  <div class="alert alert-error" *ngIf="error">
+    ⚠️ <strong>Error{{ error.status ? ' ' + error.status : '' }}:</strong>
+    {{ error.message || 'No se pudo cargar la información.' }}
+    <button class="alert-close" type="button" (click)="error = null">×</button>
+  </div>
+
+  <div class="filtros-card">
+    <select class="filtro-select" [(ngModel)]="filtros.productoId" (change)="aplicarFiltros()">
+      <option value="">Todos los productos</option>
+      <option *ngFor="let p of productos" [value]="p.id">
+        {{ p.nombre }}{{ p.codigoSku ? ' (' + p.codigoSku + ')' : '' }}
+      </option>
+    </select>
+
+    <div class="filtro-busqueda">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Buscar por nombre de fracción..."
+        [ngModel]="filtros.searchTerm"
+        (ngModelChange)="onBuscarInput($event)"
+      />
+    </div>
+
+    <select class="filtro-select" [(ngModel)]="filtros.activo" (change)="aplicarFiltros()">
+      <option value="">Activo / Inactivo</option>
+      <option value="true">Solo activas</option>
+      <option value="false">Solo inactivas</option>
+    </select>
+
+    <button class="btn btn-ghost" type="button" (click)="limpiarFiltros()">Limpiar</button>
+  </div>
+
+  <div class="tabla-card">
+    <div class="tabla-header">
+      <span>{{ rangoMostrado() }} fracciones</span>
+      <select class="size-select" [(ngModel)]="size" (change)="cambiarSize($any($event.target).value)">
+        <option [ngValue]="10">10 por página</option>
+        <option [ngValue]="20">20 por página</option>
+        <option [ngValue]="50">50 por página</option>
+        <option [ngValue]="100">100 por página</option>
+      </select>
+    </div>
+
+    <div class="tabla-loading" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Cargando fracciones…</p>
+    </div>
+
+    <div class="tabla-empty" *ngIf="!loading && fracciones.length === 0">
+      <p class="empty-icon">📭</p>
+      <p>No hay fracciones que coincidan con los filtros.</p>
+      <p class="hint" *ngIf="!filtros.productoId">
+        Tip: selecciona un producto arriba para ver solo sus fracciones.
+      </p>
+      <button class="btn btn-primary" type="button" (click)="abrirFormularioNuevo()">
+        Crear la primera
+      </button>
+    </div>
+
+    <div class="tabla-wrap" *ngIf="!loading && fracciones.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre de fracción</th>
+            <th class="num">Factor</th>
+            <th class="num">Precio de venta</th>
+            <th>Estado</th>
+            <th class="acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let f of fracciones; trackBy: trackById">
+            <td><strong class="nombre-cell">{{ f.nombreFraccion }}</strong></td>
+            <td class="num">{{ f.factorDescuentoKardex ?? '—' }}</td>
+            <td class="num">{{ formatearPrecio(f.precioVenta) }}</td>
+            <td>
+              <span class="badge" [class.badge-activo]="f.activo" [class.badge-inactivo]="!f.activo">
+                {{ f.activo ? 'Activa' : 'Inactiva' }}
+              </span>
+            </td>
+            <td class="acciones">
+              <button class="icon-btn" type="button" title="Editar" (click)="abrirFormularioEditar(f)">
+                ✏️
+              </button>
+              <button class="icon-btn icon-btn-danger" type="button" title="Eliminar" (click)="confirmarEliminar(f)">
+                🗑️
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="paginacion" *ngIf="!loading && totalPaginas > 1">
+      <button class="btn btn-ghost" type="button" [disabled]="page === 0" (click)="cambiarPage(page - 1)">
+        ← Anterior
+      </button>
+      <button
+        class="page-btn"
+        type="button"
+        *ngFor="let n of paginasVisibles()"
+        [class.active]="n === page"
+        (click)="cambiarPage(n)"
+      >
+        {{ n + 1 }}
+      </button>
+      <button
+        class="btn btn-ghost"
+        type="button"
+        [disabled]="page >= totalPaginas - 1"
+        (click)="cambiarPage(page + 1)"
+      >
+        Siguiente →
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Crear / Editar -->
+  <div class="modal-backdrop" *ngIf="mostrarFormulario" (click)="cerrarFormulario()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>{{ modoEdicion ? 'Editar fracción' : 'Nueva fracción' }}</h2>
+        <button class="modal-close" type="button" (click)="cerrarFormulario()">×</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="form-alert" *ngIf="errorFormulario">⚠️ {{ errorFormulario }}</div>
+
+        <div class="form-grid">
+          <label class="form-field form-field-full">
+            <span>Producto *</span>
+            <select [(ngModel)]="form.productoId">
+              <option value="">Selecciona un producto fraccionable</option>
+              <option *ngFor="let p of productos" [value]="p.id">
+                {{ p.nombre }}{{ p.codigoSku ? ' (' + p.codigoSku + ')' : '' }}
+              </option>
+            </select>
+            <small class="hint">Solo se listan productos marcados como fraccionables.</small>
+          </label>
+
+          <label class="form-field form-field-full">
+            <span>Nombre de la fracción *</span>
+            <input
+              type="text"
+              [(ngModel)]="form.nombreFraccion"
+              placeholder="Ej: Media plancha (1/2)"
+            />
+          </label>
+
+          <label class="form-field">
+            <span>Factor * (0 &lt; factor ≤ 1)</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              max="1"
+              [(ngModel)]="form.factorDescuentoKardex"
+              placeholder="Ej: 0.5"
+            />
+            <small class="hint">Representa cuánto del producto entero consume esta fracción.</small>
+          </label>
+
+          <label class="form-field">
+            <span>Precio de venta</span>
+            <input type="number" step="0.01" min="0" [(ngModel)]="form.precioVenta" placeholder="Opcional" />
+            <small class="hint">Si se deja vacío, se calcula desde el precio base.</small>
+          </label>
+
+          <div class="form-checks form-field-full">
+            <label class="check"><input type="checkbox" [(ngModel)]="form.activo" /> Activa</label>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button class="btn btn-ghost" type="button" (click)="cerrarFormulario()" [disabled]="guardando">
+          Cancelar
+        </button>
+        <button class="btn btn-primary" type="button" (click)="guardarFraccion()" [disabled]="guardando">
+          {{ guardando ? 'Guardando…' : (modoEdicion ? 'Actualizar' : 'Crear fracción') }}
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Modal Eliminar -->
+  <div class="modal-backdrop" *ngIf="mostrarConfirmacion" (click)="cerrarConfirmacion()">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>Eliminar fracción</h2>
+        <button class="modal-close" type="button" (click)="cerrarConfirmacion()">×</button>
+      </header>
+      <div class="modal-body">
+        <p>
+          ¿Seguro que quieres eliminar <strong>{{ fraccionAEliminar?.nombreFraccion }}</strong>?
+        </p>
+        <p class="muted">Esta acción no se puede deshacer.</p>
+      </div>
+      <footer class="modal-footer">
+        <button class="btn btn-ghost" type="button" (click)="cerrarConfirmacion()" [disabled]="eliminando">
+          Cancelar
+        </button>
+        <button class="btn btn-danger" type="button" (click)="eliminarFraccion()" [disabled]="eliminando">
+          {{ eliminando ? 'Eliminando…' : 'Sí, eliminar' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,52 @@
+import { Routes } from '@angular/router';
+import { VentasPageComponent } from '../ventas/pages/ventas-page.component';
+import { ClientesPageComponent } from '../clientes/pages/clientes-page.component';
+import { CotizacionesPageComponent } from '../cotizaciones/pages/cotizaciones-page.component';
+import { ProductosPageComponent } from '../productos/pages/productos-page.component';
+import { ServiciosPageComponent } from '../servicios/pages/servicios-page.component';
+import { CategoriasPageComponent } from '../categorias/pages/categorias-page.component';
+import { CatalogoFraccionesPageComponent } from '../catalogo-fracciones/pages/catalogo-fracciones-page.component';
+import { StockPageComponent } from '../stock/pages/stock-page.component';
+import { KardexPageComponent } from '../kardex/pages/kardex-page.component';
+import { AlmacenesPageComponent } from '../almacenes/pages/almacenes-page.component';
+import { ComprasPageComponent } from '../compras/pages/compras-page.component';
+import { ProveedoresPageComponent } from '../proveedores/pages/proveedores-page.component';
+import { DespachosPageComponent } from '../despachos/pages/despachos-page.component';
+import { MovilidadesPageComponent } from '../movilidades/pages/movilidades-page.component';
+import { TurnosCajaPageComponent } from '../turnos-caja/pages/turnos-caja-page.component';
+import { CuentasPorPagarPageComponent } from '../cuentas-por-pagar/pages/cuentas-por-pagar-page.component';
+import { FinanzasPageComponent } from '../finanzas/pages/finanzas-page.component';
+import { RrhhPageComponent } from '../rrhh/pages/rrhh-page.component';
+import { ReportesPageComponent } from '../reportes/pages/reportes-page.component';
+import { AuditoriaPageComponent } from '../auditoria/pages/auditoria-page.component';
+import { ConfiguracionPageComponent } from '../configuracion/pages/configuracion-page.component';
+import { UsersPageComponent } from '../users/pages/users-page.component';
+import { RolesPageComponent } from '../roles/pages/roles-page.component';
+import { SedesPageComponent } from '../sedes/pages/sedes-page.component';
+
+export const WORKSPACE_ROUTES: Routes = [
+  { path: 'modules/ventas', component: VentasPageComponent },
+  { path: 'modules/clientes', component: ClientesPageComponent },
+  { path: 'modules/cotizaciones', component: CotizacionesPageComponent },
+  { path: 'modules/productos', component: ProductosPageComponent },
+  { path: 'modules/servicios', component: ServiciosPageComponent },
+  { path: 'modules/categorias', component: CategoriasPageComponent },
+  { path: 'modules/catalogo-fracciones', component: CatalogoFraccionesPageComponent },
+  { path: 'modules/stock', component: StockPageComponent },
+  { path: 'modules/kardex', component: KardexPageComponent },
+  { path: 'modules/almacenes', component: AlmacenesPageComponent },
+  { path: 'modules/compras', component: ComprasPageComponent },
+  { path: 'modules/proveedores', component: ProveedoresPageComponent },
+  { path: 'modules/despachos', component: DespachosPageComponent },
+  { path: 'modules/movilidades', component: MovilidadesPageComponent },
+  { path: 'modules/turnos-caja', component: TurnosCajaPageComponent },
+  { path: 'modules/cuentas-por-pagar', component: CuentasPorPagarPageComponent },
+  { path: 'modules/finanzas', component: FinanzasPageComponent },
+  { path: 'modules/rrhh', component: RrhhPageComponent },
+  { path: 'modules/reportes', component: ReportesPageComponent },
+  { path: 'modules/auditoria', component: AuditoriaPageComponent },
+  { path: 'modules/configuracion', component: ConfiguracionPageComponent },
+  { path: 'modules/users', component: UsersPageComponent },
+  { path: 'modules/roles', component: RolesPageComponent },
+  { path: 'modules/sedes', component: SedesPageComponent },
+];

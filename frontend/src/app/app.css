@@ -1,0 +1,27 @@
+/* src/app/app.css */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.main-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content-with-sidebar {
+  display: flex;
+  flex: 1;
+  .main-content {
+    flex: 1;
+    padding: 24px;
+    background: var(--color-bg-light);
+    overflow-y: auto;
+  }
+}

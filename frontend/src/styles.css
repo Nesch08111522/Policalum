@@ -1,0 +1,39 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import 'tailwindcss';
+
+/* src/styles.css */
+:root {
+  /* Colores principales (se mantienen igual) */
+  --color-logo-bright: #FFFFFF;
+  --color-cyan-light: #61D4E8;
+  --color-blue-medium: #1FA2D6;
+  --color-blue-dark: #075591;
+  --color-bg-gray: #B3C1CD;
+
+  /* Textos adaptados a tema oscuro */
+  --color-text-primary: #FFFFFF;        /* Antes #2c3e50 → ahora blanco */
+  --color-text-secondary: #B3C1CD;      /* Antes #5a6d7e → ahora gris azulado (mismo que bg-gray) */
+
+  /* Fondos y superficies oscuras */
+  --color-bg-light: #1A1C2B;            /* Antes #f0f4f8 → ahora azul muy oscuro */
+  --color-bg-card: #232538;             /* Nuevo, para tarjetas o paneles (opcional) */
+  --color-bg-overlay: rgba(0, 0, 0, 0.7); /* Para superposiciones */
+
+  /* Bordes y líneas */
+  --color-border: rgba(255, 255, 255, 0.1);  /* Antes #dce3ea → ahora sutil transparencia */
+
+  /* Sombras (útil para elevar elementos) */
+  --shadow-light: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-medium: 0 4px 16px rgba(0,0,0,0.4);
+}
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  background: var(--color-bg-light);
+  color: var(--color-text-primary);
+}

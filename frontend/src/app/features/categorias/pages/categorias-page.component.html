@@ -1,0 +1,213 @@
+<section class="crud-shell">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Catálogo</p>
+      <h1>🗂️ Categorías</h1>
+      <p class="subtitle">Organiza el catálogo en categorías y subcategorías jerárquicas.</p>
+    </div>
+    <button class="btn btn-primary" type="button" (click)="abrirFormularioNuevo()">
+      <span class="btn-icon">＋</span> Nueva categoría
+    </button>
+  </header>
+
+  <div class="alert alert-success" *ngIf="exito">
+    ✅ {{ exito }}
+    <button class="alert-close" type="button" (click)="exito = null">×</button>
+  </div>
+  <div class="alert alert-error" *ngIf="error">
+    ⚠️ <strong>Error{{ error.status ? ' ' + error.status : '' }}:</strong>
+    {{ error.message || 'No se pudo cargar la información.' }}
+    <button class="alert-close" type="button" (click)="error = null">×</button>
+  </div>
+
+  <div class="filtros-card">
+    <div class="filtro-busqueda">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Buscar por nombre o slug..."
+        [ngModel]="filtros.searchTerm"
+        (ngModelChange)="onBuscarInput($event)"
+      />
+    </div>
+
+    <select class="filtro-select" [(ngModel)]="filtros.activa" (change)="aplicarFiltros()">
+      <option value="">Activa / Inactiva</option>
+      <option value="true">Solo activas</option>
+      <option value="false">Solo inactivas</option>
+    </select>
+
+    <button class="btn btn-ghost" type="button" (click)="limpiarFiltros()">Limpiar</button>
+  </div>
+
+  <div class="tabla-card">
+    <div class="tabla-header">
+      <span>{{ rangoMostrado() }} categorías</span>
+      <select class="size-select" [(ngModel)]="size" (change)="cambiarSize($any($event.target).value)">
+        <option [ngValue]="10">10 por página</option>
+        <option [ngValue]="20">20 por página</option>
+        <option [ngValue]="50">50 por página</option>
+        <option [ngValue]="100">100 por página</option>
+      </select>
+    </div>
+
+    <div class="tabla-loading" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Cargando categorías…</p>
+    </div>
+
+    <div class="tabla-empty" *ngIf="!loading && categorias.length === 0">
+      <p class="empty-icon">📭</p>
+      <p>No hay categorías que coincidan con los filtros.</p>
+      <button class="btn btn-primary" type="button" (click)="abrirFormularioNuevo()">
+        Crear la primera
+      </button>
+    </div>
+
+    <div class="tabla-wrap" *ngIf="!loading && categorias.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Slug</th>
+            <th>Categoría padre</th>
+            <th>Estado</th>
+            <th class="acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of categorias; trackBy: trackById">
+            <td><strong class="nombre-cell">{{ c.nombre }}</strong></td>
+            <td><code class="sku">{{ c.slug || '—' }}</code></td>
+            <td>
+              <span class="badge badge-categoria" *ngIf="c.parent">
+                {{ c.parent.nombre }}
+              </span>
+              <span class="muted" *ngIf="!c.parent">Categoría raíz</span>
+            </td>
+            <td>
+              <span class="badge" [class.badge-activo]="c.activa" [class.badge-inactivo]="!c.activa">
+                {{ c.activa ? 'Activa' : 'Inactiva' }}
+              </span>
+            </td>
+            <td class="acciones">
+              <button class="icon-btn" type="button" title="Editar" (click)="abrirFormularioEditar(c)">
+                ✏️
+              </button>
+              <button class="icon-btn icon-btn-danger" type="button" title="Eliminar" (click)="confirmarEliminar(c)">
+                🗑️
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="paginacion" *ngIf="!loading && totalPaginas > 1">
+      <button class="btn btn-ghost" type="button" [disabled]="page === 0" (click)="cambiarPage(page - 1)">
+        ← Anterior
+      </button>
+      <button
+        class="page-btn"
+        type="button"
+        *ngFor="let n of paginasVisibles()"
+        [class.active]="n === page"
+        (click)="cambiarPage(n)"
+      >
+        {{ n + 1 }}
+      </button>
+      <button
+        class="btn btn-ghost"
+        type="button"
+        [disabled]="page >= totalPaginas - 1"
+        (click)="cambiarPage(page + 1)"
+      >
+        Siguiente →
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ Modal Crear / Editar ============ -->
+  <div class="modal-backdrop" *ngIf="mostrarFormulario" (click)="cerrarFormulario()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>{{ modoEdicion ? 'Editar categoría' : 'Nueva categoría' }}</h2>
+        <button class="modal-close" type="button" (click)="cerrarFormulario()">×</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="form-alert" *ngIf="errorFormulario">⚠️ {{ errorFormulario }}</div>
+
+        <div class="form-grid">
+          <label class="form-field form-field-full">
+            <span>Nombre *</span>
+            <input
+              type="text"
+              [(ngModel)]="form.nombre"
+              (blur)="generarSlug()"
+              placeholder="Ej: Techos y Coberturas"
+            />
+          </label>
+
+          <label class="form-field form-field-full">
+            <span>Slug *</span>
+            <input type="text" [(ngModel)]="form.slug" placeholder="techos-y-coberturas" />
+            <small class="hint">Se genera automáticamente desde el nombre. Debe ser único.</small>
+          </label>
+
+          <label class="form-field form-field-full">
+            <span>Categoría padre</span>
+            <select [(ngModel)]="form.parentId">
+              <option value="">Sin padre (categoría raíz)</option>
+              <option
+                *ngFor="let cp of categoriasPadre"
+                [value]="cp.id"
+                [disabled]="cp.id === form.id"
+              >
+                {{ cp.nombre }}
+              </option>
+            </select>
+            <small class="hint">Una categoría no puede ser su propio padre.</small>
+          </label>
+
+          <div class="form-checks form-field-full">
+            <label class="check"><input type="checkbox" [(ngModel)]="form.activa" /> Activa</label>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button class="btn btn-ghost" type="button" (click)="cerrarFormulario()" [disabled]="guardando">
+          Cancelar
+        </button>
+        <button class="btn btn-primary" type="button" (click)="guardarCategoria()" [disabled]="guardando">
+          {{ guardando ? 'Guardando…' : (modoEdicion ? 'Actualizar' : 'Crear categoría') }}
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ============ Modal Eliminar ============ -->
+  <div class="modal-backdrop" *ngIf="mostrarConfirmacion" (click)="cerrarConfirmacion()">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>Eliminar categoría</h2>
+        <button class="modal-close" type="button" (click)="cerrarConfirmacion()">×</button>
+      </header>
+      <div class="modal-body">
+        <p>
+          ¿Seguro que quieres eliminar <strong>{{ categoriaAEliminar?.nombre }}</strong>?
+        </p>
+        <p class="muted">Esta acción no se puede deshacer.</p>
+      </div>
+      <footer class="modal-footer">
+        <button class="btn btn-ghost" type="button" (click)="cerrarConfirmacion()" [disabled]="eliminando">
+          Cancelar
+        </button>
+        <button class="btn btn-danger" type="button" (click)="eliminarCategoria()" [disabled]="eliminando">
+          {{ eliminando ? 'Eliminando…' : 'Sí, eliminar' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+</section>

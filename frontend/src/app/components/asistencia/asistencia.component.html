@@ -1,0 +1,43 @@
+<!-- src/app/components/asistencia/asistencia.component.html -->
+<div class="asistencia-container">
+  <div class="page-header">
+    <h2>📋 Asistencia y Turnos</h2>
+    <p class="subtitle">👤 {{ adminName }} - {{ isAdmin ? 'Administrador' : 'Empleado' }}</p>
+  </div>
+
+  <div class="dashboard-section">
+    <h3>📊 Resumen del Día</h3>
+    <div class="dashboard-cards">
+      <div class="card card-total">
+        <span class="card-icon">👥</span>
+        <span class="card-value">{{ totalEmpleados }}</span>
+        <span class="card-label">Total Empleados</span>
+      </div>
+      <div class="card card-presentes">
+        <span class="card-icon">✅</span>
+        <span class="card-value">{{ presentesHoy }}</span>
+        <span class="card-label">Presentes Hoy</span>
+      </div>
+      <div class="card card-tardanzas">
+        <span class="card-icon">⏰</span>
+        <span class="card-value">{{ tardanzasHoy }}</span>
+        <span class="card-label">Tardanzas</span>
+      </div>
+      <div class="card card-ausentes">
+        <span class="card-icon">❌</span>
+        <span class="card-value">{{ ausentesHoy }}</span>
+        <span class="card-label">Ausentes</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="qr-section">
+    <div class="qr-header">
+      <h3>📱 QR de Asistencia</h3>
+      <p>Muestra este QR en la pantalla para que los empleados escaneen y marquen su asistencia.</p>
+    </div>
+    <app-qr-publico></app-qr-publico>
+  </div>
+
+  <app-listado-asistencias></app-listado-asistencias>
+</div>

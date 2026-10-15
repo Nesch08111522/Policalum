@@ -1,0 +1,26 @@
+package com.policalum.erp.application.dto.response;
+
+import com.policalum.erp.domain.enums.OrigenFondos;
+import com.policalum.erp.domain.model.FinanzasRetiroSocio;
+import com.policalum.erp.domain.model.Sede;
+import com.policalum.erp.domain.model.TurnoCaja;
+import com.policalum.erp.domain.model.User;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+public record FinanzasRetiroSocioResponseDTO(
+        UUID id,
+        User admin,
+        Sede sede,
+        TurnoCaja turnoCaja,
+        BigDecimal montoRetirado,
+        OrigenFondos origenFondos,
+        String descripcion,
+        LocalDateTime fechaRetiro
+) {
+}

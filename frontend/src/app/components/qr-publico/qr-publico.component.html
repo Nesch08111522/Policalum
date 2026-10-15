@@ -1,0 +1,95 @@
+<!-- src/app/components/qr-publico/qr-publico.component.html -->
+<div class="qr-container">
+  <!-- ✅ NOTIFICACIÓN FLOTANTE -->
+  <div
+    *ngIf="mostrarMensajeFlotante"
+    class="mensaje-flotante"
+    [class.success]="tipoMensaje === 'success'"
+    [class.error]="tipoMensaje === 'error'"
+  >
+    <span class="mensaje-icono">{{ tipoMensaje === 'success' ? '✅' : '❌' }}</span>
+    <span class="mensaje-texto">{{ mensajeFlotante }}</span>
+  </div>
+
+  <div class="header">
+    <div class="logo">
+      <i class="fas fa-qrcode"></i>
+      <h1>POLICALUM</h1>
+    </div>
+    <p class="subtitle">📱 Escanea el QR para marcar tu asistencia</p>
+    <div class="admin-badge">
+      <i class="fas fa-user-shield"></i>
+      <span>{{ adminNombre }}</span>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Cargando código QR...</p>
+  </div>
+
+  <div *ngIf="!isLoading && !error" class="qr-card">
+    <div id="qrcode" class="qr-image"></div>
+
+    <div class="qr-info" *ngIf="qrData">
+      <div class="info-row">
+        <span class="info-label">👤 Empleado</span>
+        <span class="info-value">{{ qrData?.empleadoNombre || 'Sistema' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">🆔 ID</span>
+        <span class="info-value">{{ qrData?.empleadoId || 'N/A' }}</span>
+      </div>
+    </div>
+
+    <!-- ✅ TIMER EN TIEMPO REAL -->
+    <div class="timer-section">
+      <div class="timer-text">
+        <span>🔄 El QR se actualiza en</span>
+        <span class="seconds" [ngClass]="{ 'text-danger': segundosRestantes <= 10 }">
+          {{ segundosRestantes }}
+        </span>
+        <span>segundos</span>
+      </div>
+      <div class="progress-track">
+        <div
+          class="progress-fill"
+          [class]="getColorBarra()"
+          [style.width.%]="getPorcentajeProgreso()"
+        ></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" (click)="refrescarQR()">
+        <i class="fas fa-sync-alt"></i> Actualizar
+      </button>
+      <button class="btn btn-secondary" (click)="mostrarEscaneoManual()">
+        <i class="fas fa-keyboard"></i> Manual
+      </button>
+    </div>
+
+    <div *ngIf="mostrandoInputManual" class="manual-input">
+      <div class="input-group">
+        <input type="text" placeholder="Pega el código QR..." [(ngModel)]="codigoManual" />
+        <button class="btn btn-success" (click)="marcarConCodigoManual()">
+          <i class="fas fa-check"></i> Marcar
+        </button>
+      </div>
+      <small class="text-muted">Pega el código completo escaneado</small>
+    </div>
+
+    <div *ngIf="error" class="alert-error">{{ error }}</div>
+  </div>
+
+  <div *ngIf="error && !isLoading" class="error-container">
+    <i class="fas fa-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+    <button class="btn btn-primary" (click)="cargarQR()">Reintentar</button>
+  </div>
+
+  <div class="footer">
+    <p>🔒 El QR cambia cada 60 segundos</p>
+    <p class="small">POLICALUM v1.0</p>
+  </div>
+</div>

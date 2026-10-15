@@ -1,0 +1,13 @@
+<aside class="sidebar" [class.collapsed]="isCollapsed">
+  <div class="sidebar-header" (click)="toggleCollapse()" title="Contraer menú">
+    <span class="brand-mark">P</span><span class="label" *ngIf="!isCollapsed">POLICALUM ERP</span><span class="toggle-icon">☰</span>
+  </div>
+  <nav class="sidebar-nav" aria-label="Módulos del sistema">
+    <button *ngFor="let module of modules" type="button" class="module-link" [class.active]="false" (click)="open(module)" [title]="module.label">
+      <span class="module-icon">{{ module.icon }}</span><span class="label" *ngIf="!isCollapsed">{{ module.label }}</span>
+    </button>
+  </nav>
+  <div class="sidebar-footer" *ngIf="!isCollapsed">
+    <button class="logout-btn" type="button" (click)="logout()">Cerrar sesión</button>
+  </div>
+</aside>

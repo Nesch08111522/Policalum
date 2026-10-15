@@ -1,0 +1,56 @@
+<section class="workspace-shell">
+  <header class="workspace-hero">
+    <div>
+      <p class="eyebrow">Módulo operativo</p>
+      <h1>{{ module.icon }} {{ module.label }}</h1>
+      <p>{{ module.description }}</p>
+    </div>
+    <div class="contract-badge"><strong>{{ endpoints.length }}</strong><span>operaciones REST</span></div>
+  </header>
+
+  <div class="workspace-layout">
+    <aside class="endpoint-panel">
+      <div class="panel-heading"><span>Operaciones</span><span>{{ endpoints.length }}</span></div>
+      <button *ngFor="let endpoint of endpoints" type="button" class="endpoint-item" [class.active]="selected?.id === endpoint.id" (click)="selectEndpoint(endpoint)">
+        <span class="method" [class]="'method ' + endpoint.method.toLowerCase()">{{ endpoint.method }}</span>
+        <span class="endpoint-copy"><strong>{{ endpoint.title }}</strong><small>{{ endpoint.path }}</small></span>
+      </button>
+      <p class="empty" *ngIf="!endpoints.length">No hay operaciones publicadas para este módulo.</p>
+    </aside>
+
+    <main class="operation-panel" *ngIf="selected as endpoint; else noEndpoint">
+      <div class="operation-heading">
+        <div>
+          <span class="method" [class]="'method ' + endpoint.method.toLowerCase()">{{ endpoint.method }}</span>
+          <h2>{{ endpoint.title }}</h2>
+          <code>{{ endpoint.path }}</code>
+        </div>
+        <button class="primary-button" type="button" [disabled]="loading" (click)="run()">{{ loading ? 'Consultando…' : 'Ejecutar operación' }}</button>
+      </div>
+
+      <div class="forms-grid">
+        <label class="json-field" *ngIf="endpoint.parameters.length">
+          <span>Parámetros de ruta y consulta</span>
+          <small>{{ endpoint.parameters.join(', ') }}</small>
+          <textarea [(ngModel)]="routeJson" rows="9" spellcheck="false"></textarea>
+        </label>
+        <label class="json-field" *ngIf="endpoint.bodyType">
+          <span>Payload · {{ endpoint.bodyType }}</span>
+          <small>El backend valida el DTO y sus reglas de negocio.</small>
+          <textarea [(ngModel)]="bodyJson" rows="9" spellcheck="false"></textarea>
+        </label>
+      </div>
+
+      <div class="notice" *ngIf="!endpoint.parameters.length && !endpoint.bodyType">Esta operación no requiere parámetros adicionales.</div>
+<div class="error-box" *ngIf="error as problem"><strong>Error {{ problem.status || '' }}</strong><span>{{ problem.message || 'Error desconocido' }}</span></div>
+      <section class="response-card" *ngIf="response !== null">
+        <div class="response-heading"><h3>Respuesta del backend</h3><span>HTTP procesado por el cliente común</span></div>
+        <div class="table-wrap" *ngIf="responseRows().length; else rawResponse">
+          <table><thead><tr><th *ngFor="let column of responseColumns()">{{ column }}</th></tr></thead><tbody><tr *ngFor="let row of responseRows()"><td *ngFor="let column of responseColumns()">{{ format(row[column]) }}</td></tr></tbody></table>
+        </div>
+        <ng-template #rawResponse><pre>{{ response | json }}</pre></ng-template>
+      </section>
+    </main>
+    <ng-template #noEndpoint><main class="operation-panel empty-state"><h2>Selecciona un módulo</h2><p>Las vistas se generan desde el contrato OpenAPI vigente.</p></main></ng-template>
+  </div>
+</section>

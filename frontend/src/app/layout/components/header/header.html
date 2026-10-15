@@ -1,0 +1,46 @@
+<header class="app-header">
+  <!-- Sección izquierda: Reloj y fecha -->
+  <div class="header-left">
+    <div class="datetime-widget">
+      <span class="time">{{ currentTime }}</span>
+      <span class="date">{{ currentDate }}</span>
+    </div>
+  </div>
+
+  <!-- Sección central: Marca y título -->
+  <div class="header-center">
+    <div class="brand">
+      <img src="assets/POLICALUM.png" alt="POLICALUM" class="logo" />
+      <div class="brand-text">
+        <h1 class="app-title">POLICALUM</h1>
+        <p class="app-subtitle">Gestión integral ERP</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección derecha: Usuario y menú -->
+  <div class="header-right">
+    <div class="user-menu" [class.open]="isProfileMenuOpen">
+      <button class="user-menu-trigger" (click)="toggleProfileMenu()" aria-label="Menú de usuario">
+        <div class="avatar">{{ userEmail.charAt(0).toUpperCase() }}{{ userEmail.charAt(1).toUpperCase() }}</div>
+        <div class="user-info">
+          <span class="user-email">{{ userEmail }}</span>
+          <span class="user-role">{{ userRole }}</span>
+        </div>
+        <i class="arrow" [class.up]="isProfileMenuOpen"></i>
+      </button>
+      <div class="dropdown-panel" *ngIf="isProfileMenuOpen" (mouseleave)="closeProfileMenu()">
+        <a class="menu-item" (click)="goToProfile()">
+          <i class="icon-user"></i> Mi Perfil
+        </a>
+        <a class="menu-item" (click)="goToProfile()">
+          <i class="icon-switch"></i> Cambiar Cuenta
+        </a>
+        <div class="separator"></div>
+        <a class="menu-item danger" (click)="logout()">
+          <i class="icon-logout"></i> Cerrar Sesión
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
