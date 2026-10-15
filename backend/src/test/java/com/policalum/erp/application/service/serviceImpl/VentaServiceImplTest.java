@@ -8,6 +8,7 @@ import com.policalum.erp.application.dto.request.*;
 import com.policalum.erp.application.dto.response.VentaDetalleResponseDTO;
 import com.policalum.erp.application.dto.response.VentaProcesadaResponseDTO;
 import com.policalum.erp.application.service.KardexService;
+import com.policalum.erp.application.service.support.RangosConsulta;
 import com.policalum.erp.domain.enums.*;
 import com.policalum.erp.domain.model.*;
 import com.policalum.erp.exception.ResourceNotFoundException;
@@ -409,7 +410,7 @@ class VentaServiceImplTest {
         Venta conCliente = ventaRegistrada(EstadoVenta.COMPLETADA, vendedor);
         conCliente.setCliente(Cliente.builder().id(UUID.randomUUID()).nombre("Constructora Lima").build());
         Pageable p = PageRequest.of(0, 10);
-        when(ventaRepository.buscar(sede.getId(), null, null, null, null, null, null, p)).thenReturn(new PageImpl<>(List.of(sinCliente, conCliente)));
+        when(ventaRepository.buscar(sede.getId(), null, null, null, null, RangosConsulta.DESDE_ABIERTO, RangosConsulta.HASTA_ABIERTO, p)).thenReturn(new PageImpl<>(List.of(sinCliente, conCliente)));
 
         var page = service.buscar(sede.getId(), null, null, null, null, null, null, p);
 

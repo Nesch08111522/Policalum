@@ -1,6 +1,7 @@
 package com.policalum.erp.application.service.serviceImpl;
 
 import com.policalum.erp.application.service.AuditService;
+import com.policalum.erp.application.service.support.RangosConsulta;
 import com.policalum.erp.domain.enums.AccionAudit;
 import com.policalum.erp.domain.model.AuditLog;
 import com.policalum.erp.domain.model.User;
@@ -72,7 +73,7 @@ public class AuditServiceImpl implements AuditService {
     public Page<Map<String, Object>> search(String tabla, UUID registroId, UUID userId,
                                             AccionAudit accion, LocalDateTime desde,
                                             LocalDateTime hasta, Pageable pageable) {
-        return auditLogRepository.search(tabla, registroId, userId, accion, desde, hasta, pageable)
+        return auditLogRepository.search(tabla, registroId, userId, accion, RangosConsulta.desde(desde), RangosConsulta.hasta(hasta), pageable)
                 .map(a -> {
                     Map<String, Object> row = new HashMap<>();
                     row.put("id", a.getId());

@@ -17,7 +17,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface CotizacionRepository extends JpaRepository<Cotizacion, UUID> {
     @EntityGraph(attributePaths = {"sede", "user", "cliente", "venta"})
-    @Query("select c from Cotizacion c where (:clienteId is null or c.cliente.id = :clienteId) and (:sedeId is null or c.sede.id = :sedeId) and (:estado is null or c.estado = :estado) and (:desde is null or c.createdAt >= :desde) and (:hasta is null or c.createdAt <= :hasta)")
+    @Query("select c from Cotizacion c where (:clienteId is null or c.cliente.id = :clienteId) and (:sedeId is null or c.sede.id = :sedeId) and (:estado is null or c.estado = :estado) and c.createdAt >= :desde and c.createdAt <= :hasta")
     Page<Cotizacion> buscar(@Param("clienteId") UUID clienteId, @Param("sedeId") UUID sedeId,
                             @Param("estado") EstadoCotizacion estado, @Param("desde") LocalDateTime desde,
                             @Param("hasta") LocalDateTime hasta, Pageable pageable);

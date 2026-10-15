@@ -26,7 +26,7 @@ public interface VentaRepository extends JpaRepository<Venta, UUID> {
     java.util.Optional<Venta> findByIdParaActualizar(@Param("id") UUID id);
 
     @EntityGraph(attributePaths = {"sede", "user", "cliente", "turnoCaja"})
-    @Query("select v from Venta v where (:sedeId is null or v.sede.id = :sedeId) and (:userId is null or v.user.id = :userId) and (:clienteId is null or v.cliente.id = :clienteId) and (:estado is null or v.estado = :estado) and (:canal is null or v.canalVenta = :canal) and (:desde is null or v.createdAt >= :desde) and (:hasta is null or v.createdAt <= :hasta)")
+    @Query("select v from Venta v where (:sedeId is null or v.sede.id = :sedeId) and (:userId is null or v.user.id = :userId) and (:clienteId is null or v.cliente.id = :clienteId) and (:estado is null or v.estado = :estado) and (:canal is null or v.canalVenta = :canal) and v.createdAt >= :desde and v.createdAt <= :hasta")
     Page<Venta> buscar(@Param("sedeId") UUID sedeId, @Param("userId") UUID userId, @Param("clienteId") UUID clienteId,
                        @Param("estado") EstadoVenta estado, @Param("canal") com.policalum.erp.domain.enums.CanalVenta canal,
                        @Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta, Pageable pageable);
