@@ -13,7 +13,7 @@
     </ng-template>
   </app-data-table>
 </section>
-<app-modal [open]="modal" [title]="editando ? 'Editar almacén' : 'Nuevo almacén'" (closed)="modal = false">
+<app-modal [closable]="!guardando" [open]="modal" [title]="editando ? 'Editar almacén' : 'Nuevo almacén'" (closed)="modal = false">
   <form class="form-grid" [formGroup]="form">
     <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
     <app-form-field class="span-2" label="Nombre" inputId="alm-nombre" [required]="true" [error]="errorDe('nombre')"><input id="alm-nombre" class="input" formControlName="nombre" /></app-form-field>
@@ -23,7 +23,7 @@
   </form>
   <div modalFooter>
     <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="form.invalid || guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
   </div>
 </app-modal>
 <app-confirm-dialog [open]="confirmar" title="Eliminar almacén" [message]="'Se eliminará ' + (seleccionado?.nombre || 'este almacén') + '.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>

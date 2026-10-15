@@ -17,7 +17,7 @@ import { PenPipe } from '../../../shared/pipes/format.pipes';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
-import { PageState } from '../../../shared/utils/page-state';
+import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { lineaProductoOServicio } from '../../../shared/utils/validators';
 import { CotizacionesApiService } from '../data-access/cotizaciones.api';
 
@@ -95,9 +95,8 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
   cambiarTab(id: string): void { this.tab = id; this.state.page = 0; this.cargar(); }
 
   cargar(): void {
-    this.state.loading = true;
     if (this.tab === 'vencidas') {
-      this.api.GetApiV1CotizacionesVencidas().pipe(takeUntil(this.destroy$)).subscribe({
+      this.api.GetApiV1CotizacionesVencidas().pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
         next: (rows) => {
           this.state.rows = rows ?? [];
           this.state.totalElements = this.state.rows.length;
@@ -110,7 +109,7 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
       });
       return;
     }
-    this.api.GetApiV1Cotizaciones(this.state.query(this.filtros.getRawValue())).pipe(takeUntil(this.destroy$)).subscribe({
+    this.api.GetApiV1Cotizaciones(this.state.query(this.filtros.getRawValue())).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
       next: (page) => this.state.apply(page),
       error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
@@ -150,6 +149,7 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
   }
 
   guardar(): void {
+    if (this.guardando) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const value = this.form.getRawValue();

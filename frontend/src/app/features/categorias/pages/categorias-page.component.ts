@@ -12,9 +12,10 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { ColumnDef, SelectOption } from '../../../shared/models/ui.models';
+import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
-import { PageState } from '../../../shared/utils/page-state';
+import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { CategoriasApiService } from '../data-access/categorias.api';
 
 @Component({
@@ -52,7 +53,7 @@ export class CategoriasPageComponent implements OnInit, OnDestroy {
   private readonly buscar$ = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: CategoriasApiService, private readonly toast: ToastService) { this.state.sort = 'nombre,asc'; }
+  constructor(private readonly api: CategoriasApiService, private readonly lookup: LookupService, private readonly toast: ToastService) { this.state.sort = 'nombre,asc'; }
   ngOnInit(): void {
     this.cargar();
     this.cargarPadres();
@@ -60,9 +61,7 @@ export class CategoriasPageComponent implements OnInit, OnDestroy {
   }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
   cargar(): void {
-    this.state.loading = true;
-    this.state.error = null;
-    this.api.GetApiV1Categorias(this.state.query(this.filtros.getRawValue())).pipe(takeUntil(this.destroy$)).subscribe({
+    this.api.GetApiV1Categorias(this.state.query(this.filtros.getRawValue())).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
       next: (page) => this.state.apply(page),
       error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
@@ -93,6 +92,7 @@ export class CategoriasPageComponent implements OnInit, OnDestroy {
     this.modal = true;
   }
   guardar(): void {
+    if (this.guardando) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const value = this.form.getRawValue();
@@ -101,7 +101,7 @@ export class CategoriasPageComponent implements OnInit, OnDestroy {
     this.guardando = true;
     const request = this.editando && value.id ? this.api.PutApiV1CategoriasId({ id: value.id }, body) : this.api.PostApiV1Categorias({}, body);
     request.pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = false; this.toast.success(this.editando ? 'Categoría actualizada.' : 'Categoría creada.'); this.cargar(); this.cargarPadres(); },
+      next: () => { this.guardando = false; this.modal = false; this.lookup.invalidate('categorias'); this.toast.success(this.editando ? 'Categoría actualizada.' : 'Categoría creada.'); this.cargar(); this.cargarPadres(); },
       error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
     });
   }
@@ -110,7 +110,7 @@ export class CategoriasPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1CategoriasId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.toast.success('Categoría eliminada.'); this.cargar(); this.cargarPadres(); },
+      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.invalidate('categorias'); this.toast.success('Categoría eliminada.'); this.cargar(); this.cargarPadres(); },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
   }

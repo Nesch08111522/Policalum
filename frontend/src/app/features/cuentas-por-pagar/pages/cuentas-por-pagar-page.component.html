@@ -19,7 +19,7 @@
     </ng-template>
   </app-data-table>
 </section>
-<app-modal [open]="modal" title="Registrar pago" (closed)="modal = false">
+<app-modal [closable]="!guardando" [open]="modal" title="Registrar pago" (closed)="modal = false">
   <p class="text-sm text-muted mb-2">Saldo de {{ seleccionado?.proveedorNombre }}: {{ seleccionado?.saldoPendiente | pen }}</p>
   <form class="form-grid" [formGroup]="pago">
     <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>

@@ -12,9 +12,10 @@ import { FormFieldComponent } from '../../../shared/components/form-field/form-f
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ColumnDef } from '../../../shared/models/ui.models';
+import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
-import { PageState } from '../../../shared/utils/page-state';
+import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { SedesApiService } from '../data-access/sedes.api';
 
 @Component({
@@ -56,18 +57,16 @@ export class SedesPageComponent implements OnInit, OnDestroy {
   seleccionado: Api.SedeResponseDTO | null = null;
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: SedesApiService, private readonly toast: ToastService) { this.state.sort = 'nombre,asc'; }
+  constructor(private readonly api: SedesApiService, private readonly lookup: LookupService, private readonly toast: ToastService) { this.state.sort = 'nombre,asc'; }
   ngOnInit(): void { this.cargar(); }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
   cargar(): void {
-    this.state.loading = true;
-    this.state.error = null;
     const activa = this.filtros.controls.activa.value;
     const request = activa === ''
       ? this.api.GetApiV1Sedes({ page: 0, size: 200, sort: this.state.sort })
       : this.api.GetApiV1SedesEstado({ activa, page: 0, size: 200, sort: this.state.sort });
-    request.pipe(takeUntil(this.destroy$)).subscribe({
+    request.pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
       next: (page) => { this.todos = page.content ?? []; this.state.loading = false; this.paginar(); },
       error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
@@ -96,6 +95,7 @@ export class SedesPageComponent implements OnInit, OnDestroy {
     this.modal = true;
   }
   guardar(): void {
+    if (this.guardando) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const value = this.form.getRawValue();
@@ -103,7 +103,7 @@ export class SedesPageComponent implements OnInit, OnDestroy {
     this.guardando = true;
     const request = this.editando && value.id ? this.api.PutApiV1SedesId({ id: value.id }, body) : this.api.PostApiV1Sedes({}, body);
     request.pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = false; this.toast.success(this.editando ? 'Sede actualizada.' : 'Sede creada.'); this.cargar(); },
+      next: () => { this.guardando = false; this.modal = false; this.lookup.invalidate('sedes'); this.toast.success(this.editando ? 'Sede actualizada.' : 'Sede creada.'); this.cargar(); },
       error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
     });
   }
@@ -112,7 +112,7 @@ export class SedesPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1SedesId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.toast.success('Sede eliminada.'); this.cargar(); },
+      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.invalidate('sedes'); this.toast.success('Sede eliminada.'); this.cargar(); },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
   }

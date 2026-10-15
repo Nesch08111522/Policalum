@@ -7,7 +7,7 @@
     </ng-template>
   </app-data-table>
 </section>
-<app-modal [open]="modal" [title]="editando ? 'Editar rol' : 'Nuevo rol'" (closed)="modal = false">
+<app-modal [closable]="!guardando" [open]="modal" [title]="editando ? 'Editar rol' : 'Nuevo rol'" (closed)="modal = false">
   <form class="stack" [formGroup]="form">
     <div *ngIf="errorFormulario" class="alert alert-error">{{ errorFormulario }}</div>
     <app-form-field label="Nombre" inputId="rol-nombre" [required]="true" [error]="errorDe('nombre')">
@@ -19,7 +19,7 @@
   </form>
   <div modalFooter>
     <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="form.invalid || guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
   </div>
 </app-modal>
 <app-confirm-dialog [open]="confirmar" title="Eliminar rol" [message]="'Se eliminará ' + (seleccionado?.nombre || 'este rol') + '.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>

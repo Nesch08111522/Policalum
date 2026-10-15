@@ -15,7 +15,7 @@
   <p *ngIf="tab === 'valorizacion' || tab === 'mermas'" class="text-sm text-muted">Valorización y mermas muestran costos y el backend las reserva al rol administrador.</p>
   <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" emptyTitle="Sin movimientos" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()"></app-data-table>
 </section>
-<app-modal [open]="modal" title="Movimiento de kardex" (closed)="modal = false">
+<app-modal [closable]="!guardando" [open]="modal" title="Movimiento de kardex" (closed)="modal = false">
   <form class="form-grid" [formGroup]="form">
     <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
     <app-form-field label="Producto" inputId="kx-f-prod" [required]="true"><app-select inputId="kx-f-prod" [options]="productos" formControlName="productoId" [clearable]="false"></app-select></app-form-field>
@@ -27,6 +27,6 @@
   </form>
   <div modalFooter>
     <button type="button" class="btn btn-ghost" (click)="modal = false">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="form.invalid || guardando">Registrar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">Registrar</button>
   </div>
 </app-modal>

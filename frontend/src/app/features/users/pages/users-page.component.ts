@@ -16,7 +16,7 @@ import { ColumnDef, SelectOption } from '../../../shared/models/ui.models';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemText } from '../../../shared/utils/feedback';
-import { PageState } from '../../../shared/utils/page-state';
+import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { UsersApiService } from '../data-access/users.api';
 
 @Component({
@@ -71,8 +71,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
   }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
   cargar(): void {
-    this.state.loading = true;
-    this.api.GetApiV1Users().pipe(takeUntil(this.destroy$)).subscribe({
+    this.api.GetApiV1Users().pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
       next: (rows) => { this.todos = rows ?? []; this.state.loading = false; this.paginar(); },
       error: (error: unknown) => { this.state.loading = false; this.state.fail(problemText(error), null); },
     });
@@ -98,6 +97,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     this.modal = true;
   }
   guardar(): void {
+    if (this.guardando) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const value = this.form.getRawValue();
@@ -109,7 +109,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     this.guardando = true;
     const request = this.editando && value.id ? this.api.PutApiV1UsersId({ id: value.id }, body) : this.api.PostApiV1Users({}, body);
     request.pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = false; this.lookup.usuarios = []; this.toast.success(this.editando ? 'Usuario actualizado.' : 'Usuario creado.'); this.cargar(); },
+      next: () => { this.guardando = false; this.modal = false; this.lookup.invalidate('usuarios'); this.toast.success(this.editando ? 'Usuario actualizado.' : 'Usuario creado.'); this.cargar(); },
       error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
     });
   }
@@ -123,7 +123,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1UsersId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.usuarios = []; this.toast.success('Usuario eliminado.'); this.cargar(); },
+      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.invalidate('usuarios'); this.toast.success('Usuario eliminado.'); this.cargar(); },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
   }

@@ -15,7 +15,7 @@ import { ColumnDef, SelectOption } from '../../../shared/models/ui.models';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
-import { PageState } from '../../../shared/utils/page-state';
+import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { ProductosApiService } from '../data-access/productos.api';
 
 @Component({
@@ -68,14 +68,16 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
   constructor(private readonly api: ProductosApiService, private readonly lookup: LookupService, private readonly toast: ToastService) { this.state.sort = 'nombre,asc'; }
   ngOnInit(): void {
     this.cargar();
+    this.cargarCombos();
+    this.buscar$.pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$)).subscribe((valor) => { this.filtros.controls.searchTerm.setValue(valor); this.filtrar(); });
+  }
+  cargarCombos(): void {
     this.lookup.loadCategorias().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.categorias = this.lookup.options(rows, (row) => (row as Api.CategoriaResponseDTO).nombre ?? 'Categoría'); });
     this.lookup.loadProveedores().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.proveedores = this.lookup.options(rows, (row) => (row as Api.ProveedorResponseDTO).nombreRazon ?? 'Proveedor'); });
-    this.buscar$.pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$)).subscribe((valor) => { this.filtros.controls.searchTerm.setValue(valor); this.filtrar(); });
   }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
   cargar(): void {
-    this.state.loading = true;
-    this.api.GetApiV1Productos(this.state.query(this.filtros.getRawValue())).pipe(takeUntil(this.destroy$)).subscribe({
+    this.api.GetApiV1Productos(this.state.query(this.filtros.getRawValue())).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
       next: (page) => this.state.apply(page),
       error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
@@ -86,8 +88,9 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
   cambiarPagina(page: number): void { this.state.page = page; this.cargar(); }
   cambiarTamano(size: number): void { this.state.size = size; this.state.page = 0; this.cargar(); }
   ordenar(event: { key: string; direction: 'asc' | 'desc' }): void { this.state.sort = `${event.key},${event.direction}`; this.cargar(); }
-  abrirCrear(): void { this.editando = false; this.errorFormulario = null; this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, incluyeIgv: true }); this.modal = true; }
+  abrirCrear(): void { this.cargarCombos(); this.editando = false; this.errorFormulario = null; this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, incluyeIgv: true }); this.modal = true; }
   abrirEditar(row: unknown): void {
+    this.cargarCombos();
     const item = row as Api.ProductoResponseDTO;
     this.editando = true;
     this.errorFormulario = null;
@@ -99,6 +102,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     this.modal = true;
   }
   guardar(): void {
+    if (this.guardando) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const value = this.form.getRawValue();
@@ -110,7 +114,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     this.guardando = true;
     const request = this.editando && value.id ? this.api.PutApiV1ProductosId({ id: value.id }, body) : this.api.PostApiV1Productos({}, body);
     request.pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = false; this.lookup.productos = []; this.toast.success(this.editando ? 'Producto actualizado.' : 'Producto creado.'); this.cargar(); },
+      next: () => { this.guardando = false; this.modal = false; this.lookup.invalidate('productos'); this.toast.success(this.editando ? 'Producto actualizado.' : 'Producto creado.'); this.cargar(); },
       error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
     });
   }
@@ -119,7 +123,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1ProductosId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.productos = []; this.toast.success('Producto eliminado.'); this.cargar(); },
+      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.invalidate('productos'); this.toast.success('Producto eliminado.'); this.cargar(); },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
   }

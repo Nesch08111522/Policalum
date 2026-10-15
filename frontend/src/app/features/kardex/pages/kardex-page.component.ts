@@ -17,7 +17,7 @@ import { PenPipe } from '../../../shared/pipes/format.pipes';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { problemStatus, problemText } from '../../../shared/utils/feedback';
-import { PageState } from '../../../shared/utils/page-state';
+import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { KardexApiService } from '../data-access/kardex.api';
 
 @Component({
@@ -85,30 +85,29 @@ export class KardexPageComponent implements OnInit, OnDestroy {
   }
 
   cargar(): void {
-    this.state.loading = true;
     const filtros = this.filtros.getRawValue();
     if (this.tab === 'saldos') {
-      this.api.GetApiV1KardexSaldos(this.state.query({ sedeId: filtros.sedeId, busqueda: filtros.busqueda })).pipe(takeUntil(this.destroy$)).subscribe({
+      this.api.GetApiV1KardexSaldos(this.state.query({ sedeId: filtros.sedeId, busqueda: filtros.busqueda })).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
         next: (page) => this.state.apply(page as { content?: Record<string, unknown>[] }),
         error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
       });
       return;
     }
     if (this.tab === 'valorizacion') {
-      this.api.GetApiV1KardexValorizacion({ sedeId: filtros.sedeId }).pipe(takeUntil(this.destroy$)).subscribe({
+      this.api.GetApiV1KardexValorizacion({ sedeId: filtros.sedeId }).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
         next: (data) => { this.valorizacion = data; this.state.loading = false; this.state.rows = (data.detalle ?? []) as Record<string, unknown>[]; this.state.totalElements = this.state.rows.length; this.state.totalPages = this.state.rows.length ? 1 : 0; this.state.error = null; },
         error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
       });
       return;
     }
     if (this.tab === 'mermas') {
-      this.api.GetApiV1KardexMermas(this.state.query(filtros)).pipe(takeUntil(this.destroy$)).subscribe({
+      this.api.GetApiV1KardexMermas(this.state.query(filtros)).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
         next: (data) => { this.mermas = data; this.state.loading = false; this.state.rows = (data.detalle ?? []) as unknown as Record<string, unknown>[]; this.state.totalElements = data.totalElementos ?? this.state.rows.length; this.state.totalPages = data.totalPaginas ?? 1; this.state.error = null; },
         error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
       });
       return;
     }
-    this.api.GetApiV1KardexMovimientos(this.state.query(filtros)).pipe(takeUntil(this.destroy$)).subscribe({
+    this.api.GetApiV1KardexMovimientos(this.state.query(filtros)).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
       next: (page) => this.state.apply(page as { content?: Record<string, unknown>[] }),
       error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
@@ -120,6 +119,7 @@ export class KardexPageComponent implements OnInit, OnDestroy {
   cambiarTamano(size: number): void { this.state.size = size; this.state.page = 0; this.cargar(); }
   abrir(): void { this.errorFormulario = null; this.form.reset({ productoId: '', almacenId: '', tipoMovimiento: 'ENTRADA', tipoReferencia: 'AJUSTE', cantidadMovida: 1, observacion: '' }); this.modal = true; }
   guardar(): void {
+    if (this.guardando) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const value = this.form.getRawValue();

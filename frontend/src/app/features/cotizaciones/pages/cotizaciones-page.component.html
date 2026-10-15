@@ -21,7 +21,7 @@
   </app-data-table>
 </section>
 
-<app-modal [open]="modal" [title]="editando ? 'Editar cotización' : 'Nueva cotización'" size="lg" (closed)="modal = false">
+<app-modal [closable]="!guardando" [open]="modal" [title]="editando ? 'Editar cotización' : 'Nueva cotización'" size="lg" (closed)="modal = false">
   <form class="form-grid" [formGroup]="form">
     <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
     <app-form-field label="Sede" inputId="cot-f-sede" [required]="true" [error]="errorDe('sedeId')"><app-select inputId="cot-f-sede" [options]="sedes" placeholder="Sede" formControlName="sedeId" [clearable]="false"></app-select></app-form-field>
@@ -40,7 +40,7 @@
   </form>
   <div modalFooter>
     <button type="button" class="btn btn-ghost" (click)="modal = false">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="form.invalid || guardando">Guardar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">Guardar</button>
   </div>
 </app-modal>
 

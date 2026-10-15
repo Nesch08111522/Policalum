@@ -12,9 +12,17 @@ import { PaginationComponent } from '../pagination/pagination.component';
   standalone: true,
   imports: [CommonModule, PenPipe, FechaPipe, NumeroPipe, EmptyStateComponent, LoaderComponent, PaginationComponent],
   template: `
-    <section class="table-wrap">
+    <section class="table-wrap" [class.is-refreshing]="loading && rows.length">
       <div class="table-scroll">
-        <table class="table" *ngIf="!loading && !error">
+        <div *ngIf="error" class="alert alert-error" style="margin:16px">
+          <div>
+            <strong>No se pudieron cargar los datos</strong>
+            <p>{{ error }}</p>
+            <p *ngIf="status" class="text-xs">Código {{ status }}</p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="retry.emit()">Reintentar</button>
+        </div>
+        <table class="table" *ngIf="(!loading || rows.length) && (!error || rows.length)">
           <thead>
             <tr>
               <th
@@ -49,19 +57,11 @@ import { PaginationComponent } from '../pagination/pagination.component';
             </tr>
           </tbody>
         </table>
-        <app-loader *ngIf="loading"></app-loader>
+        <app-loader *ngIf="loading && !rows.length && !error"></app-loader>
         <app-empty-state *ngIf="!loading && !error && !rows.length" [title]="emptyTitle" [message]="emptyMessage" [actionLabel]="emptyAction" (action)="empty.emit()"></app-empty-state>
-        <div *ngIf="!loading && error" class="alert alert-error" style="margin:16px">
-          <div>
-            <strong>No se pudieron cargar los datos</strong>
-            <p>{{ error }}</p>
-            <p *ngIf="status" class="text-xs">Código {{ status }}</p>
-          </div>
-          <button type="button" class="btn btn-ghost btn-sm" (click)="retry.emit()">Reintentar</button>
-        </div>
       </div>
       <app-pagination
-        *ngIf="!error"
+        *ngIf="!error || rows.length"
         [page]="page"
         [size]="size"
         [totalElements]="totalElements"

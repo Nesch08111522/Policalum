@@ -17,7 +17,7 @@ import { PenPipe } from '../../../shared/pipes/format.pipes';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
-import { PageState } from '../../../shared/utils/page-state';
+import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { ComprasApiService } from '../data-access/compras.api';
 
 function hoy(): string {
@@ -98,9 +98,7 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
   get detalles() { return this.form.controls.detalles; }
 
   cargar(): void {
-    this.state.loading = true;
-    this.state.error = null;
-    this.api.GetApiV1Compras(this.state.query(this.filtros.getRawValue())).pipe(takeUntil(this.destroy$)).subscribe({
+    this.api.GetApiV1Compras(this.state.query(this.filtros.getRawValue())).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
       next: (page) => this.state.apply(page),
       error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
@@ -158,6 +156,7 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
   }
 
   guardar(): void {
+    if (this.guardando) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const value = this.form.getRawValue();

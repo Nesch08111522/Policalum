@@ -14,7 +14,7 @@ import { ColumnDef } from '../../../shared/models/ui.models';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemText } from '../../../shared/utils/feedback';
-import { PageState } from '../../../shared/utils/page-state';
+import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { jsonObject } from '../../../shared/utils/validators';
 import { RolesApiService } from '../data-access/roles.api';
 
@@ -50,8 +50,7 @@ export class RolesPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void { this.cargar(); }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
   cargar(): void {
-    this.state.loading = true;
-    this.api.GetApiV1Roles().pipe(takeUntil(this.destroy$)).subscribe({
+    this.api.GetApiV1Roles().pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
       next: (rows) => {
         this.state.loading = false;
         this.state.rows = rows ?? [];
@@ -72,6 +71,7 @@ export class RolesPageComponent implements OnInit, OnDestroy {
     this.modal = true;
   }
   guardar(): void {
+    if (this.guardando) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const value = this.form.getRawValue();
@@ -79,7 +79,7 @@ export class RolesPageComponent implements OnInit, OnDestroy {
     this.guardando = true;
     const request = this.editando && value.id ? this.api.PutApiV1RolesId({ id: value.id }, body) : this.api.PostApiV1Roles({}, body);
     request.pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = false; this.lookup.roles = []; this.toast.success(this.editando ? 'Rol actualizado.' : 'Rol creado.'); this.cargar(); },
+      next: () => { this.guardando = false; this.modal = false; this.lookup.invalidate('roles'); this.toast.success(this.editando ? 'Rol actualizado.' : 'Rol creado.'); this.cargar(); },
       error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
     });
   }
@@ -88,7 +88,7 @@ export class RolesPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1RolesId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.roles = []; this.toast.success('Rol eliminado.'); this.cargar(); },
+      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.invalidate('roles'); this.toast.success('Rol eliminado.'); this.cargar(); },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
   }

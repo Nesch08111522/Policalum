@@ -7,6 +7,7 @@ const ICONS: Record<string, string> = {
   trash: 'M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13',
   x: 'M6 6l12 12M18 6L6 18',
   chevron: 'M9 6l6 6-6 6',
+  chevronDown: 'M6 9l6 6 6-6',
   check: 'M5 12l5 5L20 7',
   filter: 'M4 5h16l-6 7v6l-4 2v-8z',
   refresh: 'M20 12a8 8 0 1 1-2.3-5.6M20 4v6h-6',

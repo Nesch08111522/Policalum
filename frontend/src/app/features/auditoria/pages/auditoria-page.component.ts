@@ -17,7 +17,7 @@ import { ColumnDef, SelectOption } from '../../../shared/models/ui.models';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { problemStatus, problemText } from '../../../shared/utils/feedback';
-import { PageState } from '../../../shared/utils/page-state';
+import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { AuditoriaApiService } from '../data-access/auditoria.api';
 
 function haceDias(dias: number): string {
@@ -65,8 +65,7 @@ export class AuditoriaPageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
   cargar(): void {
-    this.state.loading = true;
-    this.api.GetApiV1AuditoriaLogs(this.state.query(this.filtros.getRawValue())).pipe(takeUntil(this.destroy$)).subscribe({
+    this.api.GetApiV1AuditoriaLogs(this.state.query(this.filtros.getRawValue())).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
       next: (page) => this.state.apply(page),
       error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });

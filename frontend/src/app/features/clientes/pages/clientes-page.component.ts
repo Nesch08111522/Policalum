@@ -10,9 +10,10 @@ import { FormFieldComponent } from '../../../shared/components/form-field/form-f
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ColumnDef } from '../../../shared/models/ui.models';
+import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
-import { PageState } from '../../../shared/utils/page-state';
+import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { documentoCliente } from '../../../shared/utils/validators';
 import * as Api from '../../../core/api/openapi.types';
 import { ClientesApiService } from '../data-access/clientes.api';
@@ -55,7 +56,7 @@ export class ClientesPageComponent implements OnInit, OnDestroy {
   private readonly buscar$ = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: ClientesApiService, private readonly toast: ToastService) {
+  constructor(private readonly api: ClientesApiService, private readonly lookup: LookupService, private readonly toast: ToastService) {
     this.state.sort = 'nombre,asc';
   }
 
@@ -76,9 +77,7 @@ export class ClientesPageComponent implements OnInit, OnDestroy {
   }
 
   cargar(): void {
-    this.state.loading = true;
-    this.state.error = null;
-    this.api.GetApiV1Clientes(this.state.query(this.filtros.getRawValue())).pipe(takeUntil(this.destroy$)).subscribe({
+    this.api.GetApiV1Clientes(this.state.query(this.filtros.getRawValue())).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
       next: (page) => this.state.apply(page),
       error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
@@ -118,6 +117,7 @@ export class ClientesPageComponent implements OnInit, OnDestroy {
   }
 
   guardar(): void {
+    if (this.guardando) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const value = this.form.getRawValue();
@@ -138,6 +138,7 @@ export class ClientesPageComponent implements OnInit, OnDestroy {
       next: () => {
         this.guardando = false;
         this.modal = false;
+        this.lookup.invalidate('clientes');
         this.toast.success(this.editando ? 'Cliente actualizado.' : 'Cliente creado.');
         this.cargar();
       },
@@ -161,6 +162,7 @@ export class ClientesPageComponent implements OnInit, OnDestroy {
       next: () => {
         this.eliminando = false;
         this.confirmar = false;
+        this.lookup.invalidate('clientes');
         this.toast.success('Cliente eliminado.');
         this.cargar();
       },

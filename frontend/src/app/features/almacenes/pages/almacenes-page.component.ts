@@ -15,7 +15,7 @@ import { ColumnDef, SelectOption } from '../../../shared/models/ui.models';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
-import { PageState } from '../../../shared/utils/page-state';
+import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { AlmacenesApiService } from '../data-access/almacenes.api';
 
 @Component({
@@ -61,9 +61,7 @@ export class AlmacenesPageComponent implements OnInit, OnDestroy {
   }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
   cargar(): void {
-    this.state.loading = true;
-    this.state.error = null;
-    this.api.GetApiV1Almacenes(this.state.query(this.filtros.getRawValue())).pipe(takeUntil(this.destroy$)).subscribe({
+    this.api.GetApiV1Almacenes(this.state.query(this.filtros.getRawValue())).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
       next: (page) => this.state.apply(page),
       error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
@@ -83,6 +81,7 @@ export class AlmacenesPageComponent implements OnInit, OnDestroy {
     this.modal = true;
   }
   guardar(): void {
+    if (this.guardando) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const value = this.form.getRawValue();
@@ -90,7 +89,7 @@ export class AlmacenesPageComponent implements OnInit, OnDestroy {
     this.guardando = true;
     const request = this.editando && value.id ? this.api.PutApiV1AlmacenesId({ id: value.id }, body) : this.api.PostApiV1Almacenes({}, body);
     request.pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = false; this.toast.success(this.editando ? 'Almacén actualizado.' : 'Almacén creado.'); this.lookup.almacenes = []; this.cargar(); },
+      next: () => { this.guardando = false; this.modal = false; this.toast.success(this.editando ? 'Almacén actualizado.' : 'Almacén creado.'); this.lookup.invalidate('almacenes'); this.cargar(); },
       error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
     });
   }
@@ -99,7 +98,7 @@ export class AlmacenesPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1AlmacenesId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.toast.success('Almacén eliminado.'); this.lookup.almacenes = []; this.cargar(); },
+      next: () => { this.eliminando = false; this.confirmar = false; this.toast.success('Almacén eliminado.'); this.lookup.invalidate('almacenes'); this.cargar(); },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
   }

@@ -17,7 +17,7 @@ import { PenPipe } from '../../../shared/pipes/format.pipes';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
-import { PageState } from '../../../shared/utils/page-state';
+import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { StockApiService } from '../data-access/stock.api';
 
 @Component({
@@ -85,14 +85,12 @@ export class StockPageComponent implements OnInit, OnDestroy {
   }
 
   cargar(): void {
-    this.state.loading = true;
-    this.state.error = null;
     const filtros = this.filtros.getRawValue();
     const done = { next: (page: { content?: unknown[]; totalElements?: number; totalPages?: number; number?: number }) => this.state.apply(page as { content?: Record<string, unknown>[] }), error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)) };
-    if (this.tab === 'bajo') this.api.GetApiV1StockBajoStock(this.state.query(filtros)).pipe(takeUntil(this.destroy$)).subscribe(done);
-    else if (this.tab === 'ajustes') this.api.GetApiV1StockAjustes(this.state.query(filtros)).pipe(takeUntil(this.destroy$)).subscribe(done);
-    else if (this.tab === 'transferencias') this.api.GetApiV1StockTransferencias(this.state.query(filtros)).pipe(takeUntil(this.destroy$)).subscribe(done);
-    else this.api.GetApiV1StockConsolidado(this.state.query({ sedeId: filtros.sedeId, busqueda: filtros.busqueda })).pipe(takeUntil(this.destroy$)).subscribe(done);
+    if (this.tab === 'bajo') this.api.GetApiV1StockBajoStock(this.state.query(filtros)).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe(done);
+    else if (this.tab === 'ajustes') this.api.GetApiV1StockAjustes(this.state.query(filtros)).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe(done);
+    else if (this.tab === 'transferencias') this.api.GetApiV1StockTransferencias(this.state.query(filtros)).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe(done);
+    else this.api.GetApiV1StockConsolidado(this.state.query({ sedeId: filtros.sedeId, busqueda: filtros.busqueda })).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe(done);
   }
   cambiarTab(id: string): void { this.tab = id; this.state.page = 0; this.cargar(); }
   filtrar(): void { this.state.page = 0; this.cargar(); }

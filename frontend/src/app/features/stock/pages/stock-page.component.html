@@ -21,7 +21,7 @@
   </app-filter-bar>
   <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" emptyTitle="Sin movimientos de stock" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()"></app-data-table>
 </section>
-<app-modal [open]="modal === 'ajuste'" title="Ajuste de stock" (closed)="modal = null">
+<app-modal [closable]="!guardando" [open]="modal === 'ajuste'" title="Ajuste de stock" (closed)="modal = null">
   <p class="text-sm text-muted mb-2">Cantidad positiva suma stock. Cantidad negativa lo descuenta. Si el valor supera el umbral, el backend exige justificación.</p>
   <form class="form-grid" [formGroup]="ajuste">
     <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
@@ -36,7 +36,7 @@
     <button type="button" class="btn btn-primary" (click)="guardarAjuste()" [disabled]="ajuste.invalid || guardando">Registrar</button>
   </div>
 </app-modal>
-<app-modal [open]="modal === 'transferencia'" title="Transferir stock" (closed)="modal = null">
+<app-modal [closable]="!guardando" [open]="modal === 'transferencia'" title="Transferir stock" (closed)="modal = null">
   <form class="form-grid" [formGroup]="transferencia">
     <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
     <app-form-field class="span-2" label="Producto" inputId="tr-prod" [required]="true"><app-select inputId="tr-prod" [options]="productos" formControlName="productoId" [clearable]="false"></app-select></app-form-field>
