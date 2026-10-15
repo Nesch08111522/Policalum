@@ -24,7 +24,7 @@ ERP para ventas de policarbonato por fracciones, servicios, compras, inventario/
 docker compose up -d postgres
 ```
 
-Si no usas Docker, crea una base PostgreSQL llamada `ERPpoli` y configura las variables del backend.
+Si no usas Docker, crea una base PostgreSQL llamada `ERPpoli` y configura las variables del backend. En una base vacía, el arranque crea la sede principal y los usuarios de demostración; no hace falta cargar un volcado SQL antes del primer inicio.
 
 ### 2. Backend
 
@@ -32,7 +32,7 @@ Si no usas Docker, crea una base PostgreSQL llamada `ERPpoli` y configura las va
 cd backend
 cp .env.example .env 2>/dev/null || true
 export SPRING_PROFILES_ACTIVE=dev
-./mvnw spring-boot:run
+bash mvnw spring-boot:run
 ```
 
 API: `http://localhost:8080`  
@@ -48,6 +48,16 @@ npm start
 ```
 
 Aplicación: `http://localhost:4200`
+
+## Pruebas
+
+```bash
+cd backend && bash mvnw -B test
+cd frontend && npm ci && npx ng test --watch=false
+cd frontend && npx ng build --configuration development
+```
+
+Los listados de ventas, cotizaciones, kardex, compras y auditoría comparan las fechas contra límites concretos. Un filtro vacío abarca todo el historial; PostgreSQL no acepta un parámetro de fecha usado en `IS NULL`.
 
 ## Seguridad y configuración
 

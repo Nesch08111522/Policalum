@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.policalum.erp.application.service.support.RangosConsulta;
 import com.policalum.erp.domain.enums.AccionAudit;
 import com.policalum.erp.domain.model.AuditLog;
 import com.policalum.erp.domain.model.User;
@@ -120,7 +121,7 @@ class AuditServiceImplTest {
         Pageable pg = PageRequest.of(0, 10);
         AuditLog conUsuario = AuditLog.builder().id(UUID.randomUUID()).tabla("ventas").accion(AccionAudit.INSERT).user(admin).build();
         AuditLog sistema = AuditLog.builder().id(UUID.randomUUID()).tabla("preformas").accion(AccionAudit.UPDATE).build();
-        when(auditLogRepository.search("ventas", null, null, null, null, null, pg)).thenReturn(new PageImpl<>(List.of(conUsuario, sistema)));
+        when(auditLogRepository.search("ventas", null, null, null, RangosConsulta.DESDE_ABIERTO, RangosConsulta.HASTA_ABIERTO, pg)).thenReturn(new PageImpl<>(List.of(conUsuario, sistema)));
 
         List<Map<String, Object>> filas = service.search("ventas", null, null, null, null, null, pg).getContent();
 

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -25,6 +26,7 @@ public class SedeController {
     private final SedeService sedeService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SedeResponseDTO> crearSede(@Valid @RequestBody SedeRequestDTO request) {
         SedeResponseDTO response = sedeService.crearSede(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -49,6 +51,7 @@ public class SedeController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SedeResponseDTO> actualizarSede(
             @PathVariable UUID id,
             @Valid @RequestBody SedeRequestDTO request) {
@@ -57,6 +60,7 @@ public class SedeController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> eliminarSede(@PathVariable UUID id) {
         sedeService.eliminarSede(id);
         return ResponseEntity.noContent().build();

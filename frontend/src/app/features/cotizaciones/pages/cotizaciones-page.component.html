@@ -21,7 +21,7 @@
   </app-data-table>
 </section>
 
-<app-modal [open]="modal" [title]="editando ? 'Editar cotización' : 'Nueva cotización'" size="lg" (closed)="modal = false">
+<app-modal [open]="modal" [title]="editando ? 'Editar cotización' : 'Nueva cotización'" size="lg" [closable]="!guardando" (closed)="modal = false">
   <form class="form-grid" [formGroup]="form">
     <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
     <app-form-field label="Sede" inputId="cot-f-sede" [required]="true" [error]="errorDe('sedeId')"><app-select inputId="cot-f-sede" [options]="sedes" placeholder="Sede" formControlName="sedeId" [clearable]="false"></app-select></app-form-field>
@@ -31,6 +31,7 @@
     <div class="span-2" formArrayName="lineas">
       <div class="form-grid" *ngFor="let linea of lineas.controls; let i = index" [formGroupName]="i">
         <app-form-field label="Producto" [inputId]="'cot-prod-' + i"><app-select [inputId]="'cot-prod-' + i" [options]="productos" placeholder="Producto" formControlName="productoId"></app-select></app-form-field>
+        <app-form-field label="Fracción" [inputId]="'cot-frac-' + i" hint="Obligatoria si el producto se vende por fracción."><app-select [inputId]="'cot-frac-' + i" [options]="fraccionesLinea[i] || []" placeholder="Sin fracción" formControlName="fraccionId"></app-select></app-form-field>
         <app-form-field label="Servicio" [inputId]="'cot-srv-' + i"><app-select [inputId]="'cot-srv-' + i" [options]="servicios" placeholder="Servicio" formControlName="servicioId"></app-select></app-form-field>
         <app-form-field label="Cantidad" [inputId]="'cot-cant-' + i" [required]="true"><input class="input" type="number" min="0.0001" step="0.0001" formControlName="cantidad" /></app-form-field>
         <div class="filter-actions"><button type="button" class="btn btn-ghost btn-sm" (click)="quitarLinea(i)" [disabled]="lineas.length === 1">Quitar</button></div>

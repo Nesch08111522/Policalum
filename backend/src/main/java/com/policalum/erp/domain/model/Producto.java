@@ -80,11 +80,18 @@ public class Producto {
 
 
     public void addFraccion(CatalogoFraccion fraccion){
+        if (fracciones == null) {
+            fracciones = new ArrayList<>();
+        }
         fracciones.add(fraccion);
         fraccion.setProducto(this);
     }
 
     public void clearFracciones(){
+        if (fracciones == null) {
+            fracciones = new ArrayList<>();
+            return;
+        }
         fracciones.clear();
     }
 

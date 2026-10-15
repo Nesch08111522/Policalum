@@ -46,17 +46,12 @@ public class SecurityConfig {
                         // ✅ Marca (nombre comercial + logo) para la pantalla de login
                         .requestMatchers(HttpMethod.GET, "/api/v1/configuracion/publica").permitAll()
 
-                        // ✅ Permitir QR público
-                        .requestMatchers("/api/v1/rrhh/asistencias/qr-publico").permitAll()
+                        // QR de kiosco. La marcación autenticada y el listado de empleados exigen sesión.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/rrhh/asistencias/qr-publico").permitAll()
 
-                        // ✅ Permitir marcación con QR
-                        .requestMatchers("/api/v1/rrhh/asistencias/marcar-qr-real").permitAll()
-
-                        // ✅ Permitir obtener empleados (para el combo box)
-                        .requestMatchers("/api/v1/rrhh/asistencias/empleados").permitAll()  // ← AGREGAR ESTO
-
-                        // ✅ Admin puede configurar TOTP
                         .requestMatchers("/api/v1/rrhh/asistencias/configurar-totp/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/rrhh/asistencias/qr-config/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/rrhh/asistencias/empleados").hasRole("ADMIN")
 
                         // ✅ El resto requiere autenticación
                         .anyRequest().authenticated()
@@ -87,7 +82,7 @@ public class SecurityConfig {
                 "https://jujitsu-freeway-crying.ngrok-free.dev",  // Tu frontend
                     "https://otra-url.ngrok-free.dev" // 👈 O EL ESPECÍFICO
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
