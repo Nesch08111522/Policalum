@@ -10,6 +10,8 @@ import com.policalum.erp.domain.model.CatalogoFraccion;
 
 @Mapper(componentModel = "spring")
 public interface CatalogoFraccionMapper {
+    @Mapping(target = "productoId", source = "producto.id")
+    @Mapping(target = "productoNombre", source = "producto.nombre")
     CatalogoFraccionResponseDTO toResponseDto(CatalogoFraccion entity);
 
     @Mapping(target = "producto", ignore = true)

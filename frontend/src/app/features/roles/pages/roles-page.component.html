@@ -1,1 +1,25 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Roles" subtitle="Roles de acceso y el mapa de permisos que consume el backend." actionLabel="Nuevo rol" (action)="abrirCrear()"></app-page-header>
+  <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [totalElements]="state.totalElements" [totalPages]="state.totalPages" emptyTitle="No hay roles" emptyAction="Nuevo rol" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(row)">Editar</button>
+      <button type="button" class="btn btn-danger btn-sm" (click)="pedirEliminar(row)">Eliminar</button>
+    </ng-template>
+  </app-data-table>
+</section>
+<app-modal [open]="modal" [title]="editando ? 'Editar rol' : 'Nuevo rol'" (closed)="modal = false">
+  <form class="stack" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error">{{ errorFormulario }}</div>
+    <app-form-field label="Nombre" inputId="rol-nombre" [required]="true" [error]="errorDe('nombre')">
+      <select id="rol-nombre" class="select" formControlName="nombre"><option value="ROLE_ADMIN">ROLE_ADMIN</option><option value="ROLE_MULTIFUNCIONAL">ROLE_MULTIFUNCIONAL</option></select>
+    </app-form-field>
+    <app-form-field label="Permisos JSON" inputId="rol-json" [required]="true" [error]="errorDe('permisosJson')" hint="Objeto JSON no vacío. El backend rechaza una lista o un objeto sin claves.">
+      <textarea id="rol-json" class="textarea" formControlName="permisosJson"></textarea>
+    </app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="form.invalid || guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+  </div>
+</app-modal>
+<app-confirm-dialog [open]="confirmar" title="Eliminar rol" [message]="'Se eliminará ' + (seleccionado?.nombre || 'este rol') + '.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>

@@ -1,1 +1,29 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Caja" subtitle="Apertura, resumen y cierre. El backend no expone un listado de turnos: el turno abierto se recuerda en este navegador."></app-page-header>
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div class="stats-grid">
+    <form class="card card-body stack" [formGroup]="apertura" (ngSubmit)="abrir()">
+      <h2>Abrir turno</h2>
+      <app-form-field label="Sede" inputId="caja-sede" [required]="true"><app-select inputId="caja-sede" [options]="sedes" formControlName="sedeId" [clearable]="false"></app-select></app-form-field>
+      <app-form-field label="Monto inicial" inputId="caja-inicial" [required]="true"><input id="caja-inicial" class="input" type="number" min="0" step="0.01" formControlName="montoInicial" /></app-form-field>
+      <app-form-field label="Observaciones" inputId="caja-obs"><textarea id="caja-obs" class="textarea" formControlName="observaciones"></textarea></app-form-field>
+      <button type="submit" class="btn btn-primary" [disabled]="apertura.invalid || guardando">Abrir caja</button>
+    </form>
+    <form class="card card-body stack" [formGroup]="cierre" (ngSubmit)="cerrar()">
+      <h2>Cerrar turno</h2>
+      <p *ngIf="turno" class="text-sm text-muted">Turno recordado: {{ turno.id }} · estado {{ turno.estado || 'ABIERTO' }} · inicial {{ turno.montoInicial | pen }}</p>
+      <app-form-field label="Identificador del turno" inputId="caja-id" [required]="true" hint="Se completa al abrir la caja. También puedes pegar un id existente."><input id="caja-id" class="input" formControlName="id" /></app-form-field>
+      <app-form-field label="Monto declarado" inputId="caja-final" [required]="true"><input id="caja-final" class="input" type="number" min="0" step="0.01" formControlName="montoFinalDeclarado" /></app-form-field>
+      <app-form-field label="Observaciones" inputId="caja-cierre-obs"><textarea id="caja-cierre-obs" class="textarea" formControlName="observaciones"></textarea></app-form-field>
+      <div class="cluster">
+        <button type="button" class="btn btn-ghost" (click)="verResumen()" [disabled]="guardando">Ver resumen</button>
+        <button type="submit" class="btn btn-danger" [disabled]="cierre.invalid || guardando">Cerrar caja</button>
+      </div>
+    </form>
+  </div>
+  <article class="card card-body" *ngIf="resumen">
+    <h2>Resumen</h2>
+    <p>Declarado: {{ resumen.declarado | pen }}</p>
+    <pre class="text-sm">{{ resumen | json }}</pre>
+  </article>
+</section>

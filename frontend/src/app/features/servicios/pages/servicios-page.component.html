@@ -1,1 +1,30 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Servicios" subtitle="Servicios facturables que se venden sin mover stock." actionLabel="Nuevo servicio" (action)="abrirCrear()"></app-page-header>
+  <app-filter-bar>
+    <app-form-field label="Buscar" inputId="srv-buscar"><input id="srv-buscar" class="input" type="search" [value]="filtros.controls.searchTerm.value" (input)="onBuscar($event)" placeholder="Nombre" /></app-form-field>
+    <app-form-field label="Estado" inputId="srv-activo">
+      <select id="srv-activo" class="select" [formControl]="filtros.controls.activo"><option value="">Todos</option><option value="true">Activos</option><option value="false">Inactivos</option></select>
+    </app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" [sortField]="state.sort.split(',')[0]" [sortDirection]="state.sort.endsWith('desc') ? 'desc' : 'asc'" emptyTitle="No hay servicios" emptyAction="Nuevo servicio" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (sortChange)="ordenar($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(row)">Editar</button>
+      <button type="button" class="btn btn-danger btn-sm" (click)="pedirEliminar(row)">Eliminar</button>
+    </ng-template>
+  </app-data-table>
+</section>
+<app-modal [open]="modal" [title]="editando ? 'Editar servicio' : 'Nuevo servicio'" (closed)="modal = false">
+  <form class="form-grid" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field class="span-2" label="Nombre" inputId="srv-nombre" [required]="true" [error]="errorDe('nombre')"><input id="srv-nombre" class="input" formControlName="nombre" maxlength="150" /></app-form-field>
+    <app-form-field class="span-2" label="Descripción" inputId="srv-desc" [error]="errorDe('descripcion')"><textarea id="srv-desc" class="textarea" formControlName="descripcion"></textarea></app-form-field>
+    <app-form-field label="Precio" inputId="srv-precio" [required]="true" [error]="errorDe('precio')"><input id="srv-precio" class="input" type="number" min="0" step="0.01" formControlName="precio" /></app-form-field>
+    <app-form-field label="Activo" inputId="srv-act"><input id="srv-act" class="switch" type="checkbox" formControlName="activo" /></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="form.invalid || guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+  </div>
+</app-modal>
+<app-confirm-dialog [open]="confirmar" title="Eliminar servicio" [message]="'Se eliminará ' + (seleccionado?.nombre || 'este servicio') + '.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>

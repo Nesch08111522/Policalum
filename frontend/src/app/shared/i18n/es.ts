@@ -1,0 +1,18 @@
+export const ES: Record<string, string> = {
+  'action.create': 'Nuevo',
+  'action.save': 'Guardar',
+  'action.cancel': 'Cancelar',
+  'action.edit': 'Editar',
+  'action.delete': 'Eliminar',
+  'action.filter': 'Filtrar',
+  'action.clear': 'Limpiar',
+  'action.retry': 'Reintentar',
+  'action.close': 'Cerrar',
+  'state.loading': 'Cargando',
+  'state.empty': 'No hay registros',
+  'state.error': 'No se pudieron cargar los datos',
+  'confirm.delete': 'Esta acción no se puede deshacer.',
+  'session.expired': 'Tu sesión expiró. Vuelve a iniciar sesión.',
+  'timeout': 'La solicitud tardó demasiado. Inténtalo de nuevo.',
+  'forbidden': 'No tienes permiso para esta operación.',
+};

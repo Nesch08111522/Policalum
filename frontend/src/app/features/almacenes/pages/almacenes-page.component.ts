@@ -1,320 +1,111 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Routes } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
-import { ApiProblem } from '../../../core/api/openapi.types';
-import { AlmacenesApiService } from '../data-access/almacenes.api';
-import { SedesApiService } from '../../sedes/data-access/sedes.api';
 import * as Api from '../../../core/api/openapi.types';
-
-interface Filtros {
-  searchTerm: string;
-  sedeId: string;
-  activo: string;
-}
-
-interface AlmacenForm {
-  id?: string;
-  nombre: string;
-  descripcion: string;
-  sedeId: string;
-  activo: boolean;
-}
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
+import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { SelectComponent } from '../../../shared/components/select/select.component';
+import { ColumnDef, SelectOption } from '../../../shared/models/ui.models';
+import { LookupService } from '../../../shared/services/lookup.service';
+import { ToastService } from '../../../shared/services/toast.service';
+import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
+import { PageState } from '../../../shared/utils/page-state';
+import { AlmacenesApiService } from '../data-access/almacenes.api';
 
 @Component({
   selector: 'app-almacenes-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent],
   templateUrl: './almacenes-page.component.html',
   styleUrls: ['./almacenes-page.component.css'],
 })
 export class AlmacenesPageComponent implements OnInit, OnDestroy {
-  almacenes: Api.AlmacenResponseDTO[] = [];
-  totalElementos = 0;
-  totalPaginas = 0;
-  page = 0;
-  size = 20;
-  sort = 'nombre,asc';
-  loading = false;
-  error: ApiProblem | null = null;
-  exito: string | null = null;
-
-  filtros: Filtros = {
-    searchTerm: '',
-    sedeId: '',
-    activo: '',
-  };
-  sedes: Api.SedeResponseDTO[] = [];
-
-  private readonly searchSubject = new Subject<string>();
-  private readonly destroy$ = new Subject<void>();
-
-  mostrarFormulario = false;
-  modoEdicion = false;
+  private readonly fb = inject(FormBuilder);
+  readonly state = new PageState<Api.AlmacenResponseDTO>();
+  readonly columns: ColumnDef[] = [
+    { key: 'nombre', label: 'Almacén', sortable: true },
+    { key: 'sede.nombre', label: 'Sede' },
+    { key: 'descripcion', label: 'Descripción' },
+    { key: 'activo', label: 'Activo', kind: 'bool' },
+  ];
+  readonly filtros = this.fb.nonNullable.group({ searchTerm: [''], sedeId: [''], activo: [''] });
+  readonly form = this.fb.nonNullable.group({
+    id: [''],
+    nombre: ['', [Validators.required, Validators.maxLength(150)]],
+    descripcion: [''],
+    sedeId: ['', Validators.required],
+    activo: [true],
+  });
+  sedes: SelectOption[] = [];
+  modal = false;
+  editando = false;
   guardando = false;
   errorFormulario: string | null = null;
-  form: AlmacenForm = this.formVacio();
-
-  mostrarConfirmacion = false;
-  almacenAEliminar: Api.AlmacenResponseDTO | null = null;
+  confirmar = false;
   eliminando = false;
+  seleccionado: Api.AlmacenResponseDTO | null = null;
+  private readonly buscar$ = new Subject<string>();
+  private readonly destroy$ = new Subject<void>();
 
-  constructor(
-    private readonly almacenesApi: AlmacenesApiService,
-    private readonly sedesApi: SedesApiService,
-  ) {}
-
+  constructor(private readonly api: AlmacenesApiService, private readonly lookup: LookupService, private readonly toast: ToastService) { this.state.sort = 'nombre,asc'; }
   ngOnInit(): void {
-    this.cargarAlmacenes();
-    this.cargarSedes();
-
-    this.searchSubject
-      .pipe(debounceTime(400), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe((termino) => {
-        this.filtros.searchTerm = termino;
-        this.page = 0;
-        this.cargarAlmacenes();
-      });
+    this.cargar();
+    this.lookup.loadSedes().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.sedes = this.lookup.options(rows, (row) => (row as Api.SedeResponseDTO).nombre ?? 'Sede'); });
+    this.buscar$.pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$)).subscribe((valor) => { this.filtros.controls.searchTerm.setValue(valor); this.filtrar(); });
   }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  cargarAlmacenes(): void {
-    this.loading = true;
-    this.error = null;
-    const params = this.construirParams();
-    this.almacenesApi.GetApiV1Almacenes(params).subscribe({
-      next: (respuesta) => {
-        this.almacenes = respuesta.content ?? [];
-        this.totalElementos = respuesta.totalElements ?? 0;
-        this.totalPaginas = respuesta.totalPages ?? 0;
-        this.page = respuesta.number ?? 0;
-        this.loading = false;
-      },
-      error: (err: ApiProblem) => {
-        this.error = err;
-        this.almacenes = [];
-        this.totalElementos = 0;
-        this.totalPaginas = 0;
-        this.loading = false;
-      },
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+  cargar(): void {
+    this.state.loading = true;
+    this.state.error = null;
+    this.api.GetApiV1Almacenes(this.state.query(this.filtros.getRawValue())).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (page) => this.state.apply(page),
+      error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
   }
-
-  private construirParams(): Record<string, string | number> {
-    const params: Record<string, string | number> = {
-      page: this.page,
-      size: this.size,
-      sort: this.sort,
-    };
-    if (this.filtros.searchTerm.trim()) params['searchTerm'] = this.filtros.searchTerm.trim();
-    if (this.filtros.sedeId) params['sedeId'] = this.filtros.sedeId;
-    if (this.filtros.activo !== '') params['activo'] = this.filtros.activo;
-    return params;
-  }
-
-  private cargarSedes(): void {
-    this.sedesApi.GetApiV1Sedes({ page: 0, size: 500 }).subscribe({
-      next: (respuesta) => (this.sedes = respuesta.content ?? []),
-      error: () => (this.sedes = []),
-    });
-  }
-
-  onBuscarInput(valor: string): void {
-    this.searchSubject.next(valor);
-  }
-
-  aplicarFiltros(): void {
-    this.page = 0;
-    this.cargarAlmacenes();
-  }
-
-  limpiarFiltros(): void {
-    this.filtros = {
-      searchTerm: '',
-      sedeId: '',
-      activo: '',
-    };
-    this.page = 0;
-    this.cargarAlmacenes();
-  }
-
-  cambiarPage(nuevaPage: number): void {
-    if (nuevaPage < 0 || nuevaPage >= this.totalPaginas) return;
-    this.page = nuevaPage;
-    this.cargarAlmacenes();
-  }
-
-  cambiarSize(nuevoSize: number): void {
-    this.size = Number(nuevoSize);
-    this.page = 0;
-    this.cargarAlmacenes();
-  }
-
-  abrirFormularioNuevo(): void {
-    this.form = this.formVacio();
-    this.modoEdicion = false;
+  filtrar(): void { this.state.page = 0; this.cargar(); }
+  limpiar(): void { this.filtros.reset({ searchTerm: '', sedeId: '', activo: '' }); this.filtrar(); }
+  onBuscar(event: Event): void { this.buscar$.next((event.target as HTMLInputElement).value); }
+  cambiarPagina(page: number): void { this.state.page = page; this.cargar(); }
+  cambiarTamano(size: number): void { this.state.size = size; this.state.page = 0; this.cargar(); }
+  ordenar(event: { key: string; direction: 'asc' | 'desc' }): void { this.state.sort = `${event.key},${event.direction}`; this.cargar(); }
+  abrirCrear(): void { this.editando = false; this.errorFormulario = null; this.form.reset({ id: '', nombre: '', descripcion: '', sedeId: '', activo: true }); this.modal = true; }
+  abrirEditar(row: unknown): void {
+    const item = row as Api.AlmacenResponseDTO;
+    this.editando = true;
     this.errorFormulario = null;
-    this.mostrarFormulario = true;
+    this.form.reset({ id: item.id ?? '', nombre: item.nombre ?? '', descripcion: item.descripcion ?? '', sedeId: item.sede?.id ?? '', activo: item.activo ?? true });
+    this.modal = true;
   }
-
-  abrirFormularioEditar(almacen: Api.AlmacenResponseDTO): void {
-    this.form = {
-      id: almacen.id,
-      nombre: almacen.nombre ?? '',
-      descripcion: almacen.descripcion ?? '',
-      sedeId: almacen.sede?.id ?? '',
-      activo: almacen.activo ?? true,
-    };
-    this.modoEdicion = true;
-    this.errorFormulario = null;
-    this.mostrarFormulario = true;
-  }
-
-  cerrarFormulario(): void {
-    if (this.guardando) return;
-    this.mostrarFormulario = false;
-  }
-
-  guardarAlmacen(): void {
-    this.errorFormulario = null;
-
-    if (!this.form.nombre.trim()) {
-      this.errorFormulario = 'El nombre es obligatorio.';
-      return;
-    }
-    if (!this.form.sedeId) {
-      this.errorFormulario = 'Debes seleccionar una sede.';
-      return;
-    }
-
-    const sedeSeleccionada = this.sedes.find((s) => s.id === this.form.sedeId);
-    if (!sedeSeleccionada) {
-      this.errorFormulario = 'La sede seleccionada ya no está disponible.';
-      return;
-    }
-
-    // El backend espera la entidad Sede completa, no solo el id.
-    const body: Api.AlmacenRequestDTO = {
-      nombre: this.form.nombre.trim(),
-      descripcion: this.form.descripcion.trim() || undefined,
-      activo: this.form.activo,
-      sede: {
-        id: sedeSeleccionada.id,
-        nombre: sedeSeleccionada.nombre,
-        activa: sedeSeleccionada.activa,
-        ciudad: sedeSeleccionada.ciudad,
-        direccion: sedeSeleccionada.direccion,
-        pais: sedeSeleccionada.pais,
-        moneda: sedeSeleccionada.moneda,
-        celularSede: sedeSeleccionada.celularSede,
-      },
-    };
-
+  guardar(): void {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+    const value = this.form.getRawValue();
+    const body: Api.AlmacenRequestDTO = { nombre: value.nombre.trim(), descripcion: value.descripcion.trim() || undefined, activo: value.activo, sede: { id: value.sedeId } };
     this.guardando = true;
-    if (this.modoEdicion && this.form.id) {
-      this.almacenesApi.PutApiV1AlmacenesId({ id: this.form.id }, body).subscribe({
-        next: () => {
-          this.guardando = false;
-          this.mostrarFormulario = false;
-          this.mostrarExito('Almacén actualizado correctamente.');
-          this.cargarAlmacenes();
-        },
-        error: (err: ApiProblem) => {
-          this.guardando = false;
-          this.errorFormulario = this.mensajeError(err);
-        },
-      });
-    } else {
-      this.almacenesApi.PostApiV1Almacenes({}, body).subscribe({
-        next: () => {
-          this.guardando = false;
-          this.mostrarFormulario = false;
-          this.mostrarExito('Almacén creado correctamente.');
-          this.cargarAlmacenes();
-        },
-        error: (err: ApiProblem) => {
-          this.guardando = false;
-          this.errorFormulario = this.mensajeError(err);
-        },
-      });
-    }
-  }
-
-  confirmarEliminar(almacen: Api.AlmacenResponseDTO): void {
-    this.almacenAEliminar = almacen;
-    this.mostrarConfirmacion = true;
-  }
-
-  cerrarConfirmacion(): void {
-    if (this.eliminando) return;
-    this.mostrarConfirmacion = false;
-    this.almacenAEliminar = null;
-  }
-
-  eliminarAlmacen(): void {
-    if (!this.almacenAEliminar?.id) return;
-    this.eliminando = true;
-    this.almacenesApi.DeleteApiV1AlmacenesId({ id: this.almacenAEliminar.id }).subscribe({
-      next: () => {
-        this.eliminando = false;
-        this.mostrarConfirmacion = false;
-        this.almacenAEliminar = null;
-        this.mostrarExito('Almacén eliminado correctamente.');
-        this.cargarAlmacenes();
-      },
-      error: (err: ApiProblem) => {
-        this.eliminando = false;
-        this.mostrarConfirmacion = false;
-        this.error = err;
-      },
+    const request = this.editando && value.id ? this.api.PutApiV1AlmacenesId({ id: value.id }, body) : this.api.PostApiV1Almacenes({}, body);
+    request.pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.guardando = false; this.modal = false; this.toast.success(this.editando ? 'Almacén actualizado.' : 'Almacén creado.'); this.lookup.almacenes = []; this.cargar(); },
+      error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
     });
   }
-
-  private formVacio(): AlmacenForm {
-    return {
-      nombre: '',
-      descripcion: '',
-      sedeId: '',
-      activo: true,
-    };
+  pedirEliminar(row: unknown): void { this.seleccionado = row as Api.AlmacenResponseDTO; this.confirmar = true; }
+  eliminar(): void {
+    if (!this.seleccionado?.id) return;
+    this.eliminando = true;
+    this.api.DeleteApiV1AlmacenesId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.eliminando = false; this.confirmar = false; this.toast.success('Almacén eliminado.'); this.lookup.almacenes = []; this.cargar(); },
+      error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
+    });
   }
-
-  private mostrarExito(mensaje: string): void {
-    this.exito = mensaje;
-    setTimeout(() => (this.exito = null), 4000);
-  }
-
-  private mensajeError(err: ApiProblem): string {
-    if (err.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
-      return Object.entries(err.fieldErrors)
-        .map(([campo, mensaje]) => `${campo}: ${mensaje}`)
-        .join(' · ');
-    }
-    return err.message ?? 'No se pudo completar la operación.';
-  }
-
-  rangoMostrado(): string {
-    if (this.totalElementos === 0) return '0';
-    const inicio = this.page * this.size + 1;
-    const fin = Math.min((this.page + 1) * this.size, this.totalElementos);
-    return `${inicio}–${fin} de ${this.totalElementos}`;
-  }
-
-  paginasVisibles(): number[] {
-    const total = this.totalPaginas;
-    const actual = this.page;
-    const rango: number[] = [];
-    const inicio = Math.max(0, actual - 2);
-    const fin = Math.min(total - 1, actual + 2);
-    for (let i = inicio; i <= fin; i++) rango.push(i);
-    return rango;
-  }
-
-  trackById(_index: number, item: { id?: string }): string {
-    return item.id ?? String(_index);
-  }
+  errorDe(nombre: 'nombre' | 'sedeId'): string | null { return fieldError(this.form.controls[nombre]); }
 }
+
+export const ALMACENES_ROUTES: Routes = [
+  { path: '', component: AlmacenesPageComponent, title: 'Almacenes', data: { section: 'Inventario', breadcrumb: 'Almacenes' } },
+];

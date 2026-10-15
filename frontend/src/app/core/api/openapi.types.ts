@@ -262,6 +262,10 @@ export interface CatalogoFraccionResponseDTO {
   id?: string;
   nombreFraccion?: string;
   precioVenta?: number;
+  /** Añadido en el DTO de respuesta. Requiere regenerar el cliente OpenAPI. */
+  productoId?: string;
+  /** Añadido en el DTO de respuesta. Requiere regenerar el cliente OpenAPI. */
+  productoNombre?: string;
 }
 
 export interface Categoria {
@@ -2618,6 +2622,8 @@ export interface UserRequestDTO {
 }
 
 export interface UserResponseDTO {
+  /** Añadido en el DTO de respuesta. Requiere regenerar el cliente OpenAPI. */
+  id?: string;
   activo?: boolean;
   apellido?: string;
   celular?: string;

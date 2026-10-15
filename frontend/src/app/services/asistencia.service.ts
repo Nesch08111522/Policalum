@@ -27,7 +27,6 @@ export class AsistenciaService {
 
   private getHeaders() {
     const token = this.tokenService.getToken();
-    console.log('🔑 Token en getHeaders:', token ? '✅ Sí' : '❌ No');
     return {
       Authorization: `Bearer ${token}`,
     };
@@ -138,7 +137,6 @@ export class AsistenciaService {
   // ============================================
 
   obtenerDashboard(): Observable<DashboardAsistenciaDTO> {
-    console.log('📡 Enviando petición a dashboard');
     return this.http.get<DashboardAsistenciaDTO>(`${this.apiUrl}/dashboard`, {
       headers: this.getHeaders(),
     });
@@ -160,7 +158,6 @@ export class AsistenciaService {
   // ✅ ✅ ✅ NUEVO: OBTENER EMPLEADOS PARA COMBO BOX
   // ============================================
   obtenerEmpleados(): Observable<UserInfoDTO[]> {
-    console.log('📡 Obteniendo lista de empleados...');
     return this.http.get<UserInfoDTO[]>(`${this.apiUrl}/empleados`, {
       headers: this.getHeaders(),
     });

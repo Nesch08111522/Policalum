@@ -5,6 +5,8 @@ import java.util.UUID;
 
 public record CatalogoFraccionResponseDTO(
         UUID id,
+        UUID productoId,
+        String productoNombre,
         String nombreFraccion,
         BigDecimal factorDescuentoKardex,
         BigDecimal precioVenta,

@@ -1,1 +1,46 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Movilidades" subtitle="Vehículos de reparto y su conductor." actionLabel="Nueva movilidad" (action)="abrirCrear()"></app-page-header>
+  <div class="stats-grid" *ngIf="dashboard">
+    <app-stat-card label="Activos" [value]="dashboard.activos ?? 0" icon="car"></app-stat-card>
+    <app-stat-card label="En ruta" [value]="dashboard.enRuta ?? 0" icon="truck"></app-stat-card>
+    <app-stat-card label="Sin conductor" [value]="dashboard.activosSinConductor ?? 0" icon="alert"></app-stat-card>
+    <app-stat-card label="Entregas hoy" [value]="dashboard.entregasHoy ?? 0" icon="check"></app-stat-card>
+  </div>
+  <app-filter-bar>
+    <app-form-field label="Texto" inputId="mov-texto"><input id="mov-texto" class="input" [formControl]="filtros.controls.texto" placeholder="Placa o conductor" /></app-form-field>
+    <app-form-field label="Sede" inputId="mov-sede"><app-select inputId="mov-sede" [options]="sedes" placeholder="Todas" [formControl]="filtros.controls.sedeId"></app-select></app-form-field>
+    <app-form-field label="Tipo" inputId="mov-tipo"><select id="mov-tipo" class="select" [formControl]="filtros.controls.tipo"><option value="">Todos</option><option>MOTO</option><option>AUTO</option><option>CAMIONETA</option><option>CAMION</option></select></app-form-field>
+    <app-form-field label="Estado" inputId="mov-activo"><select id="mov-activo" class="select" [formControl]="filtros.controls.activo"><option value="">Todos</option><option value="true">Activos</option><option value="false">Inactivos</option></select></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" emptyTitle="No hay movilidades" emptyAction="Nueva movilidad" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirConductor(row)">Conductor</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(row)">Editar</button>
+      <button type="button" class="btn btn-danger btn-sm" (click)="pedirEliminar(row)">Eliminar</button>
+    </ng-template>
+  </app-data-table>
+</section>
+<app-modal [open]="modal" [title]="editando ? 'Editar movilidad' : 'Nueva movilidad'" (closed)="modal = false">
+  <form class="form-grid" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field label="Placa" inputId="mov-placa" [required]="true" [error]="errorDe('placa')"><input id="mov-placa" class="input" formControlName="placa" /></app-form-field>
+    <app-form-field label="Tipo" inputId="mov-tipo-f" [required]="true"><select id="mov-tipo-f" class="select" formControlName="tipo"><option>MOTO</option><option>AUTO</option><option>CAMIONETA</option><option>CAMION</option></select></app-form-field>
+    <app-form-field label="Marca" inputId="mov-marca"><input id="mov-marca" class="input" formControlName="marca" /></app-form-field>
+    <app-form-field label="Modelo" inputId="mov-modelo"><input id="mov-modelo" class="input" formControlName="modelo" /></app-form-field>
+    <app-form-field class="span-2" label="Sede" inputId="mov-sede-f" [required]="true" [error]="errorDe('sedeId')"><app-select inputId="mov-sede-f" [options]="sedes" placeholder="Selecciona una sede" formControlName="sedeId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Activo" inputId="mov-act"><input id="mov-act" class="switch" type="checkbox" formControlName="activo" /></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="form.invalid || guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+  </div>
+</app-modal>
+<app-modal [open]="conductorModal" title="Asignar conductor" size="sm" (closed)="conductorModal = false">
+  <app-form-field label="Conductor" inputId="mov-cond"><app-select inputId="mov-cond" [options]="usuarios" placeholder="Sin conductor" [formControl]="conductorForm.controls.conductorId"></app-select></app-form-field>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="conductorModal = false">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="asignarConductor()" [disabled]="guardando">Asignar</button>
+  </div>
+</app-modal>
+<app-confirm-dialog [open]="confirmar" title="Eliminar movilidad" [message]="'Se eliminará la placa ' + (seleccionado?.placa || '') + '.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>

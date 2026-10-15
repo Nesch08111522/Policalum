@@ -1,1 +1,114 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Recursos humanos" subtitle="Legajos, asistencia, turnos, nómina y comisiones." [actionLabel]="accionLabel()" (action)="abrirCrear()"></app-page-header>
+  <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
+  <div class="stats-grid" *ngIf="tab === 'asistencias' && asistenciaDash">
+    <app-stat-card label="Presentes" [value]="asistenciaDash.presentesHoy ?? 0" icon="check"></app-stat-card>
+    <app-stat-card label="Ausentes" [value]="asistenciaDash.ausentesHoy ?? 0" icon="alert"></app-stat-card>
+    <app-stat-card label="Tardanzas" [value]="asistenciaDash.tardanzasHoy ?? 0" icon="bell"></app-stat-card>
+    <app-stat-card label="Empleados" [value]="asistenciaDash.totalEmpleados ?? 0" icon="people"></app-stat-card>
+  </div>
+
+  <app-filter-bar *ngIf="tab === 'legajos'">
+    <app-form-field label="Texto" inputId="rh-texto"><input id="rh-texto" class="input" [formControl]="filtroLegajo.controls.texto" /></app-form-field>
+    <app-form-field label="Sede" inputId="rh-sede"><app-select inputId="rh-sede" [options]="sedes" placeholder="Todas" [formControl]="filtroLegajo.controls.sedeId"></app-select></app-form-field>
+    <app-form-field label="Contrato" inputId="rh-contrato"><select id="rh-contrato" class="select" [formControl]="filtroLegajo.controls.tipoContrato"><option value="">Todos</option><option value="PLANILLA">Planilla</option><option value="RECIBO_HONORARIOS">Recibo</option><option value="CAS">CAS</option></select></app-form-field>
+    <app-form-field label="Pensión" inputId="rh-pension"><select id="rh-pension" class="select" [formControl]="filtroLegajo.controls.sistemaPension"><option value="">Todos</option><option value="ONP">ONP</option><option value="AFP">AFP</option><option value="NINGUNO">Ninguno</option></select></app-form-field>
+    <app-form-field label="Activo" inputId="rh-activo"><select id="rh-activo" class="select" [formControl]="filtroLegajo.controls.activo"><option value="">Todos</option><option value="true">Sí</option><option value="false">No</option></select></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table *ngIf="tab === 'legajos'" [columns]="colLegajos" [rows]="legajos.rows" [loading]="legajos.loading" [error]="legajos.error" [status]="legajos.status" [page]="legajos.page" [size]="legajos.size" [totalElements]="legajos.totalElements" [totalPages]="legajos.totalPages" emptyTitle="No hay legajos" emptyMessage="Crea el legajo de un empleado." emptyAction="Nuevo legajo" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row><button type="button" class="btn btn-ghost btn-sm" (click)="editarLegajo(row)">Editar</button></ng-template>
+  </app-data-table>
+
+  <app-filter-bar *ngIf="tab === 'asistencias'">
+    <app-form-field label="Empleado" inputId="rh-emp"><app-select inputId="rh-emp" [options]="usuarios" placeholder="Todos" [formControl]="filtroAsistencia.controls.empleadoId"></app-select></app-form-field>
+    <app-form-field label="Desde" inputId="rh-fi"><input id="rh-fi" class="input" type="date" [formControl]="filtroAsistencia.controls.fechaInicio" /></app-form-field>
+    <app-form-field label="Hasta" inputId="rh-ff"><input id="rh-ff" class="input" type="date" [formControl]="filtroAsistencia.controls.fechaFin" /></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table *ngIf="tab === 'asistencias'" [columns]="colAsistencias" [rows]="asistencias.rows" [loading]="asistencias.loading" [error]="asistencias.error" [status]="asistencias.status" [page]="asistencias.page" [size]="asistencias.size" [totalElements]="asistencias.totalElements" [totalPages]="asistencias.totalPages" emptyTitle="Sin marcaciones" emptyMessage="Registra una marcación manual o usa el módulo de asistencia." emptyAction="Nueva marcación" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()" (empty)="abrirCrear()"></app-data-table>
+
+  <app-filter-bar *ngIf="tab === 'turnos'">
+    <app-form-field label="Sede" inputId="rh-tsede"><app-select inputId="rh-tsede" [options]="sedes" placeholder="Todas" [formControl]="filtroTurno.controls.sedeId"></app-select></app-form-field>
+    <app-form-field label="Empleado" inputId="rh-tuser"><app-select inputId="rh-tuser" [options]="usuarios" placeholder="Todos" [formControl]="filtroTurno.controls.userId"></app-select></app-form-field>
+    <app-form-field label="Activo" inputId="rh-tact"><select id="rh-tact" class="select" [formControl]="filtroTurno.controls.activo"><option value="">Todos</option><option value="true">Sí</option><option value="false">No</option></select></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table *ngIf="tab === 'turnos'" [columns]="colTurnos" [rows]="turnos.rows" [loading]="turnos.loading" [error]="turnos.error" [status]="turnos.status" [page]="turnos.page" [size]="turnos.size" [totalElements]="turnos.totalElements" [totalPages]="turnos.totalPages" emptyTitle="No hay turnos" emptyMessage="Programa el horario de un empleado." emptyAction="Nuevo turno" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row><button type="button" class="btn btn-ghost btn-sm" (click)="editarTurno(row)">Editar</button><button type="button" class="btn btn-danger btn-sm" (click)="pedirEliminar(row)">Eliminar</button></ng-template>
+  </app-data-table>
+
+  <app-filter-bar *ngIf="tab === 'nominas'">
+    <app-form-field label="Periodo" inputId="rh-nper" hint="AAAA-MM"><input id="rh-nper" class="input" [formControl]="filtroNomina.controls.periodo" placeholder="2026-10" /></app-form-field>
+    <app-form-field label="Sede" inputId="rh-nsede"><app-select inputId="rh-nsede" [options]="sedes" placeholder="Todas" [formControl]="filtroNomina.controls.sedeId"></app-select></app-form-field>
+    <app-form-field label="Estado" inputId="rh-nest"><select id="rh-nest" class="select" [formControl]="filtroNomina.controls.estado"><option value="">Todos</option><option value="PENDIENTE">Pendiente</option><option value="APROBADA">Aprobada</option><option value="PAGADA">Pagada</option></select></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table *ngIf="tab === 'nominas'" [columns]="colNominas" [rows]="nominas.rows" [loading]="nominas.loading" [error]="nominas.error" [status]="nominas.status" [page]="nominas.page" [size]="nominas.size" [totalElements]="nominas.totalElements" [totalPages]="nominas.totalPages" emptyTitle="No hay nóminas" emptyMessage="Genera la planilla del periodo." emptyAction="Generar" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-ghost btn-sm" *ngIf="estadoPendiente(row)" (click)="aprobarNomina(row)">Aprobar</button>
+      <button type="button" class="btn btn-primary btn-sm" *ngIf="estadoAprobada(row)" (click)="abrirPago(row)">Pagar</button>
+      <button type="button" class="btn btn-danger btn-sm" *ngIf="estadoPendiente(row)" (click)="pedirEliminar(row)">Eliminar</button>
+    </ng-template>
+  </app-data-table>
+
+  <app-filter-bar *ngIf="tab === 'comisiones'">
+    <app-form-field label="Periodo" inputId="rh-cper"><input id="rh-cper" class="input" [formControl]="filtroComision.controls.periodo" placeholder="2026-10" /></app-form-field>
+    <app-form-field label="Sede" inputId="rh-csede"><app-select inputId="rh-csede" [options]="sedes" placeholder="Todas" [formControl]="filtroComision.controls.sedeId"></app-select></app-form-field>
+    <app-form-field label="Estado" inputId="rh-cest"><select id="rh-cest" class="select" [formControl]="filtroComision.controls.estado"><option value="">Todos</option><option value="CALCULADA">Calculada</option><option value="APROBADA">Aprobada</option><option value="LIQUIDADA">Liquidada</option></select></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table *ngIf="tab === 'comisiones'" [columns]="colComisiones" [rows]="comisiones.rows" [loading]="comisiones.loading" [error]="comisiones.error" [status]="comisiones.status" [page]="comisiones.page" [size]="comisiones.size" [totalElements]="comisiones.totalElements" [totalPages]="comisiones.totalPages" emptyTitle="No hay comisiones" emptyMessage="Calcula las comisiones del periodo." emptyAction="Calcular" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row><button type="button" class="btn btn-ghost btn-sm" *ngIf="comisionCalculada(row)" (click)="aprobarComision(row)">Aprobar</button></ng-template>
+  </app-data-table>
+</section>
+
+<app-modal [open]="modal" [title]="tituloAccion()" (closed)="modal = false; legajoForm.controls.empleadoId.enable()">
+  <div *ngIf="errorFormulario" class="alert alert-error">{{ errorFormulario }}</div>
+  <form *ngIf="tab === 'legajos'" class="form-grid" [formGroup]="legajoForm">
+    <app-form-field label="Empleado" inputId="lg-emp" [required]="true" [error]="errorDe('empleadoId')"><app-select inputId="lg-emp" [options]="usuarios" placeholder="Empleado" formControlName="empleadoId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Contrato" inputId="lg-tipo" [required]="true"><select id="lg-tipo" class="select" formControlName="tipoContrato"><option value="PLANILLA">Planilla</option><option value="RECIBO_HONORARIOS">Recibo por honorarios</option><option value="CAS">CAS</option></select></app-form-field>
+    <app-form-field label="Ingreso" inputId="lg-fecha" [required]="true" [error]="errorDe('fechaIngreso')"><input id="lg-fecha" class="input" type="date" formControlName="fechaIngreso" /></app-form-field>
+    <app-form-field label="Sueldo base" inputId="lg-sueldo" [required]="true" [error]="errorDe('sueldoBase')"><input id="lg-sueldo" class="input" type="number" min="0.01" step="0.01" formControlName="sueldoBase" /></app-form-field>
+    <app-form-field label="Pensión" inputId="lg-pen"><select id="lg-pen" class="select" formControlName="sistemaPension"><option value="ONP">ONP</option><option value="AFP">AFP</option><option value="NINGUNO">Ninguno</option></select></app-form-field>
+    <app-form-field label="% comisión" inputId="lg-com"><input id="lg-com" class="input" type="number" min="0" max="100" formControlName="porcentajeComision" /></app-form-field>
+    <app-form-field label="Tasa pensión" inputId="lg-tasa"><input id="lg-tasa" class="input" type="number" min="0" max="100" formControlName="tasaPension" /></app-form-field>
+    <label class="check-row"><input class="checkbox" type="checkbox" formControlName="activo" /> Activo</label>
+  </form>
+  <form *ngIf="tab === 'asistencias'" class="form-grid" [formGroup]="asistenciaForm">
+    <app-form-field label="Empleado" inputId="as-emp" [required]="true"><app-select inputId="as-emp" [options]="usuarios" placeholder="Empleado" formControlName="empleadoId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Tipo" inputId="as-tipo" [required]="true"><select id="as-tipo" class="select" formControlName="tipoMarcacion"><option value="ENTRADA">Entrada</option><option value="SALIDA">Salida</option><option value="INICIO_RECESO">Inicio de receso</option><option value="FIN_RECESO">Fin de receso</option></select></app-form-field>
+    <app-form-field label="Fecha y hora" inputId="as-fecha" hint="Vacío usa la hora del servidor."><input id="as-fecha" class="input" type="datetime-local" formControlName="fechaHora" /></app-form-field>
+  </form>
+  <form *ngIf="tab === 'turnos'" class="form-grid" [formGroup]="turnoForm">
+    <app-form-field label="Empleado" inputId="tu-emp" [required]="true"><app-select inputId="tu-emp" [options]="usuarios" placeholder="Empleado" formControlName="userId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Nombre" inputId="tu-nom" [required]="true"><input id="tu-nom" class="input" formControlName="nombreTurno" /></app-form-field>
+    <app-form-field label="Inicio" inputId="tu-ini" [required]="true"><input id="tu-ini" class="input" type="time" formControlName="horaInicio" /></app-form-field>
+    <app-form-field label="Fin" inputId="tu-fin" [required]="true"><input id="tu-fin" class="input" type="time" formControlName="horaFin" /></app-form-field>
+    <app-form-field class="span-2" label="Días" inputId="tu-dias" hint="Separados por coma: LUNES,MARTES"><input id="tu-dias" class="input" formControlName="diasSemana" /></app-form-field>
+    <app-form-field label="Tolerancia (min)" inputId="tu-tol"><input id="tu-tol" class="input" type="number" min="0" max="120" formControlName="toleranciaMinutos" /></app-form-field>
+    <app-form-field label="Sede" inputId="tu-sede"><app-select inputId="tu-sede" [options]="sedes" placeholder="Opcional" formControlName="sedeId"></app-select></app-form-field>
+    <label class="check-row"><input class="checkbox" type="checkbox" formControlName="activo" /> Activo</label>
+  </form>
+  <form *ngIf="tab === 'nominas'" class="form-grid" [formGroup]="nominaForm">
+    <app-form-field label="Periodo" inputId="no-per" [required]="true" hint="Formato AAAA-MM"><input id="no-per" class="input" formControlName="periodo" /></app-form-field>
+    <app-form-field label="Sede" inputId="no-sede" [required]="true"><app-select inputId="no-sede" [options]="sedes" placeholder="Sede" formControlName="sedeId" [clearable]="false"></app-select></app-form-field>
+  </form>
+  <form *ngIf="tab === 'comisiones'" class="form-grid" [formGroup]="comisionForm">
+    <app-form-field label="Periodo" inputId="co-per" [required]="true"><input id="co-per" class="input" formControlName="periodo" /></app-form-field>
+    <app-form-field label="Sede" inputId="co-sede"><app-select inputId="co-sede" [options]="sedes" placeholder="Todas" formControlName="sedeId"></app-select></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false; legajoForm.controls.empleadoId.enable()">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="formularioInvalido() || guardando">Guardar</button>
+  </div>
+</app-modal>
+
+<app-modal [open]="pagoAbierto" title="Pagar nómina" (closed)="pagoAbierto = false">
+  <form class="form-grid" [formGroup]="pagoForm">
+    <app-form-field label="Método" inputId="pg-met" [required]="true"><select id="pg-met" class="select" formControlName="metodoPago"><option value="TRANSFERENCIA">Transferencia</option><option value="EFECTIVO">Efectivo</option><option value="YAPE">Yape</option><option value="PLIN">Plin</option></select></app-form-field>
+    <app-form-field label="Referencia" inputId="pg-ref"><input id="pg-ref" class="input" formControlName="referencia" /></app-form-field>
+  </form>
+  <div modalFooter><button type="button" class="btn btn-ghost" (click)="pagoAbierto = false">Cancelar</button><button type="button" class="btn btn-primary" (click)="pagar()" [disabled]="pagoForm.invalid || guardando">Pagar</button></div>
+</app-modal>
+<app-confirm-dialog [open]="confirmar" title="Eliminar registro" message="Esta acción no se puede deshacer." confirmLabel="Eliminar" [loading]="guardando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>

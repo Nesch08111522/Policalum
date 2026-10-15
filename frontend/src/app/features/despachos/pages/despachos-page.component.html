@@ -1,1 +1,57 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Despachos" subtitle="Entregas de ventas: programación, repartidor y estado." actionLabel="Nuevo despacho" (action)="abrirCrear()"></app-page-header>
+  <div class="stats-grid" *ngIf="dashboard">
+    <app-stat-card label="Atrasados" [value]="dashboard.atrasados ?? 0" icon="alert"></app-stat-card>
+    <app-stat-card label="Entregados" [value]="dashboard.entregadosEnLaFecha ?? 0" icon="check"></app-stat-card>
+    <app-stat-card label="Éxito 1er intento" [value]="(dashboard.tasaEntregaPrimerIntento ?? 0) + '%'" icon="truck"></app-stat-card>
+  </div>
+  <app-filter-bar>
+    <app-form-field label="Sede" inputId="des-sede"><app-select inputId="des-sede" [options]="sedes" placeholder="Todas" [formControl]="filtros.controls.sedeId"></app-select></app-form-field>
+    <app-form-field label="Estado" inputId="des-est"><select id="des-est" class="select" [formControl]="filtros.controls.estado"><option value="">Todos</option><option value="PENDIENTE">Pendiente</option><option value="EN_CAMINO">En camino</option><option value="ENTREGADO">Entregado</option><option value="FALLIDO">Fallido</option></select></app-form-field>
+    <app-form-field label="Repartidor" inputId="des-rep"><app-select inputId="des-rep" [options]="usuarios" placeholder="Todos" [formControl]="filtros.controls.responsableId"></app-select></app-form-field>
+    <app-form-field label="Desde" inputId="des-desde"><input id="des-desde" class="input" type="date" [formControl]="filtros.controls.desde" /></app-form-field>
+    <app-form-field label="Hasta" inputId="des-hasta"><input id="des-hasta" class="input" type="date" [formControl]="filtros.controls.hasta" /></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" emptyTitle="No hay despachos" emptyMessage="Crea un despacho a partir de una venta." emptyAction="Nuevo despacho" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (sortChange)="ordenar($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirAsignar(row)">Asignar</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEstado(row)">Estado</button>
+    </ng-template>
+  </app-data-table>
+</section>
+
+<app-modal [open]="modal" title="Nuevo despacho" (closed)="modal = false">
+  <form class="form-grid" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field class="span-2" label="Id de la venta" inputId="des-venta" [required]="true" [error]="errorDe('ventaId')" hint="Cópialo desde el detalle de la venta."><input id="des-venta" class="input" formControlName="ventaId" /></app-form-field>
+    <app-form-field label="Sede" inputId="des-f-sede"><app-select inputId="des-f-sede" [options]="sedes" placeholder="Opcional" formControlName="sedeId"></app-select></app-form-field>
+    <app-form-field label="Fecha programada" inputId="des-fecha"><input id="des-fecha" class="input" type="date" formControlName="fechaProgramada" /></app-form-field>
+    <app-form-field class="span-2" label="Dirección" inputId="des-dir" [required]="true" [error]="errorDe('direccionEntrega')"><input id="des-dir" class="input" formControlName="direccionEntrega" /></app-form-field>
+    <app-form-field label="Contacto" inputId="des-nom"><input id="des-nom" class="input" formControlName="contactoNombre" /></app-form-field>
+    <app-form-field label="Teléfono" inputId="des-tel"><input id="des-tel" class="input" formControlName="contactoTelefono" /></app-form-field>
+    <app-form-field label="Referencia" inputId="des-ref"><input id="des-ref" class="input" formControlName="referenciaEntrega" /></app-form-field>
+    <app-form-field label="Observaciones" inputId="des-obs"><input id="des-obs" class="input" formControlName="observaciones" /></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="form.invalid || guardando">Crear</button>
+  </div>
+</app-modal>
+
+<app-modal [open]="asignarAbierto" title="Asignar repartidor" (closed)="asignarAbierto = false">
+  <form class="form-grid" [formGroup]="asignacion">
+    <app-form-field label="Responsable" inputId="des-resp" [required]="true"><app-select inputId="des-resp" [options]="usuarios" placeholder="Usuario" formControlName="responsableId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Movilidad" inputId="des-mov"><app-select inputId="des-mov" [options]="movilidades" placeholder="Opcional" formControlName="movilidadId"></app-select></app-form-field>
+  </form>
+  <div modalFooter><button type="button" class="btn btn-ghost" (click)="asignarAbierto = false">Cancelar</button><button type="button" class="btn btn-primary" (click)="asignar()" [disabled]="asignacion.invalid || guardando">Asignar</button></div>
+</app-modal>
+
+<app-modal [open]="estadoAbierto" title="Cambiar estado" (closed)="estadoAbierto = false">
+  <form class="form-grid" [formGroup]="cambio">
+    <app-form-field label="Estado" inputId="des-nuevo"><select id="des-nuevo" class="select" formControlName="estado"><option value="PENDIENTE">Pendiente</option><option value="EN_CAMINO">En camino</option><option value="ENTREGADO">Entregado</option><option value="FALLIDO">Fallido</option></select></app-form-field>
+    <app-form-field label="Reprogramar" inputId="des-repro"><input id="des-repro" class="input" type="date" formControlName="fechaProgramada" /></app-form-field>
+    <app-form-field class="span-2" label="Motivo" inputId="des-motivo" [required]="cambio.controls.estado.value === 'FALLIDO'"><textarea id="des-motivo" class="textarea" formControlName="motivo"></textarea></app-form-field>
+  </form>
+  <div modalFooter><button type="button" class="btn btn-ghost" (click)="estadoAbierto = false">Cancelar</button><button type="button" class="btn btn-primary" (click)="cambiarEstado()" [disabled]="cambio.invalid || guardando">Guardar</button></div>
+</app-modal>

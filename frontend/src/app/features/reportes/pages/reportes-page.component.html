@@ -1,1 +1,37 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Reportes" subtitle="Ventas, rentabilidad, clientes, proveedores y arqueos de caja. La exportación de archivos queda pendiente: el cliente generado espera JSON."></app-page-header>
+  <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
+  <app-filter-bar>
+    <app-form-field label="Desde" inputId="rep-desde"><input id="rep-desde" class="input" type="date" [formControl]="filtros.controls.desde" /></app-form-field>
+    <app-form-field label="Hasta" inputId="rep-hasta"><input id="rep-hasta" class="input" type="date" [formControl]="filtros.controls.hasta" /></app-form-field>
+    <app-form-field label="Sede" inputId="rep-sede"><app-select inputId="rep-sede" [options]="sedes" placeholder="Todas" [formControl]="filtros.controls.sedeId"></app-select></app-form-field>
+    <app-form-field label="Canal" inputId="rep-canal" *ngIf="tab === 'ventas'"><select id="rep-canal" class="select" [formControl]="filtros.controls.canal"><option value="">Todos</option><option value="LOCAL">Local</option><option value="ONLINE">Online</option></select></app-form-field>
+    <app-form-field label="Agrupación" inputId="rep-agr" *ngIf="tab === 'ventas'"><select id="rep-agr" class="select" [formControl]="filtros.controls.agrupacion"><option value="DIA">Día</option><option value="SEMANA">Semana</option><option value="MES">Mes</option></select></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Consultar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <div *ngIf="error && tab !== 'ventas'" class="alert alert-error"><div><strong>No se pudo cargar el reporte</strong><p>{{ error }}</p><p *ngIf="status" class="text-xs">Código {{ status }}</p></div><button type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button></div>
+
+  <ng-container *ngIf="tab === 'ventas'">
+    <div class="stats-grid" *ngIf="resumen">
+      <app-stat-card label="Ventas" [value]="resumen.cantidad ?? 0" icon="cart"></app-stat-card>
+      <app-stat-card label="Total" [value]="resumen.total | pen" icon="cash"></app-stat-card>
+      <app-stat-card label="Neto" [value]="resumen.neto | pen" icon="chart"></app-stat-card>
+      <app-stat-card label="Ticket promedio" [value]="resumen.ticketPromedio | pen" icon="report"></app-stat-card>
+    </div>
+    <article class="card card-body"><h2>Evolución</h2><app-bar-chart [points]="puntos" label="Ventas por periodo"></app-bar-chart></article>
+    <app-data-table [columns]="colVentas" [rows]="ventas.rows" [loading]="ventas.loading" [error]="ventas.error" [status]="ventas.status" [page]="ventas.page" [size]="ventas.size" [totalElements]="ventas.totalElements" [totalPages]="ventas.totalPages" emptyTitle="Sin ventas en el rango" emptyMessage="Ajusta las fechas o la sede." (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()"></app-data-table>
+  </ng-container>
+  <app-data-table *ngIf="tab === 'rentabilidad'" [columns]="colRentabilidad" [rows]="rentabilidad" [loading]="loading" [totalElements]="rentabilidad.length" [totalPages]="rentabilidad.length ? 1 : 0" emptyTitle="Sin rentabilidad" emptyMessage="No hay productos con movimiento en el rango."></app-data-table>
+  <app-data-table *ngIf="tab === 'estrella'" [columns]="colRentabilidad" [rows]="estrella" [loading]="loading" [totalElements]="estrella.length" [totalPages]="estrella.length ? 1 : 0" emptyTitle="Sin productos estrella" emptyMessage="No hay ranking para el rango elegido."></app-data-table>
+  <app-data-table *ngIf="tab === 'clientes'" [columns]="colClientes" [rows]="clientes" [loading]="loading" [totalElements]="clientes.length" [totalPages]="clientes.length ? 1 : 0" emptyTitle="Sin clientes frecuentes" emptyMessage="No hay compras de clientes en el rango."></app-data-table>
+  <app-data-table *ngIf="tab === 'proveedores'" [columns]="colProveedores" [rows]="proveedores" [loading]="loading" [totalElements]="proveedores.length" [totalPages]="proveedores.length ? 1 : 0" emptyTitle="Sin ranking" emptyMessage="No hay compras a proveedores en el rango."></app-data-table>
+  <ng-container *ngIf="tab === 'arqueos'">
+    <div class="stats-grid" *ngIf="resumenArqueo">
+      <app-stat-card label="Turnos" [value]="resumenArqueo.turnos ?? 0" icon="cash"></app-stat-card>
+      <app-stat-card label="Cuadrados" [value]="resumenArqueo.cuadrados ?? 0" icon="check"></app-stat-card>
+      <app-stat-card label="Faltantes" [value]="resumenArqueo.conFaltante ?? 0" icon="alert"></app-stat-card>
+      <app-stat-card label="Diferencia neta" [value]="resumenArqueo.diferenciaNeta | pen" icon="chart"></app-stat-card>
+    </div>
+    <app-data-table [columns]="colArqueos" [rows]="arqueos" [loading]="loading" [totalElements]="arqueos.length" [totalPages]="arqueos.length ? 1 : 0" emptyTitle="Sin arqueos" emptyMessage="No hay turnos de caja en el rango."></app-data-table>
+  </ng-container>
+</section>
