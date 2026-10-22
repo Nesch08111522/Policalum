@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
@@ -65,10 +65,15 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
   private readonly buscar$ = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: ProductosApiService, private readonly lookup: LookupService, private readonly toast: ToastService) { this.state.sort = 'nombre,asc'; }
+  constructor(private readonly api: ProductosApiService, private readonly lookup: LookupService, private readonly toast: ToastService) {
+    this.state.sort = 'nombre,asc';
+    effect(() => {
+      this.lookup.revision();
+      untracked(() => this.cargarCombos());
+    });
+  }
   ngOnInit(): void {
     this.cargar();
-    this.cargarCombos();
     this.buscar$.pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$)).subscribe((valor) => { this.filtros.controls.searchTerm.setValue(valor); this.filtrar(); });
   }
   cargarCombos(): void {

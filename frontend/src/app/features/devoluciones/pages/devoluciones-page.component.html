@@ -1,0 +1,73 @@
+<section class="module-page">
+  <app-page-header title="Devoluciones" subtitle="Solicitudes sobre ventas completadas. Aprobar mueve el kardex." actionLabel="Nueva devolución" (action)="abrirCrear()"></app-page-header>
+  <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
+  <app-filter-bar *ngIf="tab === 'lista'">
+    <app-form-field label="Sede" inputId="dev-sede"><app-select inputId="dev-sede" [options]="sedes" placeholder="Todas" [formControl]="filtros.controls.sedeId"></app-select></app-form-field>
+    <app-form-field label="Estado" inputId="dev-est"><select id="dev-est" class="select" [formControl]="filtros.controls.estado"><option value="">Todos</option><option value="PENDIENTE">Pendiente</option><option value="APROBADA">Aprobada</option><option value="RECHAZADA">Rechazada</option></select></app-form-field>
+    <app-form-field label="Desde" inputId="dev-desde"><input id="dev-desde" class="input" type="date" [formControl]="filtros.controls.desde" /></app-form-field>
+    <app-form-field label="Hasta" inputId="dev-hasta"><input id="dev-hasta" class="input" type="date" [formControl]="filtros.controls.hasta" /></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <div class="stats-grid" *ngIf="tab === 'resumen' && dashboard">
+    <app-stat-card label="Monto aprobado" [value]="(dashboard.montoAprobado ?? 0) | pen" icon="check"></app-stat-card>
+    <app-stat-card label="Reembolsado" [value]="(dashboard.montoReembolsado ?? 0) | pen" icon="cash"></app-stat-card>
+    <app-stat-card label="Reingresadas" [value]="dashboard.unidadesReingresadas ?? 0" icon="layers"></app-stat-card>
+    <app-stat-card label="Merma" [value]="dashboard.unidadesMerma ?? 0" icon="alert"></app-stat-card>
+  </div>
+  <app-data-table *ngIf="tab === 'lista'" [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" emptyTitle="No hay devoluciones" emptyMessage="Registra una devolución a partir de una venta completada." emptyAction="Nueva devolución" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (sortChange)="ordenar($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="ver(row)">Ver</button>
+      <button type="button" class="btn btn-primary btn-sm" *ngIf="admin && pendiente(row)" (click)="abrirAprobar(row)">Aprobar</button>
+      <button type="button" class="btn btn-danger btn-sm" *ngIf="admin && pendiente(row)" (click)="abrirRechazar(row)">Rechazar</button>
+    </ng-template>
+  </app-data-table>
+</section>
+
+<app-modal [closable]="!guardando" [open]="modal" title="Nueva devolución" size="lg" (closed)="modal = false">
+  <form class="form-grid" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field label="Venta" inputId="dev-venta" [required]="true" [error]="errorDe('ventaId')"><app-select inputId="dev-venta" [options]="ventas" placeholder="Venta completada" formControlName="ventaId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Motivo" inputId="dev-motivo" [required]="true" [error]="errorDe('motivo')"><input id="dev-motivo" class="input" formControlName="motivo" /></app-form-field>
+    <div class="span-2" formArrayName="lineas">
+      <p *ngIf="!lineas.length" class="text-sm">Elige una venta para cargar sus líneas.</p>
+      <div class="form-grid" *ngFor="let linea of lineas.controls; let i = index" [formGroupName]="i">
+        <app-form-field label="Ítem" [inputId]="'dev-item-' + i"><input class="input" formControlName="nombre" readonly /></app-form-field>
+        <app-form-field label="Cantidad" [inputId]="'dev-cant-' + i" [required]="true" [hint]="'Vendida: ' + linea.controls.vendida.value"><input class="input" type="number" min="0" step="0.0001" formControlName="cantidad" /></app-form-field>
+        <app-form-field label="Estado del producto" [inputId]="'dev-est-' + i"><select class="select" formControlName="estadoProducto"><option value="BUENO">Bueno, reingresa</option><option value="USADO">Usado</option><option value="DAÑADO">Dañado, merma</option></select></app-form-field>
+        <app-form-field label="Observación" [inputId]="'dev-obs-' + i"><input class="input" formControlName="observacion" /></app-form-field>
+      </div>
+    </div>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">Registrar</button>
+  </div>
+</app-modal>
+
+<app-modal [open]="detalleAbierto" title="Detalle de devolución" size="lg" (closed)="detalleAbierto = false">
+  <div *ngIf="detalle">
+    <p>{{ detalle.codigo }} · {{ detalle.ventaSerie }} · {{ detalle.clienteNombre || 'Sin cliente' }} · {{ detalle.estado }} · {{ detalle.montoTotal | pen }}</p>
+    <p>Motivo: {{ detalle.motivo }}</p>
+    <p *ngIf="detalle.reembolsoEstado">Reembolso: {{ detalle.reembolsoEstado }}</p>
+    <table class="table table-compact"><thead><tr><th>Ítem</th><th>Cantidad</th><th>Estado</th><th>Subtotal</th></tr></thead>
+      <tbody><tr *ngFor="let linea of detalle.detalles"><td>{{ linea.productoNombre || linea.fraccionNombre }}</td><td>{{ linea.cantidadDevuelta }}</td><td>{{ linea.estadoProducto }}</td><td>{{ linea.subtotal | pen }}</td></tr></tbody>
+    </table>
+  </div>
+</app-modal>
+
+<app-modal [closable]="!guardando" [open]="aprobarAbierto" title="Aprobar devolución" size="sm" (closed)="aprobarAbierto = false">
+  <p class="text-sm">Lo que esté en buen estado reingresa al almacén. Dañado o usado queda como merma.</p>
+  <app-form-field label="Observación" inputId="dev-apr-obs"><textarea id="dev-apr-obs" class="textarea" [formControl]="aprobacion.controls.observacion"></textarea></app-form-field>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="aprobarAbierto = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="aprobar()" [disabled]="guardando">Aprobar</button>
+  </div>
+</app-modal>
+
+<app-modal [closable]="!guardando" [open]="rechazarAbierto" title="Rechazar devolución" size="sm" (closed)="rechazarAbierto = false">
+  <app-form-field label="Motivo" inputId="dev-rechazo" [required]="true"><textarea id="dev-rechazo" class="textarea" [formControl]="rechazo.controls.motivo"></textarea></app-form-field>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="rechazarAbierto = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-danger" (click)="rechazar()" [disabled]="guardando">Rechazar</button>
+  </div>
+</app-modal>

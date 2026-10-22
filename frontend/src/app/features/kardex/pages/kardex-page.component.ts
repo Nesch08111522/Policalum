@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -14,6 +14,7 @@ import { StatCardComponent } from '../../../shared/components/stat-card/stat-car
 import { TabsComponent } from '../../../shared/components/tabs/tabs.component';
 import { ColumnDef, SelectOption, TabItem } from '../../../shared/models/ui.models';
 import { PenPipe } from '../../../shared/pipes/format.pipes';
+import { InventarioSyncService } from '../../../shared/services/inventario-sync.service';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { problemStatus, problemText } from '../../../shared/utils/feedback';
@@ -54,7 +55,12 @@ export class KardexPageComponent implements OnInit, OnDestroy {
   errorFormulario: string | null = null;
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: KardexApiService, private readonly lookup: LookupService, private readonly toast: ToastService) {}
+  constructor(private readonly api: KardexApiService, private readonly lookup: LookupService, private readonly inventario: InventarioSyncService, private readonly toast: ToastService) {
+    effect(() => {
+      const revision = this.inventario.revision();
+      untracked(() => { if (revision) this.cargar(); });
+    });
+  }
   ngOnInit(): void {
     this.cargar();
     this.lookup.loadProductos().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.productos = this.lookup.options(rows, (row) => (row as Api.ProductoResponseDTO).nombre ?? 'Producto'); });
@@ -129,7 +135,7 @@ export class KardexPageComponent implements OnInit, OnDestroy {
     };
     this.guardando = true;
     this.api.PostApiV1KardexMovimientos({}, body).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = false; this.toast.success('Movimiento registrado.'); this.tab = 'movimientos'; this.cargar(); },
+      next: () => { this.guardando = false; this.modal = false; this.inventario.marcarCambio(); this.toast.success('Movimiento registrado.'); this.tab = 'movimientos'; this.cargar(); },
       error: (error: unknown) => { this.guardando = false; this.errorFormulario = problemText(error); },
     });
   }

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Observable, catchError, finalize, map, of, shareReplay, tap } from 'rxjs';
 import * as Api from '../../core/api/openapi.types';
 import { AlmacenesApiService } from '../../features/almacenes/data-access/almacenes.api';
@@ -25,6 +25,8 @@ export type LookupKey =
 
 @Injectable({ providedIn: 'root' })
 export class LookupService {
+  /** Cambia cuando un catálogo se invalida, para que las pantallas abiertas recarguen sus selectores. */
+  readonly revision = signal(0);
   sedes: Api.SedeResponseDTO[] = [];
   almacenes: Api.AlmacenResponseDTO[] = [];
   categorias: Api.CategoriaResponseDTO[] = [];
@@ -67,6 +69,7 @@ export class LookupService {
       this[key] = [];
       this.inflight.delete(key);
     }
+    if (keys.length) this.revision.update((valor) => valor + 1);
   }
 
   loadSedes(force = false): Observable<Api.SedeResponseDTO[]> {

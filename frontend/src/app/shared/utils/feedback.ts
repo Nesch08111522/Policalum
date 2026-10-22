@@ -58,6 +58,7 @@ export function fieldError(control: AbstractControl | null, custom: Record<strin
     pattern: 'El formato no es válido.',
     documento: 'El documento no coincide con el tipo seleccionado.',
     linea: 'Indica un producto o un servicio.',
+    lineaUnica: 'Indica un producto, un servicio o una fracción.',
     json: 'El JSON de permisos no es válido.',
   };
   return custom[key] ?? defaults[key] ?? 'Valor no válido.';

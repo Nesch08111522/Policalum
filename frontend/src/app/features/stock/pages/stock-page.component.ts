@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -14,6 +14,7 @@ import { StatCardComponent } from '../../../shared/components/stat-card/stat-car
 import { TabsComponent } from '../../../shared/components/tabs/tabs.component';
 import { ColumnDef, SelectOption, TabItem } from '../../../shared/models/ui.models';
 import { PenPipe } from '../../../shared/pipes/format.pipes';
+import { InventarioSyncService } from '../../../shared/services/inventario-sync.service';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
@@ -55,7 +56,16 @@ export class StockPageComponent implements OnInit, OnDestroy {
   errorFormulario: string | null = null;
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: StockApiService, private readonly lookup: LookupService, private readonly toast: ToastService) {}
+  constructor(private readonly api: StockApiService, private readonly lookup: LookupService, private readonly inventario: InventarioSyncService, private readonly toast: ToastService) {
+    effect(() => {
+      const revision = this.inventario.revision();
+      untracked(() => {
+        if (!revision) return;
+        this.cargar();
+        this.api.GetApiV1StockDashboard().pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.dashboard = data; }, error: () => { this.dashboard = null; } });
+      });
+    });
+  }
   ngOnInit(): void {
     this.cargar();
     this.lookup.loadProductos().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.productos = this.lookup.options(rows, (row) => (row as Api.ProductoResponseDTO).nombre ?? 'Producto'); });
@@ -105,7 +115,7 @@ export class StockPageComponent implements OnInit, OnDestroy {
     const value = this.ajuste.getRawValue();
     this.guardando = true;
     this.api.PostApiV1StockAjuste({}, { productoId: value.productoId, almacenId: value.almacenId, cantidad: Number(value.cantidad), motivo: value.motivo.trim(), justificacion: value.justificacion.trim() || undefined }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = null; this.toast.success('Ajuste registrado.'); this.tab = 'ajustes'; this.cargar(); },
+      next: () => { this.guardando = false; this.modal = null; this.inventario.marcarCambio(); this.toast.success('Ajuste registrado.'); this.tab = 'ajustes'; this.cargar(); },
       error: (error: unknown) => { this.guardando = false; this.errorFormulario = problemText(error); },
     });
   }
@@ -116,7 +126,7 @@ export class StockPageComponent implements OnInit, OnDestroy {
     if (value.almacenOrigenId === value.almacenDestinoId) { this.errorFormulario = 'El origen y el destino deben ser distintos.'; return; }
     this.guardando = true;
     this.api.PostApiV1StockTransferencia({}, { productoId: value.productoId, almacenOrigenId: value.almacenOrigenId, almacenDestinoId: value.almacenDestinoId, cantidad: Number(value.cantidad), motivo: value.motivo.trim() || undefined, referenciaDocumento: value.referenciaDocumento.trim() || undefined }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = null; this.toast.success('Transferencia registrada.'); this.tab = 'transferencias'; this.cargar(); },
+      next: () => { this.guardando = false; this.modal = null; this.inventario.marcarCambio(); this.toast.success('Transferencia registrada.'); this.tab = 'transferencias'; this.cargar(); },
       error: (error: unknown) => { this.guardando = false; this.errorFormulario = problemText(error); },
     });
   }

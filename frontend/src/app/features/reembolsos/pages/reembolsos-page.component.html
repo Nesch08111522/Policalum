@@ -1,0 +1,55 @@
+<section class="module-page">
+  <app-page-header title="Reembolsos" subtitle="Pago de una devolución aprobada. En efectivo sale de la caja abierta." actionLabel="Nuevo reembolso" (action)="abrirCrear()"></app-page-header>
+  <app-filter-bar>
+    <app-form-field label="Sede" inputId="ree-sede"><app-select inputId="ree-sede" [options]="sedes" placeholder="Todas" [formControl]="filtros.controls.sedeId"></app-select></app-form-field>
+    <app-form-field label="Estado" inputId="ree-est"><select id="ree-est" class="select" [formControl]="filtros.controls.estado"><option value="">Todos</option><option value="PENDIENTE">Pendiente</option><option value="PROCESADO">Procesado</option></select></app-form-field>
+    <app-form-field label="Método" inputId="ree-met"><select id="ree-met" class="select" [formControl]="filtros.controls.metodo"><option value="">Todos</option><option value="EFECTIVO">Efectivo</option><option value="YAPE">Yape</option><option value="PLIN">Plin</option><option value="TARJETA">Tarjeta</option><option value="TRANSFERENCIA">Transferencia</option></select></app-form-field>
+    <app-form-field label="Desde" inputId="ree-desde"><input id="ree-desde" class="input" type="date" [formControl]="filtros.controls.desde" /></app-form-field>
+    <app-form-field label="Hasta" inputId="ree-hasta"><input id="ree-hasta" class="input" type="date" [formControl]="filtros.controls.hasta" /></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" emptyTitle="No hay reembolsos" emptyMessage="Registra el pago de una devolución aprobada." emptyAction="Nuevo reembolso" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (sortChange)="ordenar($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="ver(row)">Ver</button>
+      <button type="button" class="btn btn-primary btn-sm" *ngIf="admin && pendiente(row)" (click)="abrirProcesar(row)">Procesar</button>
+    </ng-template>
+  </app-data-table>
+</section>
+
+<app-modal [closable]="!guardando" [open]="modal" title="Nuevo reembolso" (closed)="modal = false">
+  <form class="form-grid" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field label="Devolución aprobada" inputId="ree-dev" [required]="true" [error]="errorDe('devolucionId')"><app-select inputId="ree-dev" [options]="devoluciones" placeholder="Devolución" formControlName="devolucionId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Método" inputId="ree-f-met" [required]="true"><select id="ree-f-met" class="select" formControlName="metodoReembolso"><option value="EFECTIVO">Efectivo</option><option value="YAPE">Yape</option><option value="PLIN">Plin</option><option value="TARJETA">Tarjeta</option><option value="TRANSFERENCIA">Transferencia</option></select></app-form-field>
+    <app-form-field label="Monto" inputId="ree-monto" hint="Vacío usa el total de la devolución." [error]="errorDe('monto')"><input id="ree-monto" class="input" type="number" min="0.01" step="0.01" formControlName="monto" /></app-form-field>
+    <app-form-field label="Motivo del ajuste" inputId="ree-ajuste" [error]="errorDe('motivoAjuste')"><input id="ree-ajuste" class="input" formControlName="motivoAjuste" /></app-form-field>
+    <app-form-field label="Referencia" inputId="ree-ref"><input id="ree-ref" class="input" formControlName="referencia" /></app-form-field>
+    <app-form-field label="Observaciones" inputId="ree-obs" [error]="errorDe('observaciones')"><input id="ree-obs" class="input" formControlName="observaciones" /></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">Registrar</button>
+  </div>
+</app-modal>
+
+<app-modal [open]="detalleAbierto" title="Detalle de reembolso" (closed)="detalleAbierto = false">
+  <div *ngIf="detalle">
+    <p>{{ detalle.devolucionCodigo }} · {{ detalle.clienteNombre || 'Sin cliente' }} · {{ detalle.estado }}</p>
+    <p>{{ detalle.metodoReembolso }} · {{ detalle.montoTotalReembolso | pen }} <span *ngIf="detalle.montoMaximo">de {{ detalle.montoMaximo | pen }}</span></p>
+    <p *ngIf="detalle.motivoAjuste">Ajuste: {{ detalle.motivoAjuste }}</p>
+    <p *ngIf="detalle.referencia">Referencia: {{ detalle.referencia }}</p>
+    <p *ngIf="detalle.observaciones">{{ detalle.observaciones }}</p>
+  </div>
+</app-modal>
+
+<app-modal [closable]="!guardando" [open]="procesarAbierto" title="Procesar reembolso" size="sm" (closed)="procesarAbierto = false">
+  <p class="text-sm">Si el método es efectivo, el monto sale del turno de caja abierto del administrador en la sede.</p>
+  <form class="form-grid" [formGroup]="proceso">
+    <app-form-field label="Referencia" inputId="ree-p-ref"><input id="ree-p-ref" class="input" formControlName="referencia" /></app-form-field>
+    <app-form-field label="Observaciones" inputId="ree-p-obs"><textarea id="ree-p-obs" class="textarea" formControlName="observaciones"></textarea></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="procesarAbierto = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="procesar()" [disabled]="guardando">Procesar</button>
+  </div>
+</app-modal>
