@@ -320,7 +320,15 @@
 .sidebar-brand, .nav-link, .nav-section { color: inherit; }
 .sidebar-brand { display: flex; align-items: center; gap: 10px; min-height: var(--header-height); padding: 0 16px; border-bottom: 1px solid var(--color-border); }
 .brand-mark { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: var(--color-primary); color: var(--color-primary-contrast); font-weight: 800; }
-.sidebar-scroll { overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 14px; }
+.sidebar-scroll {
+  overflow: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scrollbar-color: var(--scrollbar-thumb) var(--color-bg-subtle);
+}
+.sidebar-scroll::-webkit-scrollbar-track { background: var(--color-bg-subtle); }
 .nav-section { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); padding: 0 8px 4px; }
 .nav-link { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; text-align: left; cursor: pointer; text-decoration: none; color: var(--color-text); }
 .nav-link.active, .nav-link:hover { background: var(--color-info-bg); color: var(--color-text); }
