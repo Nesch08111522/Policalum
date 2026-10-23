@@ -276,6 +276,9 @@ export const ENDPOINTS: EndpointDefinition[] = [
   { id: "POST_api_v1_ventas", method: "POST", path: "/api/v1/ventas", title: "Registrar venta", module: "ventas", parameters: [], bodyType: "RegistrarVentaRequestDTO", responseType: "VentaProcesadaResponseDTO" },
   { id: "GET_api_v1_ventas_id", method: "GET", path: "/api/v1/ventas/{id}", title: "Detalle de venta", module: "ventas", parameters: ["id"], bodyType: undefined, responseType: "VentaDetalleResponseDTO" },
   { id: "POST_api_v1_ventas_id_anulacion", method: "POST", path: "/api/v1/ventas/{id}/anulacion", title: "Anular venta", module: "ventas", parameters: ["id"], bodyType: "AnularVentaRequestDTO", responseType: "VentaProcesadaResponseDTO" },
+  { id: "GET_api_v1_facturacion_electronica_panel", method: "GET", path: "/api/v1/facturacion-electronica/panel", title: "Panel SUNAT", module: "facturacion-electronica", parameters: ["sedeId"], bodyType: undefined, responseType: "FacturacionElectronicaPanelDTO" },
+  { id: "POST_api_v1_facturacion_electronica_emitir", method: "POST", path: "/api/v1/facturacion-electronica/emitir", title: "Emitir", module: "facturacion-electronica", parameters: [], bodyType: undefined, responseType: "unknown" },
+  { id: "POST_api_v1_facturacion_electronica_consultar_validez", method: "POST", path: "/api/v1/facturacion-electronica/consultar-validez", title: "Consultar validez", module: "facturacion-electronica", parameters: [], bodyType: "Record<string, string>", responseType: "unknown" },
 ];
 
 export const ENDPOINT_BY_ID: Record<string, EndpointDefinition> = Object.fromEntries(ENDPOINTS.map((item) => [item.id, item]));

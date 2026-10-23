@@ -24,6 +24,9 @@ export const NAV_SECTIONS: NavSection[] = [
       { id: 'pos', label: 'Punto de venta', path: '/ventas/pos', icon: 'cash' },
       { id: 'clientes', label: 'Clientes', path: '/modules/clientes', icon: 'users' },
       { id: 'cotizaciones', label: 'Cotizaciones', path: '/modules/cotizaciones', icon: 'file' },
+      { id: 'preformas', label: 'Preformas', path: '/modules/preformas', icon: 'file' },
+      { id: 'devoluciones', label: 'Devoluciones', path: '/modules/devoluciones', icon: 'refresh' },
+      { id: 'reembolsos', label: 'Reembolsos', path: '/modules/reembolsos', icon: 'cash' },
       { id: 'turnos-caja', label: 'Caja', path: '/modules/turnos-caja', icon: 'cash' },
     ],
   },
@@ -55,6 +58,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: 'Finanzas',
     items: [
       { id: 'cuentas-por-pagar', label: 'Cuentas por pagar', path: '/modules/cuentas-por-pagar', icon: 'card' },
+      { id: 'facturacion-electronica', label: 'Facturación SUNAT', path: '/modules/facturacion-electronica', icon: 'file' },
       { id: 'finanzas', label: 'Finanzas', path: '/modules/finanzas', icon: 'chart', roles: admin },
     ],
   },

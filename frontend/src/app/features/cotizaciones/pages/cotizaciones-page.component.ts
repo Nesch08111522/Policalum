@@ -14,14 +14,14 @@ import { SelectComponent } from '../../../shared/components/select/select.compon
 import { TabsComponent } from '../../../shared/components/tabs/tabs.component';
 import { ColumnDef, SelectOption, TabItem } from '../../../shared/models/ui.models';
 import { PenPipe } from '../../../shared/pipes/format.pipes';
+import { CajaSessionService } from '../../../shared/services/caja-session.service';
+import { InventarioSyncService } from '../../../shared/services/inventario-sync.service';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { lineaProductoOServicio } from '../../../shared/utils/validators';
 import { CotizacionesApiService } from '../data-access/cotizaciones.api';
-
-const TURNO_KEY = 'erp-turno-caja';
 
 @Component({
   selector: 'app-cotizaciones-page',
@@ -32,6 +32,8 @@ const TURNO_KEY = 'erp-turno-caja';
 })
 export class CotizacionesPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly caja = inject(CajaSessionService);
+  private readonly inventario = inject(InventarioSyncService);
   readonly tabs: TabItem[] = [{ id: 'lista', label: 'Cotizaciones' }, { id: 'vencidas', label: 'Vencidas' }];
   tab = 'lista';
   readonly state = new PageState<Api.CotizacionListadoDTO>();
@@ -216,7 +218,7 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
       canalVenta: value.canalVenta,
       pagos: [{ metodoPago: value.metodoPago, monto: Number(value.monto) }],
     }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (venta) => { this.guardando = false; this.convertirAbierto = false; this.toast.success(`Convertida en venta ${venta.serieCorrelativo ?? ''}.`.trim()); this.cargar(); },
+      next: (venta) => { this.guardando = false; this.convertirAbierto = false; this.inventario.marcarCambio(); this.caja.tocar(); this.lookup.invalidate('productos'); this.toast.success(`Convertida en venta ${venta.serieCorrelativo ?? ''}.`.trim()); this.cargar(); },
       error: (error: unknown) => { this.guardando = false; this.toast.error(problemText(error)); },
     });
   }
@@ -241,7 +243,7 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
     return this.fb.nonNullable.group({ productoId: [productoId ?? ''], servicioId: [servicioId ?? ''], cantidad: [cantidad ?? 1, [Validators.required, Validators.min(0.0001)]] }, { validators: lineaProductoOServicio });
   }
 
-  private turno(): string { return typeof sessionStorage === 'undefined' ? '' : sessionStorage.getItem(TURNO_KEY) ?? ''; }
+  private turno(): string { return this.caja.id(); }
 }
 
 export const COTIZACIONES_ROUTES: Routes = [

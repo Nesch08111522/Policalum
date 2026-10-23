@@ -12,14 +12,14 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { ColumnDef, SelectOption } from '../../../shared/models/ui.models';
 import { PenPipe } from '../../../shared/pipes/format.pipes';
+import { CajaSessionService } from '../../../shared/services/caja-session.service';
+import { InventarioSyncService } from '../../../shared/services/inventario-sync.service';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { lineaProductoOServicio } from '../../../shared/utils/validators';
 import { VentasApiService } from '../data-access/ventas.api';
-
-const TURNO_KEY = 'erp-turno-caja';
 
 @Component({
   selector: 'app-ventas-page',
@@ -30,6 +30,8 @@ const TURNO_KEY = 'erp-turno-caja';
 })
 export class VentasPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly caja = inject(CajaSessionService);
+  private readonly inventario = inject(InventarioSyncService);
   readonly state = new PageState<Api.VentaListadoResponseDTO>();
   readonly columns: ColumnDef[] = [
     { key: 'serieCorrelativo', label: 'Comprobante', sortable: true },
@@ -128,7 +130,7 @@ export class VentasPageComponent implements OnInit, OnDestroy {
     this.guardando = true;
     this.errorFormulario = null;
     this.api.PostApiV1Ventas({}, body).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (venta) => { this.guardando = false; this.modal = false; this.toast.success(`Venta ${venta.serieCorrelativo ?? ''} registrada.`.trim()); this.cargar(); },
+      next: (venta) => { this.guardando = false; this.modal = false; this.inventario.marcarCambio(); this.caja.tocar(); this.lookup.invalidate('productos'); this.toast.success(`Venta ${venta.serieCorrelativo ?? ''} registrada.`.trim()); this.cargar(); },
       error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
     });
   }
@@ -150,7 +152,7 @@ export class VentasPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id || this.anulacion.invalid) return;
     this.guardando = true;
     this.api.PostApiV1VentasIdAnulacion({ id: this.seleccionado.id }, { motivo: this.anulacion.controls.motivo.value.trim() }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.anularAbierto = false; this.toast.success('Venta anulada.'); this.cargar(); },
+      next: () => { this.guardando = false; this.anularAbierto = false; this.inventario.marcarCambio(); this.caja.tocar(); this.toast.success('Venta anulada.'); this.cargar(); },
       error: (error: unknown) => { this.guardando = false; this.toast.error(problemText(error)); },
     });
   }
@@ -179,7 +181,7 @@ export class VentasPageComponent implements OnInit, OnDestroy {
   }
 
   private turnoActivo(): string {
-    return typeof sessionStorage === 'undefined' ? '' : sessionStorage.getItem(TURNO_KEY) ?? '';
+    return this.caja.id();
   }
 }
 

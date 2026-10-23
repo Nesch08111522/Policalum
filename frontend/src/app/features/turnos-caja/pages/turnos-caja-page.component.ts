@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -9,12 +9,11 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { SelectOption } from '../../../shared/models/ui.models';
 import { PenPipe } from '../../../shared/pipes/format.pipes';
+import { CajaSessionService } from '../../../shared/services/caja-session.service';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { problemText } from '../../../shared/utils/feedback';
 import { TurnosCajaApiService } from '../data-access/turnos-caja.api';
-
-const TURNO_KEY = 'erp-turno-caja';
 
 @Component({
   selector: 'app-turnos-caja-page',
@@ -25,6 +24,7 @@ const TURNO_KEY = 'erp-turno-caja';
 })
 export class TurnosCajaPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly caja = inject(CajaSessionService);
   readonly apertura = this.fb.nonNullable.group({
     sedeId: ['', Validators.required],
     montoInicial: [0, [Validators.required, Validators.min(0)]],
@@ -42,12 +42,18 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
   error: string | null = null;
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: TurnosCajaApiService, private readonly lookup: LookupService, private readonly toast: ToastService) {}
+  constructor(private readonly api: TurnosCajaApiService, private readonly lookup: LookupService, private readonly toast: ToastService) {
+    effect(() => {
+      const actividad = this.caja.actividad();
+      untracked(() => { if (actividad && this.cierre.controls.id.value) this.verResumen(); });
+    });
+  }
   ngOnInit(): void {
     this.lookup.loadSedes().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.sedes = this.lookup.options(rows, (row) => (row as Api.SedeResponseDTO).nombre ?? 'Sede'); });
-    const saved = sessionStorage.getItem(TURNO_KEY);
-    if (!saved) return;
-    try { this.turno = JSON.parse(saved) as Api.TurnoCajaResponseDTO; this.cierre.controls.id.setValue(this.turno.id ?? ''); } catch { sessionStorage.removeItem(TURNO_KEY); }
+    const turno = this.caja.turno();
+    if (!turno?.id) return;
+    this.turno = turno;
+    this.cierre.controls.id.setValue(turno.id);
   }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
@@ -62,7 +68,7 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
         this.guardando = false;
         this.turno = turno;
         this.cierre.controls.id.setValue(turno.id ?? '');
-        sessionStorage.setItem(TURNO_KEY, JSON.stringify(turno));
+        this.caja.recordar(turno);
         this.toast.success('Caja abierta.');
       },
       error: (error: unknown) => { this.guardando = false; this.error = problemText(error); },
@@ -88,7 +94,9 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.guardando = false;
         this.resumen = data;
-        sessionStorage.removeItem(TURNO_KEY);
+        this.turno = null;
+        this.cierre.controls.id.setValue('');
+        this.caja.recordar(null);
         this.toast.success('Caja cerrada.');
       },
       error: (error: unknown) => { this.guardando = false; this.error = problemText(error); },

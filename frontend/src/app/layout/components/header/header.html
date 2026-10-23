@@ -3,17 +3,28 @@
     <button type="button" class="btn btn-ghost icon-btn" (click)="toggleMenu()" aria-label="Abrir menú">
       <app-icon name="menu"></app-icon>
     </button>
-    <div class="search-shell">
-      <label class="sr-only" for="global-search">Ir a un módulo</label>
-      <input id="global-search" class="input" type="search" placeholder="Ir a un módulo…" [value]="query" (input)="onQuery($event)" (keydown.enter)="goFirst()" />
-      <div class="dropdown-panel" *ngIf="results.length" style="left:0; right:auto; width:100%">
-        <a class="dropdown-item" *ngFor="let item of results" [routerLink]="item.path" (click)="clear()">{{ item.label }}</a>
-      </div>
+  </div>
+  <div class="search-shell">
+    <label class="sr-only" for="global-search">Ir a un módulo</label>
+    <input id="global-search" class="input" type="search" placeholder="Búsqueda" [value]="query" (input)="onQuery($event)" (keydown.enter)="goFirst()" />
+    <div class="dropdown-panel" *ngIf="results.length" style="left:0; right:auto; width:100%">
+      <a class="dropdown-item" *ngFor="let item of results" [routerLink]="item.path" (click)="clear()">{{ item.label }}</a>
     </div>
   </div>
   <div class="cluster">
-    <button type="button" class="btn btn-ghost icon-btn tooltip" [attr.data-tip]="theme.theme() === 'dark' ? 'Tema claro' : 'Tema oscuro'" (click)="theme.toggle()" [attr.aria-label]="theme.theme() === 'dark' ? 'Activar tema claro' : 'Activar tema oscuro'">
-      <app-icon [name]="theme.theme() === 'dark' ? 'sun' : 'moon'"></app-icon>
+    <div class="dropdown" [class.menu-open]="sedesAbiertas">
+      <button type="button" class="btn btn-ghost btn-sm" (click)="sedesAbiertas = !sedesAbiertas" aria-haspopup="listbox" [attr.aria-expanded]="sedesAbiertas">
+        <span>{{ sedeFiltro.nombre() }}</span>
+        <app-icon name="chevronDown"></app-icon>
+      </button>
+      <div class="dropdown-panel" *ngIf="sedesAbiertas" role="listbox">
+        <button type="button" class="dropdown-item" (click)="elegirSede('', 'Sedes')">Todas las sedes</button>
+        <button type="button" class="dropdown-item" *ngFor="let sede of sedes" (click)="elegirSede(sede.id ?? '', sede.nombre ?? 'Sede')">{{ sede.nombre }}</button>
+      </div>
+    </div>
+    <button type="button" class="btn btn-ghost theme-toggle" (click)="theme.toggle()" [attr.aria-label]="theme.theme() === 'dark' ? 'Activar modo día' : 'Activar modo noche'">
+      <app-icon [name]="theme.theme() === 'dark' ? 'moon' : 'sun'"></app-icon>
+      <span class="text-sm">{{ theme.theme() === 'dark' ? 'Modo noche' : 'Modo día' }}</span>
     </button>
     <button type="button" class="btn btn-ghost icon-btn tooltip" data-tip="Sin notificaciones nuevas" aria-label="Notificaciones">
       <app-icon name="bell"></app-icon>
@@ -21,7 +32,7 @@
     <div class="dropdown" [class.menu-open]="menuOpen">
       <button type="button" class="btn btn-ghost" (click)="menuOpen = !menuOpen" aria-haspopup="menu" [attr.aria-expanded]="menuOpen">
         <span class="avatar">{{ initials }}</span>
-        <span class="text-sm">{{ userName }}</span>
+        <span class="text-sm user-label">{{ userName }} / {{ userRole }}</span>
       </button>
       <div class="dropdown-panel" *ngIf="menuOpen" role="menu">
         <div class="dropdown-item">{{ userEmail }}</div>

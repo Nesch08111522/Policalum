@@ -1,0 +1,78 @@
+:host { display: block; min-width: 0; }
+
+.sunat-card {
+  display: grid;
+  gap: 16px;
+  padding: 16px 18px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+.sunat-head, .sunat-block-head, .cdr-row, .access-link, .count-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sunat-head h2, .sunat-block h3 { margin: 0; font-size: 1rem; }
+.sunat-kicker { margin: 2px 0 0; color: var(--color-text-muted); font-size: var(--text-xs); }
+.sunat-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.9fr) minmax(240px, 1.3fr) minmax(210px, 0.9fr);
+  gap: 16px;
+}
+.sunat-mark {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  margin: 8px auto 0;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.04em;
+}
+.count-line { padding: 4px 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+.count-line strong { color: var(--color-text); }
+.cdr-table { display: grid; gap: 6px; }
+.cdr-row {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+.cdr-row span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.estado { font-weight: var(--weight-semibold); }
+.estado.ACEPTADO { color: var(--color-success); }
+.estado.RECHAZADO, .estado.ANULADO { color: var(--color-danger); }
+.estado.PENDIENTE { color: var(--color-warning); }
+.monto-ok { color: var(--color-success); }
+.monto-bad { color: var(--color-danger); }
+.access-link {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+.access-link:hover { border-color: var(--color-primary); }
+.enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.dot { width: 8px; height: 8px; border-radius: var(--radius-full); background: var(--color-warning); }
+.dot.activo { background: var(--color-success); }
+.sunat-note { margin: 8px 0 0; color: var(--color-text-muted); font-size: var(--text-xs); }
+
+@media (max-width: 1100px) {
+  .sunat-grid { grid-template-columns: 1fr; }
+}

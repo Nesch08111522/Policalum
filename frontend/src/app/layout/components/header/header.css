@@ -1,1 +1,4 @@
 :host { display: block; }
+.user-label { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.theme-toggle span { white-space: nowrap; }
+.search-shell { width: 100%; max-width: none; }

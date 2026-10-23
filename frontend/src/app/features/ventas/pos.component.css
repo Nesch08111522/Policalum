@@ -1,0 +1,115 @@
+:host { display: block; min-width: 0; color: var(--color-text); }
+
+.pos { display: grid; gap: 14px; }
+.pos-title h1 { margin: 0; font-size: 1.7rem; }
+.pos-title p, .venta header p, .vacio, .nota { margin: 0; color: var(--color-text-muted); }
+
+.banner { margin: 0; padding: 10px 12px; border-radius: var(--radius-md); }
+.banner.ok { background: var(--color-success-bg); color: var(--color-success); }
+.banner.bad { background: var(--color-danger-bg); color: var(--color-danger); }
+
+.filtros, .caja-cerrar { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.filtros label, .referencia { display: grid; gap: 6px; min-width: 180px; color: var(--color-text-muted); font-size: var(--text-sm); }
+.filtros select, .filtros input, .busqueda input, .referencia input, .stepper input {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+}
+.caja-abierta {
+  margin-left: auto;
+  align-self: center;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  font-weight: var(--weight-semibold);
+}
+.caja-cerrar button, .guardar button, .opciones button, .pagos button, .nota-venta, .fraccion, .pin, .quitar, .stepper button, .emitir {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  cursor: pointer;
+}
+.caja-cerrar button { min-height: 40px; padding: 0 14px; background: var(--color-primary); color: var(--color-primary-contrast); border-color: transparent; }
+
+.busqueda { display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
+.busqueda input { width: 100%; border: 0; background: transparent; }
+
+.tablero { display: grid; grid-template-columns: minmax(280px, 1.15fr) minmax(320px, 1.25fr) minmax(240px, 0.85fr); gap: 12px; align-items: start; }
+.catalogo, .venta, .cobro {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: 0; border-radius: var(--radius-full); background: transparent; color: var(--color-text-muted); cursor: pointer; }
+.tabs button.activo { background: var(--color-info-bg); color: var(--color-text); }
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.card { position: relative; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-subtle); }
+.card-main { display: grid; grid-template-columns: 54px 1fr; gap: 10px; width: 100%; padding: 12px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.media { display: grid; place-items: center; height: 54px; border-radius: var(--radius-sm); background: var(--color-info-bg); color: var(--color-info); font-weight: var(--weight-bold); }
+.media.servicio { background: var(--color-warning-bg); color: var(--color-warning); }
+.card-copy { display: grid; gap: 3px; min-width: 0; }
+.card-copy strong, .precio { overflow: hidden; text-overflow: ellipsis; }
+.card-copy small, .fraccion-label { color: var(--color-text-muted); font-size: var(--text-xs); }
+.fracciones { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.fraccion { padding: 2px 7px; border-radius: var(--radius-full); font-size: var(--text-xs); }
+.precio { font-weight: var(--weight-semibold); }
+.pin { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; padding: 0; background: transparent; }
+.pin.on { color: var(--color-warning); }
+
+.venta header { margin-bottom: 10px; }
+.venta h2, .cobro h2 { margin: 0 0 8px; font-size: 1rem; }
+.fila { display: grid; grid-template-columns: minmax(90px, 1.4fr) 112px 88px 64px 80px 28px; gap: 6px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--color-border); font-size: var(--text-sm); }
+.fila.head { color: var(--color-text-muted); font-size: var(--text-xs); }
+.stepper { display: flex; align-items: center; }
+.stepper button, .quitar { width: 24px; height: 28px; padding: 0; }
+.stepper input { width: 52px; min-height: 28px; padding: 2px 4px; text-align: center; }
+.quitar { color: var(--color-danger); background: transparent; }
+.totales { display: grid; justify-items: end; gap: 4px; margin-top: 12px; }
+.totales div { display: flex; gap: 24px; }
+.gran-total { margin-top: 6px; font-size: 1.35rem; color: var(--color-info); }
+
+.opciones, .pagos, .guardar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.opciones button, .nota-venta, .pagos button, .guardar button { min-height: 40px; padding: 8px; }
+.opciones button[aria-pressed="true"], .nota-venta[aria-pressed="true"], .pagos button[aria-pressed="true"] {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  border-color: transparent;
+}
+.sunat-chip, .nota-venta, .nota { margin: 10px 0; }
+.sunat-chip { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: var(--radius-md); background: var(--color-bg-subtle); font-size: var(--text-sm); }
+.sunat-chip strong { letter-spacing: 0.04em; }
+.nota-venta { width: 100%; }
+.pagos { margin-bottom: 10px; }
+.pagos button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.referencia { margin-bottom: 10px; }
+.emitir {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 8px;
+  background: var(--color-info);
+  color: var(--color-primary-contrast);
+  border-color: transparent;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.emitir:disabled, .guardar button:disabled, .caja-cerrar button:disabled { opacity: 0.5; cursor: not-allowed; }
+.guardar { margin-top: 8px; }
+.guardar button { background: transparent; color: var(--color-text-muted); }
+
+@media (max-width: 1100px) {
+  .tablero, .cards { grid-template-columns: 1fr; }
+  .caja-abierta { margin-left: 0; }
+}
+@media (max-width: 720px) {
+  .fila { grid-template-columns: 1fr 1fr; }
+  .fila.head { display: none; }
+}

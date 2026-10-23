@@ -1,43 +1,108 @@
-<section class="module-page">
-  <app-page-header title="Panel" subtitle="Indicadores del día, alertas de stock y actividad reciente."></app-page-header>
-  <div *ngIf="cargando" class="card card-body">Cargando indicadores…</div>
-  <div *ngIf="error" class="alert alert-error"><div><strong>Indicadores incompletos</strong><p>{{ error }}</p></div><button type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button></div>
-  <div class="stats-grid">
-    <app-stat-card label="Ventas de hoy" [value]="ventasHoy?.total | pen" icon="cart" [trend]="(ventasHoy?.cantidad ?? 0) + ' comprobantes'"></app-stat-card>
-    <app-stat-card label="Stock crítico" [value]="stock?.alertasBajoMinimo ?? '—'" icon="alert" [trend]="(stock?.agotados ?? 0) + ' agotados'" direction="down"></app-stat-card>
-    <app-stat-card label="CxP vencidas" [value]="cxp?.montoTotalVencido | pen" icon="card" [trend]="(cxp?.vencidas ?? 0) + ' cuentas'"></app-stat-card>
-    <app-stat-card label="Utilidad neta" [value]="esAdmin ? (kpis?.utilidadNeta | pen) : '—'" icon="chart" [trend]="esAdmin ? 'Últimos 30 días' : 'Visible para administración'"></app-stat-card>
-  </div>
-  <div class="stats-grid" *ngIf="esAdmin && patrimonio">
-    <app-stat-card label="Patrimonio" [value]="patrimonio.patrimonioNeto | pen" icon="building"></app-stat-card>
-    <app-stat-card label="Inventario valorizado" [value]="patrimonio.inventarioValorizado | pen" icon="box"></app-stat-card>
-    <app-stat-card label="Disponible" [value]="patrimonio.disponible | pen" icon="cash"></app-stat-card>
-    <app-stat-card label="Valor de inventario hoy" [value]="stock?.valorInventario | pen" icon="layers"></app-stat-card>
-  </div>
-  <div class="dashboard-grid">
-    <article class="card card-body">
-      <h2>Ventas de los últimos 30 días</h2>
-      <app-bar-chart [points]="puntos" label="Ventas diarias"></app-bar-chart>
+<section class="panel">
+  <header class="panel-title">
+    <h1>Panel</h1>
+    <button *ngIf="error" type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button>
+  </header>
+  <p *ngIf="cargando" class="text-muted">Cargando indicadores…</p>
+  <p *ngIf="error" class="alert alert-error">{{ error }}</p>
+
+  <div class="panel-grid">
+    <article class="tile tile-utilidad">
+      <header class="tile-head">
+        <div>
+          <h2>Utilidad neta real</h2>
+          <p>Finanzas</p>
+        </div>
+        <a routerLink="/modules/finanzas" class="chip">Financieros</a>
+      </header>
+      <div class="legend"><span class="swatch ingreso"></span> Ingresos netos <span class="swatch gasto"></span> Gastos operativos</div>
+      <div class="grafica">
+        <div class="eje-y"><span *ngFor="let tick of ticks(ingresos)">{{ tick }}</span></div>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Ingresos netos del periodo">
+          <polygon class="area ingreso" [attr.points]="area(ingresos)" />
+          <polyline class="linea ingreso" [attr.points]="polilinea(ingresos)" />
+        </svg>
+      </div>
+      <div class="grafica gasto">
+        <div class="eje-y"><span *ngFor="let tick of ticks(gastos)">{{ tick }}</span></div>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Gastos operativos del periodo">
+          <polyline class="linea gasto" [attr.points]="polilinea(gastos)" />
+        </svg>
+      </div>
+      <div class="eje">
+        <span *ngFor="let etiqueta of etiquetas">{{ etiqueta }}</span>
+      </div>
+      <p class="eje-nota" *ngIf="!gastos.length">La serie de gastos operativos aparece con el acceso de finanzas.</p>
+      <p class="eje-nota" *ngIf="esAdmin && kpis">Utilidad del periodo {{ kpis.utilidadNeta | pen }}.</p>
     </article>
-    <article class="card card-body">
-      <h2>Accesos rápidos</h2>
-      <div class="quick-grid">
-        <a *ngFor="let acceso of accesos" class="btn btn-ghost" [routerLink]="acceso.path">{{ acceso.label }}</a>
+
+    <article class="tile">
+      <header class="tile-head">
+        <h2>Inventario fraccionado</h2>
+        <span class="text-xs">Stock de progresos</span>
+      </header>
+      <p class="producto">Productos</p>
+      <p class="producto-nombre">{{ productoFraccion }}</p>
+      <div class="fraccion" *ngFor="let fila of fracciones">
+        <span>{{ fila.etiqueta }}</span>
+        <div class="barra"><i [style.width.%]="fila.ancho"></i></div>
+      </div>
+      <p *ngIf="!fracciones.length" class="text-muted">No hay fracciones activas en el catálogo.</p>
+    </article>
+
+    <article class="tile">
+      <header class="tile-head"><h2>Ventas</h2></header>
+      <div class="mini-grid">
+        <a class="mini" routerLink="/ventas/pos">
+          <span>Punto de venta</span>
+          <strong>{{ ventasHoy?.total | pen }}</strong>
+          <small>Ventas diarias</small>
+        </a>
+        <a class="mini" routerLink="/modules/cotizaciones">
+          <span>Cotizaciones</span>
+          <strong>{{ cotizaciones }}</strong>
+          <small>Emisión registrada</small>
+        </a>
+        <a class="mini" routerLink="/modules/turnos-caja">
+          <span>Caja</span>
+          <strong [class.abierta]="cajaEstado === 'Abierta'" [class.cerrada]="cajaEstado !== 'Abierta'">{{ cajaEstado }}</strong>
+          <small>Estado</small>
+        </a>
+        <a class="mini" routerLink="/modules/clientes">
+          <span>Clientes</span>
+          <strong>{{ clientes }}</strong>
+          <small>Actividad</small>
+        </a>
       </div>
     </article>
-    <article class="card card-body">
-      <h2>Últimas ventas</h2>
-      <p *ngIf="!ventas.length" class="text-muted">Sin ventas recientes.</p>
-      <ul class="plain-list">
-        <li *ngFor="let venta of ventas"><span>{{ venta.serieCorrelativo || 'Venta' }} · {{ venta.clienteNombre || 'Sin cliente' }}</span><strong>{{ venta.total | pen }}</strong></li>
-      </ul>
+
+    <article class="tile tile-rendimiento">
+      <header class="tile-head">
+        <h2>Rendimiento por sedes</h2>
+        <span class="text-xs">Indicadores</span>
+      </header>
+      <div class="rendimiento">
+        <div><span>Ingresos netos</span><strong class="ok">{{ resumen?.neto | pen }}</strong></div>
+        <div><span>Devoluciones</span><strong class="bad">{{ resumen?.devoluciones | pen }}</strong></div>
+        <div><span>Neto sobre el total</span><strong>{{ variacion }}</strong></div>
+      </div>
     </article>
-    <article class="card card-body">
-      <h2>Últimas compras</h2>
-      <p *ngIf="!compras.length" class="text-muted">Sin compras recientes.</p>
-      <ul class="plain-list">
-        <li *ngFor="let compra of compras"><span>{{ compra.numeroOrdenCompra || 'Compra' }} · {{ compra.proveedorNombre || 'Proveedor' }}</span><strong>{{ compra.total | pen }}</strong></li>
-      </ul>
+
+    <article class="tile tile-kardex">
+      <header class="tile-head"><h2>Kardex</h2><span class="chip">Entrada</span></header>
+      <a class="fila" routerLink="/modules/kardex"><span>Kardex</span><strong>{{ stock?.entradasHoy ?? 0 }}</strong><small>Entradas de hoy</small></a>
+      <a class="fila" routerLink="/modules/despachos"><span>Despacho</span><strong>{{ stock?.salidasHoy ?? 0 }}</strong><small>Salidas de hoy</small></a>
     </article>
+
+    <article class="tile tile-atajos">
+      <div class="atajos">
+        <a routerLink="/modules/compras"><span>Compras</span><small>Abastecimiento controlado</small></a>
+        <a routerLink="/modules/proveedores"><span>Proveedores</span><small>Cuentas del abastecimiento</small></a>
+        <a routerLink="/modules/despachos"><span>Despachos</span><small>Un abastecimiento</small></a>
+        <a routerLink="/modules/cuentas-por-pagar"><span>Cuentas por pagar</span><small>{{ cxp?.vencidas ?? 0 }} vencidas · {{ cxp?.montoTotalVencido | pen }}</small></a>
+      </div>
+    </article>
+
+    <app-facturacion-sunat class="tile-sunat" [sedeId]="sedeId"></app-facturacion-sunat>
   </div>
 </section>

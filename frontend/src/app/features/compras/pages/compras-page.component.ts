@@ -14,6 +14,7 @@ import { StatCardComponent } from '../../../shared/components/stat-card/stat-car
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ColumnDef, SelectOption } from '../../../shared/models/ui.models';
 import { PenPipe } from '../../../shared/pipes/format.pipes';
+import { InventarioSyncService } from '../../../shared/services/inventario-sync.service';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
@@ -76,6 +77,7 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
   constructor(
     private readonly api: ComprasApiService,
     private readonly lookup: LookupService,
+    private readonly inventario: InventarioSyncService,
     private readonly toast: ToastService,
   ) {
     this.state.sort = 'fechaEmision,desc';
@@ -197,7 +199,7 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
       numeroFacturaProveedor: value.numeroFacturaProveedor.trim() || undefined,
       observaciones: value.observaciones.trim() || undefined,
     }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.recibirAbierto = false; this.toast.success('Recepción registrada.'); this.cargar(); },
+      next: () => { this.guardando = false; this.recibirAbierto = false; this.inventario.marcarCambio(); this.toast.success('Recepción registrada.'); this.cargar(); },
       error: (error: unknown) => { this.guardando = false; this.toast.error(problemText(error)); },
     });
   }
@@ -213,7 +215,7 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id || this.anulacion.invalid) return;
     this.guardando = true;
     this.api.PostApiV1ComprasIdAnulacion({ id: this.seleccionado.id }, { motivo: this.anulacion.controls.motivo.value.trim() }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.anularAbierto = false; this.toast.success('Compra anulada.'); this.cargar(); },
+      next: () => { this.guardando = false; this.anularAbierto = false; this.inventario.marcarCambio(); this.toast.success('Compra anulada.'); this.cargar(); },
       error: (error: unknown) => { this.guardando = false; this.toast.error(problemText(error)); },
     });
   }
