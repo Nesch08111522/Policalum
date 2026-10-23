@@ -5,6 +5,7 @@ import com.policalum.erp.application.dto.response.VentaProcesadaResponseDTO;
 import com.policalum.erp.application.dto.response.*;
 import com.policalum.erp.application.service.KardexService;
 import com.policalum.erp.application.service.VentaService;
+import com.policalum.erp.application.service.support.RangosConsulta;
 import com.policalum.erp.domain.enums.*;
 import com.policalum.erp.domain.model.*;
 import com.policalum.erp.exception.ResourceNotFoundException;
@@ -87,7 +88,7 @@ public class VentaServiceImpl implements VentaService {
     public Page<VentaListadoResponseDTO> buscar(UUID sedeId, UUID userId, UUID clienteId, EstadoVenta estado,
                                                   CanalVenta canal, LocalDateTime desde, LocalDateTime hasta, Pageable pageable) {
         if (desde != null && hasta != null && desde.isAfter(hasta)) throw new IllegalArgumentException("La fecha inicial no puede ser posterior a la fecha final");
-        return ventaRepository.buscar(sedeId, userId, clienteId, estado, canal, desde, hasta, pageable).map(v ->
+        return ventaRepository.buscar(sedeId, userId, clienteId, estado, canal, RangosConsulta.desde(desde), RangosConsulta.hasta(hasta), pageable).map(v ->
                 new VentaListadoResponseDTO(v.getId(), v.getSerieCorrelativo(), v.getEstado(), v.getCanalVenta(),
                         v.getTipoComprobante(), v.getTotal(), v.getCliente() == null ? null : v.getCliente().getId(),
                         v.getCliente() == null ? null : v.getCliente().getNombre(), v.getUser().getId(), v.getCreatedAt()));

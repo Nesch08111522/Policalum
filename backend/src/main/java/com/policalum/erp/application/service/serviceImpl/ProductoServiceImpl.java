@@ -20,7 +20,9 @@ import com.policalum.erp.domain.enums.TipoProducto;
 import com.policalum.erp.domain.model.CatalogoFraccion;
 import com.policalum.erp.domain.model.Producto;
 import com.policalum.erp.exception.ResourceNotFoundException;
+import com.policalum.erp.infrastructure.repository.CategoriaRepository;
 import com.policalum.erp.infrastructure.repository.ProductoRepository;
+import com.policalum.erp.infrastructure.repository.ProveedorRepository;
 
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +42,8 @@ public class ProductoServiceImpl implements ProductoService {
     private static final String ENTITY_NAME = "Producto";
 
     private final ProductoRepository productoRepository;
+    private final CategoriaRepository categoriaRepository;
+    private final ProveedorRepository proveedorRepository;
     private final ProductoMapper productoMapper;
 
     /**
@@ -50,6 +54,7 @@ public class ProductoServiceImpl implements ProductoService {
         validateSkuAvailability(requestDTO.codigoSku(), null);
 
         Producto producto = productoMapper.toEntity(requestDTO);
+        resolverReferencias(producto, requestDTO);
         normalize(producto);
 
         // Aplica el cálculo algorítmico si el producto es fraccionable
@@ -68,6 +73,7 @@ public class ProductoServiceImpl implements ProductoService {
         validateSkuAvailability(requestDTO.codigoSku(), id);
 
         productoMapper.updateEntityFromDto(requestDTO, producto);
+        resolverReferencias(producto, requestDTO);
         normalize(producto);
 
         // Recalcula o elimina el catálogo de fracciones según el nuevo estado del DTO
@@ -258,6 +264,21 @@ public class ProductoServiceImpl implements ProductoService {
      *
      * @param producto Entidad a normalizar.
      */
+    private void resolverReferencias(Producto producto, ProductoRequestDTO request) {
+        if (request.categoriaId() == null) {
+            producto.setCategoria(null);
+        } else {
+            producto.setCategoria(categoriaRepository.findById(request.categoriaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada")));
+        }
+        if (request.proveedorId() == null) {
+            producto.setProveedor(null);
+        } else {
+            producto.setProveedor(proveedorRepository.findById(request.proveedorId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado")));
+        }
+    }
+
     private void normalize(Producto producto) {
         if (producto.getCodigoSku() != null) {
             producto.setCodigoSku(producto.getCodigoSku().trim());

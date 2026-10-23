@@ -27,6 +27,7 @@ import { CategoriasApiService } from '../data-access/categorias.api';
 })
 export class CategoriasPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly lookup = inject(LookupService);
   readonly state = new PageState<Api.CategoriaResponseDTO>();
   readonly columns: ColumnDef[] = [
     { key: 'nombre', label: 'Categoría', sortable: true },

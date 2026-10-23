@@ -7,6 +7,7 @@ import com.policalum.erp.application.mapper.CompraMapper;
 import com.policalum.erp.application.service.AuditService;
 import com.policalum.erp.application.service.CompraService;
 import com.policalum.erp.application.service.KardexService;
+import com.policalum.erp.application.service.support.RangosConsulta;
 import com.policalum.erp.domain.enums.*;
 import com.policalum.erp.domain.model.*;
 import com.policalum.erp.exception.ResourceNotFoundException;
@@ -186,7 +187,7 @@ public class CompraServiceImpl implements CompraService {
     @Transactional(readOnly = true)
     public Page<CompraListadoDTO> buscar(UUID proveedorId, UUID sedeId, EstadoCompra estado,
                                          LocalDate desde, LocalDate hasta, Pageable pageable) {
-        return compraRepository.search(proveedorId, sedeId, estado, desde, hasta, pageable)
+        return compraRepository.search(proveedorId, sedeId, estado, RangosConsulta.desde(desde), RangosConsulta.hasta(hasta), pageable)
                 .map(compraMapper::toListadoDto);
     }
 

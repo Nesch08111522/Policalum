@@ -269,8 +269,9 @@ public class PreformaServiceImpl implements PreformaService {
     @Override
     public Page<PreformaListadoDTO> vencidas(UUID sedeId, Pageable pageable) {
         User actual = usuarioActual();
+        boolean admin = esAdmin(actual);
         preformaRepository.expirarVencidas(LocalDateTime.now());
-        UUID userId = esAdmin(actual) ? null : actual.getId();
+        UUID userId = admin ? null : actual.getId();
         return preformaRepository.buscarPorEstado(EstadoPreforma.EXPIRADA, sedeId, userId, pageable).map(mapper::toListadoDto);
     }
 

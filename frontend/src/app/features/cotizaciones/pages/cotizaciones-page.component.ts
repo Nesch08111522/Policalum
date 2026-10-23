@@ -20,7 +20,9 @@ import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { ignoreStale, PageState } from '../../../shared/utils/page-state';
+import { rangoFechaFiltro } from '../../../shared/utils/turno';
 import { lineaProductoOServicio } from '../../../shared/utils/validators';
+import { CatalogoFraccionesApiService } from '../../catalogo-fracciones/data-access/catalogo-fracciones.api';
 import { CotizacionesApiService } from '../data-access/cotizaciones.api';
 
 @Component({
@@ -34,6 +36,9 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly caja = inject(CajaSessionService);
   private readonly inventario = inject(InventarioSyncService);
+  private readonly fraccionesApi = inject(CatalogoFraccionesApiService);
+  private readonly destroy$ = new Subject<void>();
+  private readonly precioFraccion = new Map<string, number>();
   readonly tabs: TabItem[] = [{ id: 'lista', label: 'Cotizaciones' }, { id: 'vencidas', label: 'Vencidas' }];
   tab = 'lista';
   readonly state = new PageState<Api.CotizacionListadoDTO>();
@@ -65,6 +70,7 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
   clientes: SelectOption[] = [];
   productos: SelectOption[] = [];
   servicios: SelectOption[] = [];
+  fraccionesLinea: SelectOption[][] = [];
   almacenes: SelectOption[] = [];
   modal = false;
   editando = false;
@@ -78,8 +84,6 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
   confirmar = false;
   eliminando = false;
   seleccionado: Api.CotizacionListadoDTO | null = null;
-  private readonly destroy$ = new Subject<void>();
-
   constructor(private readonly api: CotizacionesApiService, private readonly lookup: LookupService, private readonly toast: ToastService) {}
 
   ngOnInit(): void {
@@ -111,7 +115,7 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
       });
       return;
     }
-    this.api.GetApiV1Cotizaciones(this.state.query(this.filtros.getRawValue())).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
+    this.api.GetApiV1Cotizaciones(this.state.query(rangoFechaFiltro(this.filtros.getRawValue()))).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
       next: (page) => this.state.apply(page),
       error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
@@ -129,6 +133,7 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
     this.errorFormulario = null;
     this.form.reset({ sedeId: '', clienteId: '', fechaVigencia: '', observaciones: '' });
     this.lineas.clear();
+    this.fraccionesLinea = [];
     this.lineas.push(this.linea());
     this.modal = true;
   }
@@ -142,7 +147,8 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
         this.editId = data.id ?? '';
         this.form.patchValue({ sedeId: data.sedeId ?? '', clienteId: data.clienteId ?? '', fechaVigencia: (data.fechaVigencia ?? '').slice(0, 10), observaciones: data.observaciones ?? '' });
         this.lineas.clear();
-        for (const linea of data.lineas ?? []) this.lineas.push(this.linea(linea.productoId, linea.servicioId, linea.cantidad));
+        this.fraccionesLinea = [];
+        for (const linea of data.lineas ?? []) this.lineas.push(this.linea(linea.productoId, linea.servicioId, linea.cantidad, linea.fraccionId));
         if (!this.lineas.length) this.lineas.push(this.linea());
         this.modal = true;
       },
@@ -160,7 +166,7 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
       clienteId: value.clienteId || undefined,
       fechaVigencia: value.fechaVigencia || undefined,
       observaciones: value.observaciones.trim() || undefined,
-      lineas: value.lineas.map((linea) => ({ cantidad: Number(linea.cantidad), productoId: linea.productoId || undefined, servicioId: linea.servicioId || undefined })),
+      lineas: value.lineas.map((linea) => ({ cantidad: Number(linea.cantidad), productoId: linea.productoId || undefined, fraccionId: linea.fraccionId || undefined, servicioId: linea.servicioId || undefined })),
     };
     this.guardando = true;
     const request = this.editando && this.editId ? this.api.PutApiV1CotizacionesId({ id: this.editId }, body) : this.api.PostApiV1Cotizaciones({}, body);
@@ -235,12 +241,42 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
 
   esEmitida(row: unknown): boolean { return (row as Api.CotizacionListadoDTO).estado === 'EMITIDA'; }
   puedeConvertir(row: unknown): boolean { const estado = (row as Api.CotizacionListadoDTO).estado; return estado === 'EMITIDA' || estado === 'ACEPTADA'; }
-  agregarLinea(): void { this.lineas.push(this.linea()); }
-  quitarLinea(index: number): void { if (this.lineas.length > 1) this.lineas.removeAt(index); }
+  agregarLinea(): void { this.lineas.push(this.linea()); this.fraccionesLinea.push([]); }
+  quitarLinea(index: number): void { if (this.lineas.length > 1) { this.lineas.removeAt(index); this.fraccionesLinea.splice(index, 1); } }
   errorDe(nombre: 'sedeId' | 'observaciones'): string | null { return fieldError(this.form.controls[nombre]); }
 
-  private linea(productoId = '', servicioId = '', cantidad = 1) {
-    return this.fb.nonNullable.group({ productoId: [productoId ?? ''], servicioId: [servicioId ?? ''], cantidad: [cantidad ?? 1, [Validators.required, Validators.min(0.0001)]] }, { validators: lineaProductoOServicio });
+  private linea(productoId = '', servicioId = '', cantidad = 1, fraccionId = '') {
+    const group = this.fb.nonNullable.group({
+      productoId: [productoId ?? ''],
+      fraccionId: [fraccionId ?? ''],
+      servicioId: [servicioId ?? ''],
+      cantidad: [cantidad ?? 1, [Validators.required, Validators.min(0.0001)]],
+    }, { validators: lineaProductoOServicio });
+    group.controls.productoId.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.cargarFracciones(group, false));
+    if (productoId) this.cargarFracciones(group, true);
+    return group;
+  }
+
+  private cargarFracciones(group: ReturnType<CotizacionesPageComponent['linea']>, conservar: boolean): void {
+    const productoId = group.controls.productoId.value;
+    const fraccionActual = group.controls.fraccionId.value;
+    const producto = this.lookup.productos.find((item) => item.id === productoId);
+    if (!conservar) group.controls.fraccionId.setValue('', { emitEvent: false });
+    const index = this.lineas.controls.indexOf(group);
+    if (!productoId || !producto?.esFraccionable) {
+      group.controls.fraccionId.clearValidators();
+      group.controls.fraccionId.updateValueAndValidity({ emitEvent: false });
+      if (index >= 0) this.fraccionesLinea[index] = [];
+      return;
+    }
+    group.controls.fraccionId.addValidators(Validators.required);
+    group.controls.fraccionId.updateValueAndValidity({ emitEvent: false });
+    this.fraccionesApi.GetApiV1CatalogoFraccionesProductoProductoIdDisponibles({ productoId }).pipe(takeUntil(this.destroy$)).subscribe((rows) => {
+      for (const row of rows ?? []) if (row.id != null) this.precioFraccion.set(row.id, Number(row.precioVenta ?? 0));
+      const current = this.lineas.controls.indexOf(group);
+      if (current >= 0) this.fraccionesLinea[current] = (rows ?? []).filter((row) => row.id).map((row) => ({ value: row.id as string, label: row.nombreFraccion ?? 'Fracción' }));
+      if (conservar && fraccionActual && (rows ?? []).some((row) => row.id === fraccionActual)) group.controls.fraccionId.setValue(fraccionActual, { emitEvent: false });
+    });
   }
 
   private turno(): string { return this.caja.id(); }

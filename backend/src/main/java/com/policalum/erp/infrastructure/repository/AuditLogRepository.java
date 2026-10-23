@@ -28,8 +28,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
             "(:registroId IS NULL OR a.registroId = :registroId) AND " +
             "(:userId IS NULL OR a.user.id = :userId) AND " +
             "(:accion IS NULL OR a.accion = :accion) AND " +
-            "(:desde IS NULL OR a.createdAt >= :desde) AND " +
-            "(:hasta IS NULL OR a.createdAt <= :hasta)")
+            "a.createdAt >= :desde AND " +
+            "a.createdAt <= :hasta")
     Page<AuditLog> search(
             @Param("tabla") String tabla,
             @Param("registroId") UUID registroId,

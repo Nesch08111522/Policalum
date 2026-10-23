@@ -5,6 +5,7 @@ import  java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/roles")
 @RequiredArgsConstructor
 @Controller
+@PreAuthorize("hasRole('ADMIN')")
 public class RolController {
 
     private final RolService rolService;

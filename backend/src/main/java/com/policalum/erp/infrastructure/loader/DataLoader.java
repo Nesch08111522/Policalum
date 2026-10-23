@@ -41,8 +41,8 @@ public class DataLoader implements CommandLineRunner {
         // 1. Crear roles si no existen
         crearRoles();
 
-        // 2. Obtener la sede existente
-        Sede sede = obtenerSedeExistente();
+        // 2. Usar la sede histórica o crear una si la base está vacía
+        Sede sede = obtenerOCrearSede();
 
         // 3. Crear usuarios por defecto
         crearUsuarios(sede);
@@ -103,14 +103,27 @@ public class DataLoader implements CommandLineRunner {
         return permisos;
     }
 
-    private Sede obtenerSedeExistente() {
-        Sede sede = sedeRepository.findById(SEDE_ID)
-                .orElseThrow(() -> new RuntimeException(
-                        "❌ Sede no encontrada con ID: " + SEDE_ID
-                ));
-
-        log.info("✅ Sede encontrada: {} - {}", sede.getId(), sede.getNombre());
-        return sede;
+    private Sede obtenerOCrearSede() {
+        return sedeRepository.findById(SEDE_ID).orElseGet(() -> {
+            if (sedeRepository.count() > 0) {
+                Sede existente = sedeRepository.findAll().get(0);
+                log.info("Sede de trabajo: {} - {}", existente.getId(), existente.getNombre());
+                return existente;
+            }
+            Sede sede = Sede.builder()
+                    .nombre("Sede Principal")
+                    .pais("Perú")
+                    .ciudad("Lima")
+                    .direccion("Av. Principal 100")
+                    .celularSede("999000000")
+                    .moneda("PEN")
+                    .activa(true)
+                    .build();
+            sede.setId(SEDE_ID);
+            Sede guardada = sedeRepository.save(sede);
+            log.info("Sede inicial creada: {} - {}", guardada.getId(), guardada.getNombre());
+            return guardada;
+        });
     }
 
     private void crearUsuarios(Sede sede) {
@@ -180,7 +193,7 @@ public class DataLoader implements CommandLineRunner {
 
         // ✅ GENERAR SECRETO TOTP
         String totpSecret = totpService.generateSecret();
-        log.info("🔑 Secreto TOTP generado para {}: {}", email, totpSecret);
+        log.info("Secreto TOTP generado para {}", email);
 
         // Crear nuevo usuario con TOTP configurado
         User user = User.builder()

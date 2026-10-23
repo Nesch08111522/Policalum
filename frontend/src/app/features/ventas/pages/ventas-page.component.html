@@ -31,6 +31,7 @@
       <h3>Líneas</h3>
       <div class="form-grid" *ngFor="let linea of lineas.controls; let i = index" [formGroupName]="i">
         <app-form-field label="Producto" [inputId]="'ven-prod-' + i"><app-select [inputId]="'ven-prod-' + i" [options]="productos" placeholder="Producto" formControlName="productoId"></app-select></app-form-field>
+        <app-form-field label="Fracción" [inputId]="'ven-frac-' + i" hint="Obligatoria si el producto se vende por fracción."><app-select [inputId]="'ven-frac-' + i" [options]="fraccionesLinea[i] || []" placeholder="Sin fracción" formControlName="fraccionId"></app-select></app-form-field>
         <app-form-field label="Servicio" [inputId]="'ven-srv-' + i" hint="Producto o servicio, uno de los dos."><app-select [inputId]="'ven-srv-' + i" [options]="servicios" placeholder="Servicio" formControlName="servicioId"></app-select></app-form-field>
         <app-form-field label="Cantidad" [inputId]="'ven-cant-' + i" [required]="true"><input class="input" type="number" min="0.0001" step="0.0001" formControlName="cantidad" /></app-form-field>
         <div class="filter-actions"><button type="button" class="btn btn-ghost btn-sm" (click)="quitarLinea(i)" [disabled]="lineas.length === 1">Quitar</button></div>
@@ -47,6 +48,7 @@
         <div class="filter-actions"><button type="button" class="btn btn-ghost btn-sm" (click)="quitarPago(i)" [disabled]="pagos.length === 1">Quitar</button></div>
       </div>
       <button type="button" class="btn btn-ghost btn-sm" (click)="agregarPago()">Agregar pago</button>
+      <p class="span-2">Total estimado {{ totalEstimado | pen }}. <button type="button" class="btn btn-ghost btn-sm" (click)="usarTotal()">Igualar el primer pago</button></p>
     </div>
   </form>
   <div modalFooter>

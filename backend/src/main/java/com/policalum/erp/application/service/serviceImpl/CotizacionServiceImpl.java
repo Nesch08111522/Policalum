@@ -8,6 +8,7 @@ import com.policalum.erp.application.service.AuditService;
 import com.policalum.erp.application.service.ConfiguracionService;
 import com.policalum.erp.application.service.CotizacionService;
 import com.policalum.erp.application.service.VentaService;
+import com.policalum.erp.application.service.support.RangosConsulta;
 import com.policalum.erp.domain.enums.*;
 import com.policalum.erp.domain.model.*;
 import com.policalum.erp.exception.ResourceNotFoundException;
@@ -88,7 +89,7 @@ public class CotizacionServiceImpl implements CotizacionService {
     @Override @Transactional(readOnly = true)
     public Page<CotizacionListadoDTO> search(UUID clienteId, UUID sedeId, EstadoCotizacion estado, LocalDateTime desde, LocalDateTime hasta, Pageable pageable) {
         if (desde != null && hasta != null && desde.isAfter(hasta)) throw new IllegalArgumentException("La fecha inicial no puede ser posterior a la fecha final");
-        return cotizacionRepository.buscar(clienteId, sedeId, estado, desde, hasta, pageable).map(this::listado);
+        return cotizacionRepository.buscar(clienteId, sedeId, estado, RangosConsulta.desde(desde), RangosConsulta.hasta(hasta), pageable).map(this::listado);
     }
 
     @Override

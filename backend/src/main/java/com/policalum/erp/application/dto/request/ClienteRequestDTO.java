@@ -4,11 +4,12 @@ import com.policalum.erp.domain.enums.ClienteTipoDocumentoEnum;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record ClienteRequestDTO(
-        @Size(max = 10, message = "El tipo de documento no puede exceder 10 caracteres") ClienteTipoDocumentoEnum tipoDocumento,
+        @NotNull(message = "El tipo de documento es requerido") ClienteTipoDocumentoEnum tipoDocumento,
 
         @NotBlank(message = "El número de documento es requerido") @Size(max = 20, message = "El número de documento no puede exceder 20 caracteres") String numeroDocumento,
 
