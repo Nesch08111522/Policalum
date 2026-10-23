@@ -84,7 +84,7 @@
             <td>{{ i+1 }}</td>
             <td>{{ emp.nombre }}</td>
             <td>{{ emp.cargo }}</td>
-            <td><span class="badge" [class]="'badge-' + emp.riesgo.toLowerCase()">{{ emp.riesgo }}</span></td>
+            <td><span class="badge" [class]="'badge-' + (emp.riesgo || 'sin-dato').toLowerCase()">{{ emp.riesgo || '—' }}</span></td>
             <td>{{ emp.puntualidad }}%</td>
             <td>{{ emp.faltas }}</td>
             <td>{{ emp.tardanzas }}</td>

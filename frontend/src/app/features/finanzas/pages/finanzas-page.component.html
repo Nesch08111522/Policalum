@@ -9,19 +9,20 @@
       <app-form-field label="Hasta" inputId="fin-hasta"><input id="fin-hasta" class="input" type="date" [formControl]="periodo.controls.hasta" /></app-form-field>
       <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="cargarResumen()">Actualizar</button></div>
     </app-filter-bar>
-    <div *ngIf="resumenError" class="alert alert-error"><div><strong>No se pudieron cargar los indicadores</strong><p>{{ resumenError }}</p><p *ngIf="resumenEstado" class="text-xs">Código {{ resumenEstado }}</p></div><button type="button" class="btn btn-ghost btn-sm" (click)="cargarResumen()">Reintentar</button></div>
-    <div class="stats-grid" *ngIf="!cargandoResumen">
-      <app-stat-card label="Ventas netas" [value]="(kpis?.ventasNetasReales | pen) || '—'" icon="cart"></app-stat-card>
-      <app-stat-card label="Utilidad neta" [value]="(kpis?.utilidadNeta | pen) || '—'" icon="chart"></app-stat-card>
-      <app-stat-card label="CxP vencidas" [value]="(kpis?.cuentasPorPagarVencidas | pen) || '—'" icon="alert"></app-stat-card>
-      <app-stat-card label="Patrimonio" [value]="(patrimonio?.patrimonioNeto | pen) || '—'" icon="building"></app-stat-card>
-      <app-stat-card label="Inventario" [value]="(patrimonio?.inventarioValorizado | pen) || '—'" icon="box"></app-stat-card>
-      <app-stat-card label="Disponible" [value]="(patrimonio?.disponible | pen) || '—'" icon="cash"></app-stat-card>
+    <div *ngIf="resumenError" class="alert alert-error"><div><strong>No se pudieron cargar los indicadores</strong><p>{{ resumenError }}</p></div><button type="button" class="btn btn-ghost btn-sm" (click)="cargarResumen()">Reintentar</button></div>
+    <p *ngIf="cargandoResumen" class="text-muted">Cargando indicadores…</p>
+    <div class="stats-grid">
+      <app-stat-card label="Ventas netas" [value]="(kpis?.ventasNetasReales ?? 0) | pen" icon="cart"></app-stat-card>
+      <app-stat-card label="Utilidad neta" [value]="(kpis?.utilidadNeta ?? 0) | pen" icon="chart"></app-stat-card>
+      <app-stat-card label="CxP vencidas" [value]="(kpis?.cuentasPorPagarVencidas ?? 0) | pen" icon="alert"></app-stat-card>
+      <app-stat-card label="Patrimonio" [value]="(patrimonio?.patrimonioNeto ?? 0) | pen" icon="building"></app-stat-card>
+      <app-stat-card label="Inventario" [value]="(patrimonio?.inventarioValorizado ?? 0) | pen" icon="box"></app-stat-card>
+      <app-stat-card label="Disponible" [value]="(patrimonio?.disponible ?? 0) | pen" icon="cash"></app-stat-card>
     </div>
     <article class="card card-body">
       <h2>Utilidad mensual</h2>
       <app-bar-chart [points]="puntos" label="Utilidad neta por mes"></app-bar-chart>
-      <p *ngIf="utilidad" class="text-sm">Utilidad operativa {{ utilidad.utilidadOperativa | pen }} · Margen {{ utilidad.margenNetoPorcentaje ?? 0 }}%</p>
+      <p class="text-sm">Utilidad operativa {{ (utilidad?.utilidadOperativa ?? 0) | pen }} · Margen {{ utilidad?.margenNetoPorcentaje ?? 0 }}%</p>
     </article>
   </ng-container>
 

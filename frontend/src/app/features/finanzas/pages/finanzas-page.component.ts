@@ -128,12 +128,26 @@ export class FinanzasPageComponent implements OnInit, OnDestroy {
       patrimonio: this.api.GetApiV1FinanzasDashboardPatrimonio({ sedeId: fechas.sedeId }).pipe(catchError(() => of(null))),
       utilidad: this.api.GetApiV1FinanzasUtilidadNeta({ sedeId: fechas.sedeId, desde: fechas.desde, hasta: fechas.hasta }).pipe(catchError(() => of(null))),
       evolucion: this.api.GetApiV1FinanzasDashboardEvolucionMensual({ sedeId: fechas.sedeId, meses: 6 }).pipe(catchError(() => of(null))),
-    }).pipe(takeUntil(this.destroy$)).subscribe((data) => {
-      this.kpis = data.kpis?.consolidado ?? null;
-      this.patrimonio = data.patrimonio;
-      this.utilidad = data.utilidad;
-      this.puntos = (data.evolucion?.serie ?? []).map((mes) => ({ label: mes.periodo ?? '', value: Number(mes.utilidadNeta ?? 0) }));
-      this.cargandoResumen = false;
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (data) => {
+        this.kpis = data.kpis?.consolidado ?? null;
+        this.patrimonio = data.patrimonio ?? null;
+        this.utilidad = data.utilidad ?? null;
+        this.puntos = (data.evolucion?.serie ?? []).filter((mes) => !!mes).map((mes) => ({
+          label: mes.periodo ?? '',
+          value: Number(mes.utilidadNeta ?? 0) || 0,
+        }));
+        this.cargandoResumen = false;
+      },
+      error: (error: unknown) => {
+        this.cargandoResumen = false;
+        this.resumenError = problemText(error);
+        this.resumenEstado = problemStatus(error);
+        this.kpis = null;
+        this.patrimonio = null;
+        this.utilidad = null;
+        this.puntos = [];
+      },
     });
   }
 

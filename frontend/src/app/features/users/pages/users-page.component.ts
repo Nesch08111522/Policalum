@@ -79,7 +79,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
   }
   paginar(): void {
     const texto = this.filtros.controls.texto.value.trim().toLowerCase();
-    const filtrados = this.todos.filter((user) => !texto || `${user.nombreUsuario} ${user.nombre} ${user.apellido} ${user.email}`.toLowerCase().includes(texto));
+    const filtrados = this.todos.filter((user) => !texto || `${user?.nombreUsuario ?? ''} ${user?.nombre ?? ''} ${user?.apellido ?? ''} ${user?.email ?? ''}`.toLowerCase().includes(texto));
     this.state.totalElements = filtrados.length;
     this.state.totalPages = filtrados.length ? Math.ceil(filtrados.length / this.state.size) : 0;
     this.state.rows = filtrados.slice(this.state.page * this.state.size, (this.state.page + 1) * this.state.size);

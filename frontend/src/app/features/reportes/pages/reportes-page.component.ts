@@ -124,7 +124,7 @@ export class ReportesPageComponent implements OnInit, OnDestroy {
     const params = this.filtros.getRawValue();
     if (this.tab === 'ventas') {
       this.api.GetApiV1ReportesVentasResumen(params).pipe(takeUntil(this.destroy$)).subscribe({
-        next: (data) => { this.resumen = data; this.puntos = (data.periodos ?? []).map((periodo) => ({ label: periodo.etiqueta ?? '', value: Number(periodo.total ?? 0) })); },
+        next: (data) => { this.resumen = data; this.puntos = (data?.periodos ?? []).filter((periodo) => !!periodo).map((periodo) => ({ label: periodo.etiqueta ?? '', value: Number(periodo.total ?? 0) || 0 })); },
         error: () => { this.resumen = null; this.puntos = []; },
       });
       this.ventas.loading = true;
@@ -137,15 +137,15 @@ export class ReportesPageComponent implements OnInit, OnDestroy {
     const done = (): void => { this.loading = false; };
     const fail = (error: unknown): void => { this.loading = false; this.error = problemText(error); this.status = problemStatus(error); };
     if (this.tab === 'rentabilidad') {
-      this.api.GetApiV1ReportesProductosRentabilidad(params).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.rentabilidad = data.items ?? []; done(); }, error: fail });
+      this.api.GetApiV1ReportesProductosRentabilidad(params).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.rentabilidad = data?.items ?? []; done(); }, error: fail });
     } else if (this.tab === 'estrella') {
-      this.api.GetApiV1ReportesProductosEstrella(params).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.estrella = data.items ?? []; done(); }, error: fail });
+      this.api.GetApiV1ReportesProductosEstrella(params).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.estrella = data?.items ?? []; done(); }, error: fail });
     } else if (this.tab === 'clientes') {
-      this.api.GetApiV1ReportesClientesFrecuentes(params).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.clientes = data.items ?? []; done(); }, error: fail });
+      this.api.GetApiV1ReportesClientesFrecuentes(params).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.clientes = data?.items ?? []; done(); }, error: fail });
     } else if (this.tab === 'proveedores') {
-      this.api.GetApiV1ReportesProveedoresRanking(params).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.proveedores = data.items ?? []; done(); }, error: fail });
+      this.api.GetApiV1ReportesProveedoresRanking(params).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.proveedores = data?.items ?? []; done(); }, error: fail });
     } else {
-      this.api.GetApiV1ReportesCajaArqueos(params).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.arqueos = data.turnos ?? []; this.resumenArqueo = data.resumen ?? null; done(); }, error: fail });
+      this.api.GetApiV1ReportesCajaArqueos(params).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.arqueos = data?.turnos ?? []; this.resumenArqueo = data?.resumen ?? null; done(); }, error: fail });
     }
   }
 

@@ -49,8 +49,8 @@
               <tr *ngFor="let item of state.rows" (click)="ver(item)" [class.activa]="detalle?.id === item.id">
                 <td>
                   <div class="sku">
-                    <span class="tile" aria-hidden="true">{{ iniciales(item.nombre) }}</span>
-                    <strong>{{ item.nombre }}</strong>
+                    <span class="tile" aria-hidden="true">{{ iniciales(item?.nombre) }}</span>
+                    <strong>{{ item?.nombre || 'Sin nombre' }}</strong>
                   </div>
                 </td>
                 <td>{{ item.descripcion || 'Sin descripción' }}</td>

@@ -144,25 +144,26 @@ export class DashboardPageComponent implements OnDestroy {
       cotizaciones: this.cotizacionesApi.GetApiV1Cotizaciones({ ...sede, page: 0, size: 1, sort: 'createdAt,desc' }).pipe(catchError(() => of(null))),
       kpis: this.esAdmin ? this.finanzas.GetApiV1FinanzasDashboardKpis(rango).pipe(catchError(() => of(null))) : of(null),
       evolucion: this.esAdmin ? this.finanzas.GetApiV1FinanzasDashboardEvolucionMensual({ ...sede, meses: 7 }).pipe(catchError(() => of(null))) : of(null),
-    }).pipe(takeUntil(this.destroy$)).subscribe((data) => {
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (data) => {
       if (ticket !== this.carga) return;
       this.ventasHoy = data.hoy;
       this.resumen = data.resumen;
       this.stock = data.stock;
       this.cxp = data.cxp;
       this.kpis = data.kpis?.consolidado ?? null;
-      const serie = data.evolucion?.serie ?? [];
+      const serie = (data.evolucion?.serie ?? []).filter((mes) => !!mes);
       if (serie.length) {
-        this.ingresos = serie.map((mes) => Number(mes.ventasNetasReales ?? 0));
-        this.gastos = serie.map((mes) => Number(mes.egresosOperativos ?? 0));
+        this.ingresos = serie.map((mes) => Number(mes.ventasNetasReales ?? 0) || 0);
+        this.gastos = serie.map((mes) => Number(mes.egresosOperativos ?? 0) || 0);
         this.etiquetas = serie.map((mes) => this.mesCorto(mes.periodo ?? ''));
       } else {
-        const periodos = data.resumen?.periodos ?? [];
-        this.ingresos = periodos.map((periodo) => Number(periodo.neto ?? periodo.total ?? 0));
+        const periodos = (data.resumen?.periodos ?? []).filter((periodo) => !!periodo);
+        this.ingresos = periodos.map((periodo) => Number(periodo.neto ?? periodo.total ?? 0) || 0);
         this.gastos = [];
         this.etiquetas = periodos.map((periodo) => (periodo.etiqueta ?? '').slice(0, 3));
       }
-      const filas = data.fracciones?.content ?? [];
+      const filas = (data.fracciones?.content ?? []).filter((fila) => !!fila);
       this.productoFraccion = filas[0]?.productoNombre || this.productoFraccion;
       this.fracciones = filas.slice(0, 3).map((fila) => ({
         nombre: fila.productoNombre || 'Producto',
@@ -174,6 +175,12 @@ export class DashboardPageComponent implements OnDestroy {
       const vacio = !data.hoy && !data.stock && !data.cxp && !data.ventas && !data.compras;
       this.error = vacio ? 'No hay conexión con el servidor. Reintenta cuando el backend esté disponible.' : null;
       this.cargando = false;
+      },
+      error: () => {
+        if (ticket !== this.carga) return;
+        this.cargando = false;
+        this.error = 'No hay conexión con el servidor. Reintenta cuando el backend esté disponible.';
+      },
     });
   }
 }

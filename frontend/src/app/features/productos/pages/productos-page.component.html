@@ -63,13 +63,13 @@
                 <td>
                   <div class="sku">
                     <img *ngIf="vistaDe(fila.producto) as foto" class="foto" [src]="foto" alt="" (error)="ocultarVista(fila.producto)" />
-                    <span class="tile" *ngIf="!vistaDe(fila.producto)" aria-hidden="true">{{ iniciales(fila.producto.nombre) }}</span>
-                    <span>{{ fila.producto.codigoSku || 'Sin SKU' }}</span>
+                    <span class="tile" *ngIf="!vistaDe(fila.producto)" aria-hidden="true">{{ iniciales(fila.producto?.nombre) }}</span>
+                    <span>{{ fila.producto?.codigoSku || 'Sin SKU' }}</span>
                   </div>
                 </td>
                 <td>
-                  <strong>{{ fila.producto.nombre }}</strong>
-                  <span class="badge badge-info" *ngIf="fila.producto.categoria?.nombre">{{ fila.producto.categoria?.nombre }}</span>
+                  <strong>{{ fila.producto?.nombre || 'Sin nombre' }}</strong>
+                  <span class="badge badge-info" *ngIf="fila.producto?.categoria?.nombre">{{ fila.producto?.categoria?.nombre }}</span>
                 </td>
                 <td>
                   <div class="corte" *ngFor="let corte of fila.cortes">
@@ -84,7 +84,7 @@
                     <div class="barra"><span [style.width.%]="corte.ancho" [class.warn]="fila.estado === 'minimo'" [class.empty]="fila.estado === 'agotado'"></span></div>
                     <strong>{{ corte.equivalentes | number:'1.0-2' }}</strong>
                   </div>
-                  <p class="ayuda" *ngIf="fila.producto.esFraccionable">Equivalente del saldo base. El kardex no guarda un stock por corte.</p>
+                  <p class="ayuda" *ngIf="fila.producto?.esFraccionable">Equivalente del saldo base. El kardex no guarda un stock por corte.</p>
                 </td>
                 <td>
                   <strong>{{ fila.sede }}</strong>
@@ -93,14 +93,14 @@
                 </td>
                 <td>
                   <span class="badge" [class.badge-success]="fila.estado === 'optimo'" [class.badge-warning]="fila.estado === 'minimo'" [class.badge-danger]="fila.estado === 'agotado'" [class.badge-neutral]="fila.estado === 'inactivo'">{{ fila.estadoLabel }}</span>
-                  <span class="badge badge-success" *ngIf="fila.producto.activo !== false">Activo</span>
+                  <span class="badge badge-success" *ngIf="fila.producto?.activo !== false">Activo</span>
                   <span class="minimo" *ngIf="fila.minimo > 0">Mínimo {{ fila.minimo | number:'1.0-2' }}</span>
                 </td>
                 <td class="acciones">
                   <button type="button" class="btn btn-ghost btn-sm" (click)="verKardex(fila.producto)">Kardex</button>
                   <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(fila.producto)">Editar</button>
-                  <button type="button" class="btn btn-danger btn-sm" *ngIf="fila.producto.activo !== false" (click)="pedirDesactivar(fila.producto)">Desactivar</button>
-                  <button type="button" class="btn btn-danger btn-sm" *ngIf="fila.producto.activo === false" (click)="pedirEliminar(fila.producto)">Eliminar</button>
+                  <button type="button" class="btn btn-danger btn-sm" *ngIf="fila.producto?.activo !== false" (click)="pedirDesactivar(fila.producto)">Desactivar</button>
+                  <button type="button" class="btn btn-danger btn-sm" *ngIf="fila.producto?.activo === false" (click)="pedirEliminar(fila.producto)">Eliminar</button>
                 </td>
               </tr>
             </tbody>

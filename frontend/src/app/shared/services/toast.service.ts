@@ -11,6 +11,8 @@ export interface ToastMessage {
 @Injectable({ providedIn: 'root' })
 export class ToastService {
   private seq = 0;
+  private ultimo = '';
+  private ultimoEn = 0;
   readonly toasts = signal<ToastMessage[]>([]);
 
   success(text: string): void { this.push('success', text); }
@@ -23,6 +25,11 @@ export class ToastService {
   }
 
   private push(kind: ToastKind, text: string): void {
+    const clave = `${kind}|${text}`;
+    const ahora = Date.now();
+    if (clave === this.ultimo && ahora - this.ultimoEn < 1500) return;
+    this.ultimo = clave;
+    this.ultimoEn = ahora;
     const id = ++this.seq;
     this.toasts.update((items) => [...items, { id, kind, text }].slice(-4));
     setTimeout(() => this.dismiss(id), 4500);

@@ -47,13 +47,14 @@ export class SelectComponent implements ControlValueAccessor {
   constructor(private readonly host: ElementRef<HTMLElement>) {}
 
   get filtered(): SelectOption[] {
+    const options = this.options ?? [];
     const term = this.query.trim().toLowerCase();
-    if (!term) return this.options;
-    return this.options.filter((option) => option.label.toLowerCase().includes(term));
+    if (!term) return options;
+    return options.filter((option) => (option?.label ?? '').toLowerCase().includes(term));
   }
 
   get currentLabel(): string {
-    return this.options.find((option) => option.value === this.value)?.label || this.placeholder;
+    return (this.options ?? []).find((option) => option?.value === this.value)?.label || this.placeholder;
   }
 
   onQuery(event: Event): void {

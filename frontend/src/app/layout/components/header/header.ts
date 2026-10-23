@@ -51,7 +51,7 @@ export class HeaderComponent implements OnInit {
   onQuery(event: Event): void {
     this.query = (event.target as HTMLInputElement).value;
     const term = this.query.trim().toLowerCase();
-    this.results = term ? this.items.filter((item) => item.label.toLowerCase().includes(term)).slice(0, 6) : [];
+    this.results = term ? this.items.filter((item) => (item.label ?? '').toLowerCase().includes(term)).slice(0, 6) : [];
   }
 
   goFirst(): void {
