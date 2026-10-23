@@ -2,7 +2,7 @@
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 export interface ApiPage<T> { content: T[]; totalElements: number; totalPages: number; number: number; size: number; first?: boolean; last?: boolean; }
-export interface ApiProblem { status?: number; code?: string; message?: string; fieldErrors?: Record<string, string>; traceId?: string; }
+export interface ApiProblem { status?: number; code?: string; message?: string; fieldErrors?: Record<string, string>; traceId?: string; errores?: Array<{ fila?: number; motivo?: string }>; }
 export interface ActividadTablaDTO {
   cantidad?: number;
   tabla?: string;
@@ -1980,6 +1980,7 @@ export interface ProductoRequestDTO {
   tipo: "FISICO" | "SERVICIO";
   tipoAfectacion?: string;
   unidad?: string;
+  imagen?: string;
 }
 
 export interface ProductoResponseDTO {
@@ -1999,6 +2000,7 @@ export interface ProductoResponseDTO {
   tipo?: "FISICO" | "SERVICIO";
   tipoAfectacion?: string;
   unidad?: string;
+  imagen?: string;
 }
 
 export interface ProductosEstrellaDTO {
@@ -2476,8 +2478,22 @@ export interface SeriesRequestDTO {
   series: Array<SerieComprobanteRequestDTO>;
 }
 
+export interface ServicioColaboradorRequestDTO {
+  participacion?: 'INSTALO' | 'AYUDO' | string;
+  userId: string;
+}
+
+export interface ServicioColaboradorResponseDTO {
+  apellido?: string;
+  email?: string;
+  nombre?: string;
+  participacion?: string;
+  userId?: string;
+}
+
 export interface ServicioRequestDTO {
   activo: boolean;
+  colaboradores?: Array<ServicioColaboradorRequestDTO>;
   descripcion?: string;
   nombre: string;
   precio: number;
@@ -2485,6 +2501,7 @@ export interface ServicioRequestDTO {
 
 export interface ServicioResponseDTO {
   activo?: boolean;
+  colaboradores?: Array<ServicioColaboradorResponseDTO>;
   createdAt?: string;
   descripcion?: string;
   id?: string;

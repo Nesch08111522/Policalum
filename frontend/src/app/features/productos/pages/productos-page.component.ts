@@ -17,11 +17,13 @@ import { InventarioSyncService } from '../../../shared/services/inventario-sync.
 import { LookupService } from '../../../shared/services/lookup.service';
 import { SedeFiltroService } from '../../../shared/services/sede-filtro.service';
 import { ToastService } from '../../../shared/services/toast.service';
-import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
+import { applyServerErrors, fieldError, isProblem, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { PageState } from '../../../shared/utils/page-state';
 import { KardexApiService } from '../../kardex/data-access/kardex.api';
 import { StockApiService } from '../../stock/data-access/stock.api';
+import { COLUMNAS_PRODUCTO, ProductoImportacionFila, ProductosMasivoApiService } from '../data-access/productos-masivo.api';
 import { ProductosApiService } from '../data-access/productos.api';
+import * as XLSX from 'xlsx';
 
 interface CorteVista {
   nombre: string;
@@ -74,6 +76,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     activo: [true],
     esFraccionable: [false],
     incluyeIgv: [true],
+    imagen: [''],
   });
   categorias: SelectOption[] = [];
   proveedores: SelectOption[] = [];
@@ -91,6 +94,17 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
   eliminando = false;
   accion: 'eliminar' | 'desactivar' = 'eliminar';
   seleccionado: Api.ProductoResponseDTO | null = null;
+  menuExportar = false;
+  modalImportar = false;
+  importando = false;
+  sobreArchivo = false;
+  archivoNombre = '';
+  importErrores: { fila?: number; motivo?: string }[] = [];
+  importExito: string | null = null;
+  modoImagen: 'archivo' | 'url' = 'archivo';
+  archivoPendiente: File | null = null;
+  vistaPrevia: string | null = null;
+  private readonly vistas = new Map<string, string>();
   private saldos = new Map<string, Api.SaldoKardexDTO[]>();
   private carga = 0;
   private fraccionesActuales: Api.CatalogoFraccionResponseDTO[] = [];
@@ -104,6 +118,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     private readonly lookup: LookupService,
     private readonly toast: ToastService,
     private readonly router: Router,
+    private readonly masivo: ProductosMasivoApiService,
   ) {
     this.state.sort = 'nombre,asc';
     effect(() => {
@@ -133,7 +148,13 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     this.filtros.controls.sedeId.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.filtrar());
   }
 
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    for (const url of this.vistas.values()) {
+      if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+    }
+  }
 
   get filas(): FilaCatalogo[] {
     const filas = this.state.rows.map((producto) => this.fila(producto));
@@ -181,8 +202,14 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
           this.saldos.set(id, lista);
         }
         this.stockTruncado = Boolean(this.stockFiltro) && (page.totalElements ?? 0) > (page.content?.length ?? 0);
+        this.prepararVistas();
       },
-      error: (error: unknown) => { if (token !== this.carga) return; this.state.fail(problemText(error), problemStatus(error)); },
+      error: (error: unknown) => {
+        if (token !== this.carga) return;
+        const mensaje = problemText(error);
+        this.state.fail(mensaje, problemStatus(error));
+        this.toast.error(mensaje);
+      },
     });
     this.cargarPanel(extra.sedeId);
   }
@@ -201,7 +228,17 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
   cambiarPagina(page: number): void { this.state.page = page; this.cargar(); }
   cambiarTamano(size: number): void { this.state.size = size; this.state.page = 0; this.cargar(); }
 
-  abrirCrear(): void { this.cargarCombos(); this.editando = false; this.fraccionesActuales = []; this.errorFormulario = null; this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, incluyeIgv: true }); this.modal = true; }
+  abrirCrear(): void {
+    this.cargarCombos();
+    this.editando = false;
+    this.fraccionesActuales = [];
+    this.errorFormulario = null;
+    this.modoImagen = 'archivo';
+    this.archivoPendiente = null;
+    this.vistaPrevia = null;
+    this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, incluyeIgv: true, imagen: '' });
+    this.modal = true;
+  }
   abrirEditar(item: Api.ProductoResponseDTO): void {
     this.cargarCombos();
     this.editando = true;
@@ -211,7 +248,12 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
       id: item.id ?? '', nombre: item.nombre ?? '', codigoSku: item.codigoSku ?? '', descripcion: item.descripcion ?? '',
       categoriaId: item.categoria?.id ?? '', proveedorId: item.proveedor?.id ?? '', tipo: item.tipo ?? 'FISICO', unidad: item.unidad ?? 'UNIDAD',
       precioCompra: item.precioCompra ?? 0, precioVentaBase: item.precioVentaBase ?? 0, activo: item.activo ?? true, esFraccionable: item.esFraccionable ?? false, incluyeIgv: item.incluyeIgv ?? true,
+      imagen: item.imagen ?? '',
     });
+    this.archivoPendiente = null;
+    this.modoImagen = item.imagen?.startsWith('http://') || item.imagen?.startsWith('https://') ? 'url' : 'archivo';
+    this.vistaPrevia = this.modoImagen === 'url' ? item.imagen ?? null : null;
+    if (this.modoImagen === 'archivo' && item.imagen) this.cargarVistaPrevia(item.imagen);
     this.modal = true;
   }
   guardar(): void {
@@ -219,8 +261,31 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const value = this.form.getRawValue();
-    const body = this.cuerpo(value, value.id, this.fraccionesActuales);
+    if (this.modoImagen === 'url') {
+      const url = value.imagen.trim();
+      if (url && !/^https?:\/\//i.test(url)) {
+        this.errorFormulario = 'La URL de la imagen debe empezar por http:// o https://.';
+        return;
+      }
+    }
     this.guardando = true;
+    if (this.modoImagen === 'archivo' && this.archivoPendiente) {
+      this.masivo.subirImagen(this.archivoPendiente).pipe(takeUntil(this.destroy$)).subscribe({
+        next: (respuesta) => {
+          this.form.controls.imagen.setValue(respuesta.ruta);
+          this.archivoPendiente = null;
+          this.persistir();
+        },
+        error: (error: unknown) => { this.guardando = false; this.errorFormulario = problemText(error); },
+      });
+      return;
+    }
+    this.persistir();
+  }
+
+  private persistir(): void {
+    const value = this.form.getRawValue();
+    const body = this.cuerpo(value, value.id, this.fraccionesActuales);
     const request = this.editando && value.id ? this.api.PutApiV1ProductosId({ id: value.id }, body) : this.api.PostApiV1Productos({}, body);
     request.pipe(takeUntil(this.destroy$)).subscribe({
       next: () => { this.guardando = false; this.modal = false; this.lookup.invalidate('productos'); this.inventario.marcarCambio(); this.toast.success(this.editando ? 'Producto actualizado.' : 'Producto creado.'); this.cargar(); },
@@ -244,27 +309,81 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
   verKardex(item: Api.ProductoResponseDTO): void {
     void this.router.navigate(['/modules/kardex'], { queryParams: { productoId: item.id ?? null } });
   }
-  exportar(): void {
-    const filas = this.filas;
-    const encabezado = ['SKU', 'Producto', 'Categoría', 'Precio base', 'Saldo', 'Unidad', 'Almacén', 'Sede', 'Estado'];
-    const lineas = [encabezado, ...filas.map((fila) => [
-      fila.producto.codigoSku ?? '',
-      fila.producto.nombre ?? '',
-      fila.producto.categoria?.nombre ?? '',
-      String(fila.producto.precioVentaBase ?? ''),
-      String(fila.cantidad),
-      fila.unidad,
-      fila.almacen,
-      fila.sede,
-      fila.estadoLabel,
-    ])];
-    const csv = lineas.map((columnas) => columnas.map((valor) => `"${String(valor).replaceAll('"', '""')}"`).join(',')).join('\n');
-    const enlace = document.createElement('a');
-    enlace.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
-    enlace.download = 'productos.csv';
-    enlace.click();
-    URL.revokeObjectURL(enlace.href);
-    this.toast.success(filas.length ? 'Catálogo exportado en CSV.' : 'El archivo se generó sin filas.');
+  exportar(formato: 'xlsx' | 'csv'): void {
+    this.menuExportar = false;
+    const extra = this.filtros.getRawValue();
+    this.masivo.exportar({
+      searchTerm: extra.searchTerm,
+      categoriaId: extra.categoriaId,
+      tipo: extra.tipo,
+      activo: extra.activo,
+      esFraccionable: extra.esFraccionable,
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (filas) => {
+        this.escribirArchivo(filas, formato, formato === 'xlsx' ? 'productos.xlsx' : 'productos.csv');
+        this.toast.success(filas.length ? 'Catálogo exportado.' : 'El archivo se generó sin filas.');
+      },
+      error: (error: unknown) => this.toast.error(problemText(error)),
+    });
+  }
+
+  abrirImportar(): void {
+    this.menuExportar = false;
+    this.importando = false;
+    this.sobreArchivo = false;
+    this.archivoNombre = '';
+    this.importErrores = [];
+    this.importExito = null;
+    this.modalImportar = true;
+  }
+
+  descargarPlantilla(): void {
+    this.escribirArchivo([], 'xlsx', 'plantilla-productos.xlsx');
+  }
+
+  soltarArchivo(event: DragEvent): void {
+    event.preventDefault();
+    this.sobreArchivo = false;
+    const archivo = event.dataTransfer?.files?.[0];
+    if (archivo) this.leerArchivo(archivo);
+  }
+
+  elegirArchivo(event: Event): void {
+    const archivo = (event.target as HTMLInputElement).files?.[0];
+    if (archivo) this.leerArchivo(archivo);
+  }
+
+  elegirImagen(event: Event): void {
+    const archivo = (event.target as HTMLInputElement).files?.[0];
+    if (!archivo) return;
+    if (archivo.size > 2 * 1024 * 1024) {
+      this.errorFormulario = 'La imagen no puede superar 2 MB.';
+      return;
+    }
+    this.errorFormulario = null;
+    this.archivoPendiente = archivo;
+    const lector = new FileReader();
+    lector.onload = () => { this.vistaPrevia = String(lector.result ?? ''); };
+    lector.readAsDataURL(archivo);
+  }
+
+  usarModoImagen(modo: 'archivo' | 'url'): void {
+    this.modoImagen = modo;
+    this.archivoPendiente = null;
+    if (modo === 'url') this.vistaPrevia = this.form.controls.imagen.value.trim() || null;
+  }
+
+  actualizarVistaUrl(): void {
+    const url = this.form.controls.imagen.value.trim();
+    this.vistaPrevia = /^https?:\/\//i.test(url) ? url : null;
+  }
+
+  vistaDe(producto: Api.ProductoResponseDTO): string | null {
+    return producto.id ? this.vistas.get(producto.id) ?? null : null;
+  }
+
+  ocultarVista(producto: Api.ProductoResponseDTO): void {
+    if (producto.id) this.vistas.delete(producto.id);
   }
   iniciales(nombre: string | undefined): string {
     const partes = (nombre ?? 'P').trim().split(/\s+/).slice(0, 2);
@@ -277,6 +396,173 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     if (event.key !== 'F2' || this.modal) return;
     event.preventDefault();
     document.getElementById('prod-buscar')?.focus();
+  }
+
+  private leerArchivo(archivo: File): void {
+    const nombre = archivo.name.toLowerCase();
+    if (!nombre.endsWith('.xlsx') && !nombre.endsWith('.csv')) {
+      this.importErrores = [{ motivo: 'Solo se aceptan archivos .xlsx o .csv.' }];
+      return;
+    }
+    if (archivo.size > 5 * 1024 * 1024) {
+      this.importErrores = [{ motivo: 'El archivo no puede superar 5 MB.' }];
+      return;
+    }
+    this.archivoNombre = archivo.name;
+    this.importErrores = [];
+    this.importExito = null;
+    this.importando = true;
+    archivo.arrayBuffer().then((buffer) => {
+      const libro = XLSX.read(buffer, { type: 'array' });
+      const hoja = libro.Sheets[libro.SheetNames[0]];
+      const crudas = XLSX.utils.sheet_to_json<Record<string, unknown>>(hoja, { defval: '' });
+      const filas: ProductoImportacionFila[] = [];
+      const errores: { fila?: number; motivo?: string }[] = [];
+      crudas.forEach((cruda, indice) => {
+        const fila = this.filaImportada(cruda);
+        if (!fila) return;
+        const error = this.validarFilaCliente(fila);
+        if (error) errores.push({ fila: indice + 1, motivo: error });
+        else filas.push(fila);
+      });
+      if (!filas.length && !errores.length) {
+        this.importando = false;
+        this.importErrores = [{ motivo: 'No hay filas para importar.' }];
+        return;
+      }
+      if (errores.length) {
+        this.importando = false;
+        this.importErrores = errores;
+        return;
+      }
+      this.masivo.importar(filas).pipe(takeUntil(this.destroy$)).subscribe({
+        next: (resultado) => {
+          this.importando = false;
+          this.importExito = `Se crearon ${resultado.creados} y se actualizaron ${resultado.actualizados}. Ninguna fila quedó a medias.`;
+          this.lookup.invalidate('productos');
+          this.inventario.marcarCambio();
+          this.cargar();
+        },
+        error: (error: unknown) => {
+          this.importando = false;
+          this.importErrores = isProblem(error) && error.errores?.length
+            ? error.errores
+            : [{ motivo: problemText(error) }];
+        },
+      });
+    }).catch(() => {
+      this.importando = false;
+      this.importErrores = [{ motivo: 'No se pudo leer el archivo.' }];
+    });
+  }
+
+  private filaImportada(cruda: Record<string, unknown>): ProductoImportacionFila | null {
+    const normalizada: Record<string, unknown> = {};
+    for (const [clave, valor] of Object.entries(cruda)) {
+      normalizada[this.aliasColumna(clave)] = valor;
+    }
+    const sku = this.texto(normalizada['codigoSku']);
+    const nombre = this.texto(normalizada['nombre']);
+    if (!sku && !nombre) return null;
+    return {
+      codigoSku: sku || undefined,
+      nombre: nombre || undefined,
+      descripcion: this.texto(normalizada['descripcion']) || undefined,
+      categoria: this.texto(normalizada['categoria']) || undefined,
+      tipo: this.texto(normalizada['tipo']).toUpperCase() || undefined,
+      precioCompra: this.numero(normalizada['precioCompra']),
+      precioVentaBase: this.numero(normalizada['precioVentaBase']),
+      unidad: this.texto(normalizada['unidad']) || undefined,
+      esFraccionable: this.bandera(normalizada['esFraccionable']),
+      activo: this.bandera(normalizada['activo']),
+      incluyeIgv: this.bandera(normalizada['incluyeIgv']),
+      tipoAfectacion: this.texto(normalizada['tipoAfectacion']) || undefined,
+      imagen: this.texto(normalizada['imagen']) || undefined,
+      stockInicial: this.numero(normalizada['stockInicial']),
+      almacen: this.texto(normalizada['almacen']) || undefined,
+    };
+  }
+
+  private validarFilaCliente(fila: ProductoImportacionFila): string | null {
+    if (!fila.codigoSku) return 'El SKU es obligatorio.';
+    if (fila.tipo && !['FISICO', 'SERVICIO'].includes(fila.tipo.toUpperCase())) return 'El tipo debe ser FISICO o SERVICIO.';
+    if (fila.imagen && !/^https?:\/\//i.test(fila.imagen) && !fila.imagen.startsWith('productos/')) {
+      return 'La imagen debe ser una URL http(s) o una ruta productos/.';
+    }
+    return null;
+  }
+
+  private aliasColumna(clave: string): string {
+    const limpia = clave.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const alias: Record<string, string> = {
+      sku: 'codigoSku', codigosku: 'codigoSku', codigo_sku: 'codigoSku',
+      preciocompra: 'precioCompra', precio_compra: 'precioCompra',
+      precioventabase: 'precioVentaBase', precio_venta_base: 'precioVentaBase', precioventa: 'precioVentaBase',
+      esfraccionable: 'esFraccionable', incluyeigv: 'incluyeIgv', tipoafectacion: 'tipoAfectacion',
+      stockinicial: 'stockInicial', stock_inicial: 'stockInicial',
+    };
+    return alias[limpia] ?? clave.trim();
+  }
+
+  private texto(valor: unknown): string {
+    if (valor === null || valor === undefined) return '';
+    return String(valor).trim();
+  }
+
+  private numero(valor: unknown): number | undefined {
+    if (valor === null || valor === undefined || valor === '') return undefined;
+    const numero = typeof valor === 'number' ? valor : Number(String(valor).replace(',', '.'));
+    return Number.isFinite(numero) ? numero : undefined;
+  }
+
+  private bandera(valor: unknown): boolean | undefined {
+    if (valor === null || valor === undefined || valor === '') return undefined;
+    if (typeof valor === 'boolean') return valor;
+    const texto = String(valor).trim().toLowerCase();
+    if (['true', '1', 'si', 'sí', 's', 'yes'].includes(texto)) return true;
+    if (['false', '0', 'no', 'n'].includes(texto)) return false;
+    return undefined;
+  }
+
+  private escribirArchivo(filas: ProductoImportacionFila[], formato: 'xlsx' | 'csv', nombre: string): void {
+    const hoja = filas.length
+      ? XLSX.utils.json_to_sheet(filas, { header: [...COLUMNAS_PRODUCTO] })
+      : XLSX.utils.aoa_to_sheet([[...COLUMNAS_PRODUCTO]]);
+    if (formato === 'csv') {
+      const csv = XLSX.utils.sheet_to_csv(hoja);
+      const enlace = document.createElement('a');
+      enlace.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
+      enlace.download = nombre;
+      enlace.click();
+      URL.revokeObjectURL(enlace.href);
+      return;
+    }
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, 'Productos');
+    XLSX.writeFile(libro, nombre);
+  }
+
+  private prepararVistas(): void {
+    for (const producto of this.state.rows) {
+      const imagen = producto.imagen;
+      const id = producto.id;
+      if (!imagen || !id || this.vistas.has(id)) continue;
+      if (imagen.startsWith('http://') || imagen.startsWith('https://')) {
+        this.vistas.set(id, imagen);
+      } else {
+        this.masivo.verImagen(imagen).pipe(takeUntil(this.destroy$)).subscribe({
+          next: (blob) => this.vistas.set(id, URL.createObjectURL(blob)),
+          error: () => this.vistas.delete(id),
+        });
+      }
+    }
+  }
+
+  private cargarVistaPrevia(ruta: string): void {
+    this.masivo.verImagen(ruta).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (blob) => { this.vistaPrevia = URL.createObjectURL(blob); },
+      error: () => { this.vistaPrevia = null; },
+    });
   }
 
   private cargarPanel(sedeId: string): void {
@@ -301,6 +587,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
       categoriaId: value.categoriaId || undefined, proveedorId: value.proveedorId || undefined, tipo: value.tipo, unidad: value.unidad.trim() || undefined,
       precioCompra: Number(value.precioCompra), precioVentaBase: Number(value.precioVentaBase), activo: value.activo, esFraccionable: value.esFraccionable, incluyeIgv: value.incluyeIgv,
       fracciones: value.esFraccionable ? this.fraccionesDe(productoId, fracciones) : undefined,
+      imagen: value.imagen.trim() || undefined,
     };
   }
 
@@ -319,6 +606,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
       esFraccionable: item.esFraccionable ?? false,
       incluyeIgv: item.incluyeIgv ?? true,
       fracciones: item.esFraccionable ? this.fraccionesDe(item.id ?? '', item.fracciones ?? []) : undefined,
+      imagen: item.imagen,
     };
   }
 

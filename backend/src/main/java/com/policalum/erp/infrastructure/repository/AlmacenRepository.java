@@ -50,6 +50,9 @@ public interface AlmacenRepository extends JpaRepository<Almacen, UUID> {
 
     Optional<Almacen> findBySede_IdAndNombreIgnoreCase(UUID sedeId, String nombre);
 
+    @Query("SELECT a FROM Almacen a WHERE LOWER(a.nombre) = LOWER(:nombre)")
+    List<Almacen> buscarPorNombre(@Param("nombre") String nombre);
+
     long countByActivo(Boolean activo);
 
     long countBySede_Id(UUID sedeId);

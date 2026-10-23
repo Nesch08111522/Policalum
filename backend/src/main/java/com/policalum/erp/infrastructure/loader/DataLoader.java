@@ -11,6 +11,7 @@ import com.policalum.erp.application.service.TotpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ import java.util.UUID;
 
 @Slf4j
 @Component
+@Order(0)
 @RequiredArgsConstructor
 public class DataLoader implements CommandLineRunner {
 

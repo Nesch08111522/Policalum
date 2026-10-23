@@ -12,12 +12,15 @@ function normalize(error: HttpErrorResponse): ApiProblem {
     code?: string;
     error?: string;
     message?: string;
+    details?: string;
     errors?: Record<string, string>;
     fieldErrors?: Record<string, string>;
     traceId?: string;
+    errores?: Array<{ fila?: number; motivo?: string }>;
   } | null;
 
   let message = body?.message ?? body?.error;
+  if (body?.details && error.status >= 500) message = body.details;
   if (!message && error.status === 0) message = 'No hay conexión con el servidor.';
   if (!message && error.status === 401) message = 'Tu sesión expiró. Vuelve a iniciar sesión.';
   if (!message && error.status === 403) message = 'No tienes permiso para esta operación.';
@@ -31,6 +34,7 @@ function normalize(error: HttpErrorResponse): ApiProblem {
     message,
     fieldErrors: body?.fieldErrors ?? body?.errors ?? {},
     traceId: body?.traceId,
+    errores: body?.errores,
   };
 }
 

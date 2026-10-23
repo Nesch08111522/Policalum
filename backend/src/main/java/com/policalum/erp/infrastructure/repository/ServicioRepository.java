@@ -25,8 +25,13 @@ public interface ServicioRepository extends JpaRepository<Servicio, UUID> {
     /**
      * Búsqueda paginada flexible por nombre/descripción y rango de precios.
      */
+    /**
+     * El CAST a string evita que PostgreSQL trate el parámetro nulo como bytea
+     * y falle con "function lower(bytea) does not exist".
+     */
     @Query("SELECT s FROM Servicio s WHERE " +
-            "(:searchTerm IS NULL OR LOWER(s.nombre) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR LOWER(s.descripcion) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) AND " +
+            "(:searchTerm IS NULL OR LOWER(s.nombre) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')) " +
+            "OR LOWER(COALESCE(s.descripcion, '')) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%'))) AND " +
             "(:activo IS NULL OR s.activo = :activo) AND " +
             "(:precioMin IS NULL OR s.precio >= :precioMin) AND " +
             "(:precioMax IS NULL OR s.precio <= :precioMax)")

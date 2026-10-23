@@ -30,6 +30,54 @@
 }
 .chips button.active { background: var(--color-info-bg); color: var(--color-text); border-color: transparent; }
 .filtros-acciones { display: flex; flex-direction: column; gap: 8px; }
+.menu-exportar { position: relative; }
+.menu {
+  position: absolute;
+  z-index: var(--z-dropdown);
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+.menu button {
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.menu button:hover { background: var(--color-info-bg); color: var(--color-info); }
+.foto, .vista-previa { object-fit: cover; background: var(--color-bg); }
+.foto { width: 44px; height: 44px; border-radius: 10px; }
+.imagen-bloque { display: flex; flex-direction: column; gap: 8px; }
+.imagen-titulo { color: var(--color-text-muted); font-size: var(--text-sm); }
+.vista-previa { width: 96px; height: 96px; border-radius: var(--radius-md); border: 1px solid var(--color-border); }
+.importar { display: flex; flex-direction: column; gap: 12px; }
+.importar p, .enlace { margin: 0; }
+.enlace { color: var(--color-primary); cursor: pointer; }
+.drop {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  padding: 24px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+.drop.sobre { border-color: var(--color-primary); background: var(--color-info-bg); color: var(--color-text); }
+.drop strong { color: var(--color-text); }
+.alert-success { color: var(--color-success); }
 
 .tabla-card h2, .catalogo-side h2 { font-size: var(--text-md); }
 .nota, .ayuda, .vacio, .minimo { margin: 0; color: var(--color-text-muted); font-size: var(--text-xs); }

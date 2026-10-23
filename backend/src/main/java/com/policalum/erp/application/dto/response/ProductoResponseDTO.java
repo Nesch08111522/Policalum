@@ -23,6 +23,7 @@ public record ProductoResponseDTO(
         LocalDateTime createdAt,
         Boolean incluyeIgv,
         String tipoAfectacion,
-        List<CatalogoFraccionResponseDTO> fracciones
+        List<CatalogoFraccionResponseDTO> fracciones,
+        String imagen
 ) {
 }

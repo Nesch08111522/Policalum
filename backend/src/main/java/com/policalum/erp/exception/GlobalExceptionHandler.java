@@ -17,6 +17,7 @@ import jakarta.validation.ValidationException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -185,6 +186,30 @@ public class GlobalExceptionHandler {
      */
     private boolean isDevelopmentEnvironment() {
         return Arrays.stream(environment.getActiveProfiles()).anyMatch(profile -> "dev".equals(profile) || "local".equals(profile));
+    }
+
+    @ExceptionHandler(ImportacionRechazadaException.class)
+    public ResponseEntity<Map<String, Object>> handleImportacionRechazada(ImportacionRechazadaException ex) {
+        List<Map<String, Object>> errores = ex.getErrores().stream().map(error -> {
+            Map<String, Object> fila = new HashMap<>();
+            fila.put("fila", error.fila());
+            fila.put("motivo", error.motivo());
+            return fila;
+        }).toList();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("error", "Importación rechazada");
+        response.put("message", ex.getMessage());
+        response.put("errores", errores);
+        if (!errores.isEmpty()) {
+            Object fila = errores.get(0).get("fila");
+            Object motivo = errores.get(0).get("motivo");
+            response.put("fila", fila);
+            response.put("motivo", motivo);
+        }
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(FileStorageException.class)

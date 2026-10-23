@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.policalum.erp.application.dto.request.ProductoRequestDTO;
 import com.policalum.erp.application.dto.response.ProductoResponseDTO;
 import com.policalum.erp.application.mapper.ProductoMapper;
+import com.policalum.erp.application.service.FileStorageService;
 import com.policalum.erp.application.service.ProductoService;
 import com.policalum.erp.domain.enums.TipoProducto;
 import com.policalum.erp.domain.model.CatalogoFraccion;
@@ -45,6 +47,7 @@ public class ProductoServiceImpl implements ProductoService {
     private final CategoriaRepository categoriaRepository;
     private final ProveedorRepository proveedorRepository;
     private final ProductoMapper productoMapper;
+    private final FileStorageService fileStorageService;
 
     /**
      * {@inheritDoc}
@@ -289,6 +292,28 @@ public class ProductoServiceImpl implements ProductoService {
         if (producto.getUnidad() != null) {
             producto.setUnidad(producto.getUnidad().trim().toUpperCase());
         }
+        producto.setImagen(normalizarImagen(producto.getImagen()));
+    }
+
+    private String normalizarImagen(String imagen) {
+        if (imagen == null || imagen.isBlank()) {
+            return null;
+        }
+        String valor = imagen.trim();
+        if (valor.length() > 500) {
+            throw new ValidationException("La imagen no puede exceder 500 caracteres");
+        }
+        String lower = valor.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("https://") || lower.startsWith("http://")) {
+            return valor;
+        }
+        if (lower.startsWith("data:") || lower.contains("://") || valor.startsWith("/") || valor.contains("..") || !valor.startsWith("productos/")) {
+            throw new ValidationException("La imagen debe ser una URL http(s) o una ruta relativa del directorio de productos");
+        }
+        if (!fileStorageService.existe(valor)) {
+            throw new ValidationException("No se encontró el archivo de imagen indicado");
+        }
+        return valor;
     }
 
     /**

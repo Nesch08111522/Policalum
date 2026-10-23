@@ -24,7 +24,14 @@
           </div>
           <div class="filtros-acciones">
             <button type="button" class="btn btn-primary" (click)="abrirCrear()"><app-icon name="plus"></app-icon> Nuevo producto</button>
-            <button type="button" class="btn btn-ghost" (click)="exportar()"><app-icon name="file"></app-icon> Exportar CSV</button>
+            <div class="menu-exportar">
+              <button type="button" class="btn btn-ghost" (click)="menuExportar = !menuExportar" aria-haspopup="menu" [attr.aria-expanded]="menuExportar"><app-icon name="file"></app-icon> Exportar</button>
+              <div class="menu" *ngIf="menuExportar" role="menu">
+                <button type="button" (click)="exportar('xlsx')">Excel</button>
+                <button type="button" (click)="exportar('csv')">CSV</button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-ghost" (click)="abrirImportar()"><app-icon name="folder"></app-icon> Importar</button>
           </div>
         </div>
       </div>
@@ -37,7 +44,7 @@
         <p class="nota" *ngIf="stockTruncado">El filtro de stock revisa los primeros 100 productos del catálogo.</p>
         <div class="estado" *ngIf="state.loading">Cargando catálogo…</div>
         <div class="estado error" *ngIf="state.error">{{ state.error }} <button type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button></div>
-        <div class="estado" *ngIf="!state.loading && !state.error && !filas.length">No hay productos con estos filtros.</div>
+        <div class="estado" *ngIf="!state.loading && !state.error && !filas.length">{{ filtros.controls.searchTerm.value ? 'No hay resultados' : 'No hay productos con estos filtros.' }}</div>
         <div class="table-scroll" *ngIf="filas.length">
           <table class="table catalogo-tabla">
             <thead>
@@ -55,7 +62,8 @@
               <tr *ngFor="let fila of filas">
                 <td>
                   <div class="sku">
-                    <span class="tile" aria-hidden="true">{{ iniciales(fila.producto.nombre) }}</span>
+                    <img *ngIf="vistaDe(fila.producto) as foto" class="foto" [src]="foto" alt="" (error)="ocultarVista(fila.producto)" />
+                    <span class="tile" *ngIf="!vistaDe(fila.producto)" aria-hidden="true">{{ iniciales(fila.producto.nombre) }}</span>
                     <span>{{ fila.producto.codigoSku || 'Sin SKU' }}</span>
                   </div>
                 </td>
@@ -152,6 +160,17 @@
     <app-form-field label="Precio de compra" inputId="prod-compra" [required]="true" [error]="errorDe('precioCompra')"><input id="prod-compra" class="input" type="number" min="0" step="0.01" formControlName="precioCompra" /></app-form-field>
     <app-form-field label="Precio de venta" inputId="prod-venta" [required]="true" [error]="errorDe('precioVentaBase')"><input id="prod-venta" class="input" type="number" min="0" step="0.01" formControlName="precioVentaBase" /></app-form-field>
     <app-form-field class="span-2" label="Descripción" inputId="prod-desc"><textarea id="prod-desc" class="textarea" formControlName="descripcion"></textarea></app-form-field>
+    <div class="span-2 imagen-bloque">
+      <span class="imagen-titulo">Imagen</span>
+      <div class="chips" role="group" aria-label="Modo de imagen">
+        <button type="button" [class.active]="modoImagen === 'archivo'" (click)="usarModoImagen('archivo')">Subir archivo</button>
+        <button type="button" [class.active]="modoImagen === 'url'" (click)="usarModoImagen('url')">Pegar URL</button>
+      </div>
+      <input *ngIf="modoImagen === 'archivo'" id="prod-archivo" class="input" type="file" accept="image/jpeg,image/png,image/webp" (change)="elegirImagen($event)" />
+      <input *ngIf="modoImagen === 'url'" id="prod-imagen-url" class="input" type="url" formControlName="imagen" placeholder="https://…" (input)="actualizarVistaUrl()" />
+      <img *ngIf="vistaPrevia" class="vista-previa" [src]="vistaPrevia" alt="Vista previa de la imagen del producto" />
+      <p class="ayuda">JPG, PNG o WEBP de hasta 2 MB, o una URL http(s). Se guarda la ruta o la URL, no el archivo dentro de la base.</p>
+    </div>
     <app-form-field label="Activo" inputId="prod-act"><input id="prod-act" class="switch" type="checkbox" formControlName="activo" /></app-form-field>
     <app-form-field label="Fraccionable" inputId="prod-esfrac"><input id="prod-esfrac" class="switch" type="checkbox" formControlName="esFraccionable" /></app-form-field>
     <app-form-field label="Incluye IGV" inputId="prod-igv"><input id="prod-igv" class="switch" type="checkbox" formControlName="incluyeIgv" /></app-form-field>
@@ -159,6 +178,29 @@
   <div modalFooter>
     <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
     <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+  </div>
+</app-modal>
+<app-modal [closable]="!importando" [open]="modalImportar" title="Importar productos" size="lg" (closed)="modalImportar = false">
+  <div class="importar">
+    <p>El archivo se lee en el navegador y se envía como JSON. Si una fila falla, no se guarda ninguna.</p>
+    <a class="enlace" href="" (click)="$event.preventDefault(); descargarPlantilla()">Descargar plantilla con las columnas del catálogo</a>
+    <div class="drop" [class.sobre]="sobreArchivo" (dragover)="$event.preventDefault(); sobreArchivo = true" (dragleave)="sobreArchivo = false" (drop)="soltarArchivo($event)">
+      <strong>Arrastra un .xlsx o .csv</strong>
+      <span>o elige un archivo</span>
+      <input class="input" type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="elegirArchivo($event)" />
+      <span *ngIf="archivoNombre">{{ archivoNombre }}</span>
+    </div>
+    <p class="estado" *ngIf="importando">Importando…</p>
+    <div class="alert alert-success" *ngIf="importExito">{{ importExito }}</div>
+    <div class="alert alert-error" *ngIf="importErrores.length">
+      <div>
+        <strong>La importación no dejó productos nuevos.</strong>
+        <p *ngFor="let error of importErrores">{{ error.fila ? 'Fila ' + error.fila + ': ' : '' }}{{ error.motivo }}</p>
+      </div>
+    </div>
+  </div>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modalImportar = false" [disabled]="importando">Cerrar</button>
   </div>
 </app-modal>
 <app-confirm-dialog [open]="confirmar" [title]="accion === 'desactivar' ? 'Desactivar producto' : 'Eliminar producto'" [message]="accion === 'desactivar' ? 'El producto dejará de estar activo en el catálogo.' : 'Se eliminará ' + (seleccionado?.nombre || 'este producto') + '.'" [confirmLabel]="accion === 'desactivar' ? 'Desactivar' : 'Eliminar'" [loading]="eliminando" (confirm)="confirmarAccion()" (cancel)="confirmar = false"></app-confirm-dialog>

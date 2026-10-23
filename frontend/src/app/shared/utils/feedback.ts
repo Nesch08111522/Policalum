@@ -7,6 +7,9 @@ export function isProblem(value: unknown): value is ApiProblem {
 
 export function problemText(error: unknown): string {
   if (isProblem(error)) {
+    if (error.errores && error.errores.length > 0) {
+      return error.errores.map((item) => `Fila ${item.fila ?? '?'}: ${item.motivo ?? 'Error'}`).join('\n');
+    }
     if (error.fieldErrors && Object.keys(error.fieldErrors).length > 0) {
       return Object.entries(error.fieldErrors)
         .map(([campo, mensaje]) => `${campo}: ${mensaje}`)
