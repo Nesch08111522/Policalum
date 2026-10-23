@@ -39,6 +39,10 @@ export const routes: Routes = [
         data: { expectedRoles: ['ROLE_ADMIN', 'ROLE_MULTIFUNCIONAL'] },
       },
       {
+        path: 'cuenta/perfil',
+        loadChildren: () => import('./features/perfil/pages/perfil-page.component').then((m) => m.PERFIL_ROUTES),
+      },
+      {
         path: 'ventas/pos',
         component: PosComponent,
         canActivate: [RoleGuard],

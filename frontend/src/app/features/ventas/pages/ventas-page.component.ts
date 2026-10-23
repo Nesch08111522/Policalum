@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink, Routes } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -24,6 +24,7 @@ import { CatalogoFraccionesApiService } from '../../catalogo-fracciones/data-acc
 import { VentasApiService } from '../data-access/ventas.api';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-ventas-page',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, FormFieldComponent, SelectComponent, PenPipe],

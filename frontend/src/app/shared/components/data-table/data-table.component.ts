@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ContentChild, EventEmitter, Input, Output, TemplateRef } from '@angular/core';
+import { Component, ContentChild, EventEmitter, Input, Output, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
 import { ColumnDef } from '../../models/ui.models';
 import { FechaPipe, NumeroPipe, PenPipe } from '../../pipes/format.pipes';
 import { displayText, readPath } from '../../utils/feedback';
@@ -8,6 +8,7 @@ import { LoaderComponent } from '../loader/loader.component';
 import { PaginationComponent } from '../pagination/pagination.component';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-data-table',
   standalone: true,
   imports: [CommonModule, PenPipe, FechaPipe, NumeroPipe, EmptyStateComponent, LoaderComponent, PaginationComponent],

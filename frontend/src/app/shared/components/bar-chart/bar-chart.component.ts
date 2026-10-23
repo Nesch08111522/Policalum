@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 export interface ChartPoint {
   label: string;
@@ -7,6 +7,7 @@ export interface ChartPoint {
 }
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-bar-chart',
   standalone: true,
   imports: [CommonModule],

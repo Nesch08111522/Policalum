@@ -33,6 +33,7 @@ public class JwtUtil {
         claims.put("userId", user.getId().toString());
         claims.put("email", user.getEmail());
         claims.put("rol", user.getRol().getNombre());
+        claims.put("sv", user.getSesionVersion() == null ? 0 : user.getSesionVersion());
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -69,5 +70,10 @@ public class JwtUtil {
 
     public String getRolFromToken(String token) {
         return (String) getClaims(token).get("rol");
+    }
+
+    public int getSesionVersion(String token) {
+        Object value = getClaims(token).get("sv");
+        return value instanceof Number number ? number.intValue() : 0;
     }
 }

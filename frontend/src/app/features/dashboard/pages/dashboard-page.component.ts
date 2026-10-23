@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, effect, untracked } from '@angular/core';
+import { Component, OnDestroy, effect, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, Routes } from '@angular/router';
 import { Subject, forkJoin, of, takeUntil } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -24,6 +24,7 @@ function iso(fecha: Date): string { return fecha.toISOString().slice(0, 10); }
 interface FraccionPanel { nombre: string; etiqueta: string; ancho: number; }
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-dashboard-page',
   standalone: true,
   imports: [CommonModule, RouterLink, PenPipe, FacturacionSunatComponent],

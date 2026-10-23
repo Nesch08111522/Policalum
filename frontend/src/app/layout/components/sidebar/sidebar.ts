@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs';
@@ -11,6 +11,7 @@ import { NAV_SECTIONS, NavSection } from '../../navigation';
 const GROUPS_KEY = 'erp-nav-groups';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-sidebar',
   standalone: true,
   imports: [CommonModule, RouterModule, IconComponent],

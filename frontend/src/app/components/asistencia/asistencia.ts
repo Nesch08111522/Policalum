@@ -1,6 +1,6 @@
 // src/app/components/asistencia/asistencia.ts
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AsistenciaService } from '../../services/asistencia.service';
 import { TokenService } from '../../services/token.service';
@@ -8,6 +8,7 @@ import { QrPublicoComponent } from '../qr-publico/qr-publico.component';
 import { ListadoAsistenciasComponent } from './listado-asistencias.component';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-asistencia',
   standalone: true,
   imports: [CommonModule, FormsModule, QrPublicoComponent, ListadoAsistenciasComponent],

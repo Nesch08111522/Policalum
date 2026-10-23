@@ -12,6 +12,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -23,7 +24,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
 
     // ✅ MÉTODO LOGIN
-    public LoginResponseDTO login(LoginRequestDTO request) {
+    public LoginResponseDTO login(LoginRequestDTO request, String ip) {
         // 1. Buscar usuario por email
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BadCredentialsException("Credenciales inválidas. Verifica tu email y contraseña."));
@@ -35,6 +36,10 @@ public class AuthService {
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new BadCredentialsException("Credenciales inválidas. Verifica tu email y contraseña.");
         }
+
+        user.setUltimoLogin(LocalDateTime.now());
+        if (ip != null && !ip.isBlank()) user.setUltimoIp(ip.length() > 45 ? ip.substring(0, 45) : ip);
+        userRepository.save(user);
 
         // 4. Generar token JWT
         String token = jwtUtil.generateToken(user);

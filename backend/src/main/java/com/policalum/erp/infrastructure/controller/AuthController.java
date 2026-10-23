@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import com.policalum.erp.application.dto.request.LoginRequestDTO;
 import com.policalum.erp.application.dto.response.LoginResponseDTO;
 import com.policalum.erp.application.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +25,14 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
-        LoginResponseDTO response = authService.login(request);
+    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request, HttpServletRequest http) {
+        LoginResponseDTO response = authService.login(request, ipDe(http));
         return ResponseEntity.ok(response);
+    }
+
+    static String ipDe(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        String ip = forwarded != null && !forwarded.isBlank() ? forwarded.split(",")[0].trim() : request.getRemoteAddr();
+        return ip == null ? "" : ip;
     }
 }

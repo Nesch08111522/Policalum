@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, effect, inject, untracked } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -16,6 +16,7 @@ import { problemText } from '../../../shared/utils/feedback';
 import { TurnosCajaApiService } from '../data-access/turnos-caja.api';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-turnos-caja-page',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FormFieldComponent, SelectComponent, PenPipe],

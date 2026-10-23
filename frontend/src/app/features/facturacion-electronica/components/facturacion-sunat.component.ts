@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { PenPipe } from '../../../shared/pipes/format.pipes';
@@ -8,6 +8,7 @@ import { problemText } from '../../../shared/utils/feedback';
 import { ComprobanteSunat, FacturacionElectronicaApiService, FacturacionElectronicaPanel } from '../data-access/facturacion-electronica.api';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-facturacion-sunat',
   standalone: true,
   imports: [CommonModule, RouterLink, PenPipe],

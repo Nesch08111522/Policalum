@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 const ICONS: Record<string, string> = {
   plus: 'M12 5v14M5 12h14',
@@ -43,6 +43,7 @@ const ICONS: Record<string, string> = {
 };
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-icon',
   standalone: true,
   template: `

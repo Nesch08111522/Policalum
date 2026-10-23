@@ -1,6 +1,6 @@
 // src/app/components/asistencia/listado-asistencias.component.ts
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
     AsistenciaFilterDTO,
@@ -12,6 +12,7 @@ import { AsistenciaService } from '../../services/asistencia.service';
 import { TokenService } from '../../services/token.service';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-listado-asistencias',
   standalone: true,
   imports: [CommonModule, FormsModule],

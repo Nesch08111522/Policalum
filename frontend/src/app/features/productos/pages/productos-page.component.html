@@ -1,20 +1,145 @@
-<section class="module-page">
-  <app-page-header title="Productos" subtitle="Catálogo físico y de servicio, con precios y fraccionamiento." actionLabel="Nuevo producto" (action)="abrirCrear()"></app-page-header>
-  <app-filter-bar>
-    <app-form-field label="Buscar" inputId="prod-buscar"><input id="prod-buscar" class="input" type="search" [value]="filtros.controls.searchTerm.value" (input)="onBuscar($event)" placeholder="Nombre o SKU" /></app-form-field>
-    <app-form-field label="Categoría" inputId="prod-cat"><app-select inputId="prod-cat" [options]="categorias" placeholder="Todas" [formControl]="filtros.controls.categoriaId"></app-select></app-form-field>
-    <app-form-field label="Tipo" inputId="prod-tipo"><select id="prod-tipo" class="select" [formControl]="filtros.controls.tipo"><option value="">Todos</option><option value="FISICO">Físico</option><option value="SERVICIO">Servicio</option></select></app-form-field>
-    <app-form-field label="Activo" inputId="prod-activo"><select id="prod-activo" class="select" [formControl]="filtros.controls.activo"><option value="">Todos</option><option value="true">Sí</option><option value="false">No</option></select></app-form-field>
-    <app-form-field label="Fraccionable" inputId="prod-frac"><select id="prod-frac" class="select" [formControl]="filtros.controls.esFraccionable"><option value="">Todos</option><option value="true">Sí</option><option value="false">No</option></select></app-form-field>
-    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
-  </app-filter-bar>
-  <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" [sortField]="state.sort.split(',')[0]" [sortDirection]="state.sort.endsWith('desc') ? 'desc' : 'asc'" emptyTitle="No hay productos" emptyAction="Nuevo producto" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (sortChange)="ordenar($event)" (retry)="cargar()" (empty)="abrirCrear()">
-    <ng-template #rowActions let-row>
-      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(row)">Editar</button>
-      <button type="button" class="btn btn-danger btn-sm" (click)="pedirEliminar(row)">Eliminar</button>
-    </ng-template>
-  </app-data-table>
+<section class="module-page catalogo">
+  <app-page-header title="Gestión de Productos" subtitle="Administra el catálogo de productos, precios y stock fraccionado del almacén."></app-page-header>
+
+  <div class="catalogo-layout">
+    <div class="catalogo-main">
+      <div class="card filtros">
+        <div class="filtros-grid">
+          <app-form-field label="Búsqueda" inputId="prod-buscar">
+            <input id="prod-buscar" class="input" type="search" [value]="filtros.controls.searchTerm.value" (input)="onBuscar($event)" placeholder="Buscar por SKU, nombre o categoría… (F2)" />
+          </app-form-field>
+          <app-form-field label="Categoría" inputId="prod-cat">
+            <app-select inputId="prod-cat" [options]="categorias" placeholder="Todas" [formControl]="filtros.controls.categoriaId"></app-select>
+          </app-form-field>
+          <app-form-field label="Sede" inputId="prod-sede">
+            <app-select inputId="prod-sede" [options]="sedes" placeholder="Todas las sedes" [formControl]="filtros.controls.sedeId"></app-select>
+          </app-form-field>
+          <div class="stock-filtro">
+            <span>Stock</span>
+            <div class="chips" role="group" aria-label="Filtrar por stock">
+              <button type="button" [class.active]="stockFiltro === 'CON'" (click)="elegirStock('CON')">Con stock</button>
+              <button type="button" [class.active]="stockFiltro === 'BAJO'" (click)="elegirStock('BAJO')">Bajo stock</button>
+              <button type="button" [class.active]="stockFiltro === 'SIN'" (click)="elegirStock('SIN')">Sin stock</button>
+            </div>
+          </div>
+          <div class="filtros-acciones">
+            <button type="button" class="btn btn-primary" (click)="abrirCrear()"><app-icon name="plus"></app-icon> Nuevo producto</button>
+            <button type="button" class="btn btn-ghost" (click)="exportar()"><app-icon name="file"></app-icon> Exportar CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card tabla-card">
+        <div class="card-header">
+          <h2>Catálogo de productos</h2>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="limpiar()">Limpiar filtros</button>
+        </div>
+        <p class="nota" *ngIf="stockTruncado">El filtro de stock revisa los primeros 100 productos del catálogo.</p>
+        <div class="estado" *ngIf="state.loading">Cargando catálogo…</div>
+        <div class="estado error" *ngIf="state.error">{{ state.error }} <button type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button></div>
+        <div class="estado" *ngIf="!state.loading && !state.error && !filas.length">No hay productos con estos filtros.</div>
+        <div class="table-scroll" *ngIf="filas.length">
+          <table class="table catalogo-tabla">
+            <thead>
+              <tr>
+                <th>Imagen y SKU</th>
+                <th>Producto</th>
+                <th>Precios por fracción</th>
+                <th>Stock fraccionado</th>
+                <th>Ubicación / Almacén</th>
+                <th>Alertas / Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let fila of filas">
+                <td>
+                  <div class="sku">
+                    <span class="tile" aria-hidden="true">{{ iniciales(fila.producto.nombre) }}</span>
+                    <span>{{ fila.producto.codigoSku || 'Sin SKU' }}</span>
+                  </div>
+                </td>
+                <td>
+                  <strong>{{ fila.producto.nombre }}</strong>
+                  <span class="badge badge-info" *ngIf="fila.producto.categoria?.nombre">{{ fila.producto.categoria?.nombre }}</span>
+                </td>
+                <td>
+                  <div class="corte" *ngFor="let corte of fila.cortes">
+                    <span>{{ corte.nombre }}</span>
+                    <strong>{{ corte.precio | pen }}</strong>
+                  </div>
+                </td>
+                <td>
+                  <div class="saldo-base">Saldo {{ fila.cantidad | number:'1.0-2' }} {{ fila.unidad }}</div>
+                  <div class="corte" *ngFor="let corte of fila.cortes">
+                    <span>{{ corte.nombre }}</span>
+                    <div class="barra"><span [style.width.%]="corte.ancho" [class.warn]="fila.estado === 'minimo'" [class.empty]="fila.estado === 'agotado'"></span></div>
+                    <strong>{{ corte.equivalentes | number:'1.0-2' }}</strong>
+                  </div>
+                  <p class="ayuda" *ngIf="fila.producto.esFraccionable">Equivalente del saldo base. El kardex no guarda un stock por corte.</p>
+                </td>
+                <td>
+                  <strong>{{ fila.sede }}</strong>
+                  <span>{{ fila.almacen }}</span>
+                  <span *ngIf="fila.otrosAlmacenes">y {{ fila.otrosAlmacenes }} más</span>
+                </td>
+                <td>
+                  <span class="badge" [class.badge-success]="fila.estado === 'optimo'" [class.badge-warning]="fila.estado === 'minimo'" [class.badge-danger]="fila.estado === 'agotado'" [class.badge-neutral]="fila.estado === 'inactivo'">{{ fila.estadoLabel }}</span>
+                  <span class="badge badge-success" *ngIf="fila.producto.activo !== false">Activo</span>
+                  <span class="minimo" *ngIf="fila.minimo > 0">Mínimo {{ fila.minimo | number:'1.0-2' }}</span>
+                </td>
+                <td class="acciones">
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="verKardex(fila.producto)">Kardex</button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(fila.producto)">Editar</button>
+                  <button type="button" class="btn btn-danger btn-sm" *ngIf="fila.producto.activo !== false" (click)="pedirDesactivar(fila.producto)">Desactivar</button>
+                  <button type="button" class="btn btn-danger btn-sm" *ngIf="fila.producto.activo === false" (click)="pedirEliminar(fila.producto)">Eliminar</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <app-pagination *ngIf="!stockFiltro" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)"></app-pagination>
+      </div>
+    </div>
+
+    <aside class="catalogo-side">
+      <article class="card">
+        <div class="card-header"><h2>Productos con bajo stock</h2></div>
+        <div class="card-body side-list" *ngIf="alertas.length; else sinAlertas">
+          <a *ngFor="let alerta of alertas" [routerLink]="['/modules/kardex']" [queryParams]="{ productoId: alerta.productoId }">
+            <strong>{{ alerta.productoNombre }}</strong>
+            <span>{{ alerta.cantidad | number:'1.0-2' }} {{ alerta.unidad || 'UNID' }} · {{ alerta.almacenNombre || 'Almacén' }}</span>
+          </a>
+        </div>
+        <ng-template #sinAlertas><p class="card-body vacio">No hay productos bajo el mínimo.</p></ng-template>
+      </article>
+      <article class="card">
+        <div class="card-header"><h2>Mermas registradas</h2></div>
+        <div class="card-body" *ngIf="mermas?.movimientos; else sinMermas">
+          <p class="metrica">{{ mermas?.valorTotal | pen }}</p>
+          <p class="ayuda">{{ mermas?.movimientos }} movimiento(s) de merma en el kardex.</p>
+          <a class="btn btn-ghost btn-sm" routerLink="/modules/kardex" [queryParams]="{ tab: 'mermas' }">Ver historial</a>
+        </div>
+        <ng-template #sinMermas><p class="card-body vacio">No hay mermas registradas.</p></ng-template>
+      </article>
+      <article class="card resumen">
+        <div>
+          <span>Total SKU</span>
+          <strong>{{ state.totalElements }}</strong>
+        </div>
+        <div>
+          <span>Con stock</span>
+          <strong>{{ dashboard?.productosConStock ?? '—' }}</strong>
+        </div>
+        <div>
+          <span>Valorizado</span>
+          <strong>{{ dashboard?.valorInventario | pen }}</strong>
+        </div>
+      </article>
+    </aside>
+  </div>
 </section>
+
 <app-modal [closable]="!guardando" [open]="modal" [title]="editando ? 'Editar producto' : 'Nuevo producto'" size="lg" (closed)="modal = false">
   <form class="form-grid" [formGroup]="form">
     <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
@@ -36,4 +161,4 @@
     <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
   </div>
 </app-modal>
-<app-confirm-dialog [open]="confirmar" title="Eliminar producto" [message]="'Se eliminará ' + (seleccionado?.nombre || 'este producto') + '.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>
+<app-confirm-dialog [open]="confirmar" [title]="accion === 'desactivar' ? 'Desactivar producto' : 'Eliminar producto'" [message]="accion === 'desactivar' ? 'El producto dejará de estar activo en el catálogo.' : 'Se eliminará ' + (seleccionado?.nombre || 'este producto') + '.'" [confirmLabel]="accion === 'desactivar' ? 'Desactivar' : 'Eliminar'" [loading]="eliminando" (confirm)="confirmarAccion()" (cancel)="confirmar = false"></app-confirm-dialog>

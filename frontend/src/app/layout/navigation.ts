@@ -82,10 +82,11 @@ export const NAV_SECTIONS: NavSection[] = [
     id: 'config',
     label: 'Configuración',
     items: [
-      { id: 'sedes', label: 'Sedes', path: '/modules/sedes', icon: 'map', roles: admin },
+      { id: 'perfil', label: 'Mi perfil', path: '/cuenta/perfil', icon: 'users' },
       { id: 'users', label: 'Usuarios', path: '/modules/users', icon: 'shield', roles: admin },
       { id: 'roles', label: 'Roles', path: '/modules/roles', icon: 'shield', roles: admin },
-      { id: 'configuracion', label: 'Parámetros', path: '/modules/configuracion', icon: 'settings', roles: admin },
+      { id: 'sedes', label: 'Sedes', path: '/modules/sedes', icon: 'map', roles: admin },
+      { id: 'configuracion', label: 'Configuración', path: '/modules/configuracion', icon: 'settings', roles: admin },
     ],
   },
 ];

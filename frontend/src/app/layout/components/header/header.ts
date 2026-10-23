@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import * as Api from '../../../core/api/openapi.types';
 import { AuthService } from '../../../services/auth.service';
+import { TokenService } from '../../../services/token.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { LayoutService } from '../../../shared/services/layout.service';
 import { LookupService } from '../../../shared/services/lookup.service';
@@ -11,6 +12,7 @@ import { ThemeService } from '../../../shared/services/theme.service';
 import { NAV_SECTIONS, NavItem } from '../../navigation';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-header',
   standalone: true,
   imports: [CommonModule, RouterModule, IconComponent],
@@ -23,10 +25,6 @@ export class HeaderComponent implements OnInit {
   menuOpen = false;
   sedesAbiertas = false;
   sedes: Api.SedeResponseDTO[] = [];
-  userName = 'Usuario';
-  userEmail = '';
-  userRole = '';
-  initials = 'P';
   private items: NavItem[] = [];
 
   constructor(
@@ -34,17 +32,13 @@ export class HeaderComponent implements OnInit {
     readonly sedeFiltro: SedeFiltroService,
     private readonly layout: LayoutService,
     private readonly auth: AuthService,
+    private readonly tokens: TokenService,
     private readonly lookup: LookupService,
     private readonly router: Router,
   ) {}
 
   ngOnInit(): void {
-    const user = this.auth.getCurrentUser();
-    const role = user?.rol ?? '';
-    this.userEmail = user?.email ?? '';
-    this.userName = user?.nombre ?? this.userEmail;
-    this.userRole = role === 'ROLE_ADMIN' ? 'Administrador' : 'Multifuncional';
-    this.initials = (this.userName || 'P').slice(0, 2).toUpperCase();
+    const role = this.tokens.session()?.rol ?? '';
     this.items = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => !item.roles || item.roles.includes(role));
     this.lookup.loadSedes().subscribe((rows) => { this.sedes = rows.filter((sede) => sede.activa !== false); });
   }
@@ -75,6 +69,17 @@ export class HeaderComponent implements OnInit {
   toggleMenu(): void {
     if (window.innerWidth <= 900) this.layout.toggleMobile();
     else this.layout.toggleCollapsed();
+  }
+
+  get userName(): string { return this.tokens.session()?.nombre || 'Usuario'; }
+  get userEmail(): string { return this.tokens.session()?.email || ''; }
+  get userRole(): string { return this.tokens.session()?.rol === 'ROLE_ADMIN' ? 'Administrador' : this.tokens.session() ? 'Multifuncional' : ''; }
+  get initials(): string { return (this.userName || 'P').slice(0, 2).toUpperCase(); }
+  get esAdmin(): boolean { return this.tokens.session()?.rol === 'ROLE_ADMIN'; }
+
+  ir(ruta: string): void {
+    this.menuOpen = false;
+    void this.router.navigateByUrl(ruta);
   }
 
   logout(): void {

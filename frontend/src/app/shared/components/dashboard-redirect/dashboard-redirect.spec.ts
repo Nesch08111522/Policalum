@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { DashboardRedirectComponent } from './dashboard-redirect';
 
-@Component({ standalone: true, template: '' })
+@Component({
+  changeDetection: ChangeDetectionStrategy.Default, standalone: true, template: '' })
 class InicioStub {}
 
 describe('DashboardRedirectComponent', () => {

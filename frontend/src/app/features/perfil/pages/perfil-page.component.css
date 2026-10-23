@@ -1,0 +1,38 @@
+:host { display: block; }
+.perfil-grid {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
+}
+.identidad, .seguridad { display: flex; flex-direction: column; gap: 16px; }
+.identidad { padding: 24px; text-align: center; }
+.foto { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 16px; }
+.foto img, .foto span {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  font-size: 32px;
+  font-weight: var(--weight-bold);
+  border: 3px solid var(--color-info);
+}
+.foto input { display: none; }
+.identidad h2 { font-size: var(--text-lg); }
+.usuario, .ayuda { margin: 4px 0 10px; color: var(--color-text-muted); font-size: var(--text-sm); }
+.identidad .badge { margin: 4px; }
+.identidad dl { margin: 16px 0 0; text-align: left; display: flex; flex-direction: column; gap: 10px; }
+.identidad dt { color: var(--color-text-muted); font-size: var(--text-xs); }
+.identidad dd { margin: 0; }
+.datos h2 { font-size: var(--text-md); }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.factor, .sesiones { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.estado { padding: 24px; text-align: center; }
+
+@media (max-width: 1100px) {
+  .perfil-grid { grid-template-columns: 1fr; }
+}

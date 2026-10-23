@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output, forwardRef } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, forwardRef, ChangeDetectionStrategy } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { SelectOption } from '../../models/ui.models';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-select',
   standalone: true,
   imports: [CommonModule],

@@ -49,6 +49,21 @@ public class User {
  
     @Column(length = 15)
     private String celular;
+
+    @Column(length = 15)
+    private String documento;
+
+    @Column(length = 500)
+    private String biografia;
+
+    @Column(columnDefinition = "text")
+    private String foto;
+
+    @Column(name = "ultimo_ip", length = 45)
+    private String ultimoIp;
+
+    @Column(name = "sesion_version")
+    private Integer sesionVersion = 0;
  
     @Column(nullable = false)
     private Boolean activo = true;
@@ -72,6 +87,7 @@ public class User {
         // FIX deuda técnica: @Builder (y MapStruct, que usa el builder) ignora los inicializadores de campo
         if (this.activo == null) this.activo = true;
         if (this.totpEnabled == null) this.totpEnabled = false;
+        if (this.sesionVersion == null) this.sesionVersion = 0;
         this.createdAt = LocalDateTime.now();
     }
 

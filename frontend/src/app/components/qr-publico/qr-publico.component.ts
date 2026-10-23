@@ -1,6 +1,6 @@
 // src/app/components/qr-publico/qr-publico.component.ts
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AsistenciaService } from '../../services/asistencia.service';
 import { TokenService } from '../../services/token.service';
@@ -8,6 +8,7 @@ import { TokenService } from '../../services/token.service';
 declare var QRCode: any;
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-qr-publico',
   standalone: true,
   imports: [CommonModule, FormsModule],

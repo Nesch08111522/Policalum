@@ -397,7 +397,7 @@ class LegajoServiceImplTest {
 
     private LegajoRequestDTO request(String contrato, String sueldo, String comision, SistemaPension sistema,
                                      String tasa, LocalDate ingreso) {
-        return new LegajoRequestDTO(empleado.getId(), contrato, ingreso, new BigDecimal(sueldo),
+        return new LegajoRequestDTO(empleado.getId(), contrato, ingreso, new BigDecimal(sueldo), null,
                 comision == null ? null : new BigDecimal(comision), sistema,
                 tasa == null ? null : new BigDecimal(tasa), null);
     }

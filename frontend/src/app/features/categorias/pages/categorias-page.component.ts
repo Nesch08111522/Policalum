@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
@@ -19,6 +19,7 @@ import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { CategoriasApiService } from '../data-access/categorias.api';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-categorias-page',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent],
@@ -27,7 +28,6 @@ import { CategoriasApiService } from '../data-access/categorias.api';
 })
 export class CategoriasPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
-  private readonly lookup = inject(LookupService);
   readonly state = new PageState<Api.CategoriaResponseDTO>();
   readonly columns: ColumnDef[] = [
     { key: 'nombre', label: 'Categoría', sortable: true },

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { User, UserRole } from '../models/user.model';
 
@@ -6,8 +6,11 @@ import { User, UserRole } from '../models/user.model';
 export class TokenService {
   private readonly tokenKey = 'auth_token';
   private readonly userKey = 'user_data';
+  readonly session = signal<User | null>(null);
 
-  constructor(private readonly router: Router) {}
+  constructor(private readonly router: Router) {
+    this.session.set(this.getUser());
+  }
 
   setToken(token: string): void {
     if (typeof localStorage !== 'undefined') localStorage.setItem(this.tokenKey, token);
@@ -19,6 +22,7 @@ export class TokenService {
 
   setUser(user: User): void {
     if (typeof localStorage !== 'undefined') localStorage.setItem(this.userKey, JSON.stringify(user));
+    this.session.set(user);
   }
 
   getUser(): User | null {
@@ -62,5 +66,6 @@ export class TokenService {
     if (typeof localStorage === 'undefined') return;
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userKey);
+    this.session.set(null);
   }
 }

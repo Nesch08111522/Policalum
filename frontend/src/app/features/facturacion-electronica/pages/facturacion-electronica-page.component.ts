@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { Routes } from '@angular/router';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { FacturacionSunatComponent } from '../components/facturacion-sunat.component';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-facturacion-electronica-page',
   standalone: true,
   imports: [PageHeaderComponent, FacturacionSunatComponent],

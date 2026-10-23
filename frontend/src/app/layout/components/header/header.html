@@ -6,7 +6,7 @@
   </div>
   <div class="search-shell">
     <label class="sr-only" for="global-search">Ir a un módulo</label>
-    <input id="global-search" class="input" type="search" placeholder="Búsqueda" [value]="query" (input)="onQuery($event)" (keydown.enter)="goFirst()" />
+    <input id="global-search" class="input" type="search" placeholder="Ir a un módulo..." [value]="query" (input)="onQuery($event)" (keydown.enter)="goFirst()" />
     <div class="dropdown-panel" *ngIf="results.length" style="left:0; right:auto; width:100%">
       <a class="dropdown-item" *ngFor="let item of results" [routerLink]="item.path" (click)="clear()">{{ item.label }}</a>
     </div>
@@ -37,6 +37,8 @@
       <div class="dropdown-panel" *ngIf="menuOpen" role="menu">
         <div class="dropdown-item">{{ userEmail }}</div>
         <div class="dropdown-item text-muted">{{ userRole }}</div>
+        <button type="button" class="menu-item" (click)="ir('/cuenta/perfil')"><app-icon name="users"></app-icon> Editar perfil</button>
+        <button type="button" class="menu-item" *ngIf="esAdmin" (click)="ir('/modules/configuracion')"><app-icon name="settings"></app-icon> Configuración</button>
         <button type="button" class="menu-item danger" (click)="logout()"><app-icon name="logout"></app-icon> Cerrar sesión</button>
       </div>
     </div>

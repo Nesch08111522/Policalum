@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, effect, inject, untracked } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Routes } from '@angular/router';
+import { ActivatedRoute, Routes } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import * as Api from '../../../core/api/openapi.types';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
@@ -22,6 +22,7 @@ import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { KardexApiService } from '../data-access/kardex.api';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-kardex-page',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, FormFieldComponent, SelectComponent, TabsComponent, StatCardComponent, PenPipe],
@@ -55,13 +56,17 @@ export class KardexPageComponent implements OnInit, OnDestroy {
   errorFormulario: string | null = null;
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: KardexApiService, private readonly lookup: LookupService, private readonly inventario: InventarioSyncService, private readonly toast: ToastService) {
+  constructor(private readonly api: KardexApiService, private readonly lookup: LookupService, private readonly inventario: InventarioSyncService, private readonly toast: ToastService, private readonly route: ActivatedRoute) {
     effect(() => {
       const revision = this.inventario.revision();
       untracked(() => { if (revision) this.cargar(); });
     });
   }
   ngOnInit(): void {
+    const productoId = this.route.snapshot.queryParamMap.get('productoId') ?? '';
+    const tab = this.route.snapshot.queryParamMap.get('tab') ?? '';
+    if (productoId) this.filtros.controls.productoId.setValue(productoId);
+    if (tab === 'mermas' || tab === 'saldos' || tab === 'valorizacion' || tab === 'movimientos') this.tab = tab;
     this.cargar();
     this.lookup.loadProductos().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.productos = this.lookup.options(rows, (row) => (row as Api.ProductoResponseDTO).nombre ?? 'Producto'); });
     this.lookup.loadAlmacenes().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.almacenes = this.lookup.options(rows, (row) => (row as Api.AlmacenResponseDTO).nombre ?? 'Almacén'); });

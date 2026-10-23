@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -26,6 +26,7 @@ function haceDias(dias: number): string {
 }
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-reportes-page',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, TabsComponent, FilterBarComponent, FormFieldComponent, SelectComponent, DataTableComponent, StatCardComponent, BarChartComponent, PenPipe],

@@ -117,8 +117,10 @@ public class LegajoServiceImpl implements LegajoService {
 
         RrhhLegajoDigital legajo = legajoDe(empleadoId);
         Map<String, Object> antes = snapshot(legajo);
+        Integer diaCobroPrevio = legajo.getDiaCobro();
 
         mapper.updateEntityFromDto(request, legajo);
+        if (request.diaCobro() == null) legajo.setDiaCobro(diaCobroPrevio);
         aplicarCamposNormalizados(legajo, request);
         if (request.activo() != null) legajo.setActivo(request.activo());
 
@@ -354,6 +356,7 @@ public class LegajoServiceImpl implements LegajoService {
         m.put("tipoContrato", l.getTipoContrato());
         m.put("fechaIngreso", l.getFechaIngreso() != null ? l.getFechaIngreso().toString() : null);
         m.put("sueldoBase", l.getSueldoBase());
+        m.put("diaCobro", l.getDiaCobro());
         m.put("porcentajeComision", l.getPorcentajeComision());
         m.put("sistemaPension", l.getSistemaPension() != null ? l.getSistemaPension().name() : null);
         m.put("tasaPension", l.getTasaPension());

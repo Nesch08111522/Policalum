@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -21,6 +21,7 @@ import { PageState } from '../../../shared/utils/page-state';
 import { RrhhApiService } from '../data-access/rrhh.api';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-rrhh-page',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, TabsComponent, FilterBarComponent, DataTableComponent, ModalComponent, FormFieldComponent, SelectComponent, StatCardComponent, ConfirmDialogComponent],

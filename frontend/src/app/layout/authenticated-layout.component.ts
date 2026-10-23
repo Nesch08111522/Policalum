@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { BreadcrumbsComponent } from '../shared/components/breadcrumbs/breadcrumbs.component';
 import { ToastHostComponent } from '../shared/components/toast/toast-host.component';
@@ -9,6 +9,7 @@ import { NavbarComponent } from './components/navbar/navbar';
 import { SidebarComponent } from './components/sidebar/sidebar';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-authenticated-layout',
   standalone: true,
   imports: [HeaderComponent, NavbarComponent, SidebarComponent, FooterComponent, RouterOutlet, BreadcrumbsComponent, ToastHostComponent],

@@ -17,6 +17,7 @@ public record LegajoResponseDTO(
         String tipoContrato,
         LocalDate fechaIngreso,
         BigDecimal sueldoBase,
+        Integer diaCobro,
         BigDecimal porcentajeComision,
         SistemaPension sistemaPension,
         BigDecimal tasaPension,

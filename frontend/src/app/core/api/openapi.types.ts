@@ -945,6 +945,7 @@ export interface LegajoListadoDTO {
 
 export interface LegajoRequestDTO {
   activo?: boolean;
+  diaCobro?: number;
   empleadoId: string;
   fechaIngreso: string;
   porcentajeComision?: number;
@@ -957,6 +958,7 @@ export interface LegajoRequestDTO {
 export interface LegajoResponseDTO {
   activo?: boolean;
   createdAt?: string;
+  diaCobro?: number;
   documentos?: Array<LegajoDocumentoResponseDTO>;
   empleadoEmail?: string;
   empleadoId?: string;
@@ -1252,6 +1254,58 @@ export interface PageAjusteStockResponseDTO {
   sort?: SortObject;
   totalElements?: number;
   totalPages?: number;
+}
+
+export interface PerfilActualizarRequestDTO {
+  apellido: string;
+  biografia?: string;
+  celular: string;
+  diaCobro?: number;
+  documento?: string;
+  email: string;
+  foto?: string;
+  nombre: string;
+  sedeId?: string;
+  sueldoBase?: number;
+}
+
+export interface PerfilContrasenaRequestDTO {
+  actual: string;
+  confirmacion: string;
+  nueva: string;
+}
+
+export interface PerfilResponseDTO {
+  activo?: boolean;
+  apellido?: string;
+  biografia?: string;
+  celular?: string;
+  diaCobro?: number;
+  documento?: string;
+  email?: string;
+  fechaIngreso?: string;
+  foto?: string;
+  id?: string;
+  legajoId?: string;
+  nombre?: string;
+  nombreUsuario?: string;
+  puedeEditarLaboral?: boolean;
+  rol?: string;
+  sedeId?: string;
+  sedeNombre?: string;
+  sistemaPension?: string;
+  sueldoBase?: number;
+  tipoContrato?: string;
+  token?: string;
+  totpEnabled?: boolean;
+  totpSecreto?: string;
+  totpUrl?: string;
+  ultimoIp?: string;
+  ultimoLogin?: string;
+}
+
+export interface PerfilTotpRequestDTO {
+  activo: boolean;
 }
 
 export interface PageAlmacenResponseDTO {

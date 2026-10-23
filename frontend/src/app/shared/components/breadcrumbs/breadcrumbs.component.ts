@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 
 interface Crumb { label: string; url?: string; }
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-breadcrumbs',
   standalone: true,
   imports: [CommonModule, RouterLink],

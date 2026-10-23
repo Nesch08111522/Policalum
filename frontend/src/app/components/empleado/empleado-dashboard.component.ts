@@ -1,6 +1,6 @@
 // src/app/components/empleado/empleado-dashboard.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
@@ -14,6 +14,7 @@ import { TokenService } from '../../services/token.service';
 declare var Html5Qrcode: any;
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-empleado-dashboard',
   standalone: true,
   imports: [CommonModule, FormsModule],
