@@ -58,6 +58,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: 'Finanzas',
     items: [
       { id: 'cuentas-por-pagar', label: 'Cuentas por pagar', path: '/modules/cuentas-por-pagar', icon: 'card' },
+      { id: 'facturacion-electronica', label: 'Facturación SUNAT', path: '/modules/facturacion-electronica', icon: 'file' },
       { id: 'finanzas', label: 'Finanzas', path: '/modules/finanzas', icon: 'chart', roles: admin },
     ],
   },

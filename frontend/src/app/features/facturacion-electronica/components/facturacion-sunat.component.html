@@ -1,0 +1,39 @@
+<article class="sunat-card">
+  <header class="sunat-head">
+    <div>
+      <h2>Facturación electrónica SUNAT - RUC {{ rucVisible }}</h2>
+      <p class="sunat-kicker">{{ panel?.razonSocial || 'Empresa con RUC 20' }} · Comprobantes locales. El enlace espera la API.</p>
+    </div>
+    <a routerLink="/modules/facturacion-electronica" class="text-sm">Indicadores</a>
+  </header>
+  <p *ngIf="error" class="alert alert-error">{{ error }} <button type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button></p>
+  <div class="sunat-grid" *ngIf="panel">
+    <section>
+      <h3>Estado de envío de comprobantes</h3>
+      <div class="count-line"><span>Boletas</span><strong>{{ panel.boletas ?? 0 }}</strong></div>
+      <div class="count-line"><span>Facturas</span><strong>{{ panel.facturas ?? 0 }}</strong></div>
+      <div class="count-line"><span>Notas de crédito</span><strong>{{ panel.notasCredito ?? 0 }}</strong></div>
+      <div class="sunat-mark">SUNAT</div>
+      <div class="count-line"><span>Aceptados</span><strong>{{ panel.aceptados ?? 0 }}</strong></div>
+      <div class="count-line"><span>Con observación</span><strong>{{ panel.conObservacion ?? 0 }}</strong></div>
+      <p class="enlace"><span class="dot" [class.activo]="panel.enlaceCodigo === 'ACTIVO'"></span> Enlace síncrono SUNAT: {{ panel.enlaceCodigo === 'ACTIVO' ? 'Activo' : 'Pendiente de API' }}</p>
+    </section>
+    <section>
+      <div class="sunat-block-head"><h3>Historial de transacciones de facturación</h3></div>
+      <div class="cdr-row text-xs"><span>Nro. comprobante</span><span>RUC/DNI cliente</span><span>Estado de CDR</span></div>
+      <p *ngIf="!panel.historial?.length" class="sunat-note">Todavía no hay comprobantes locales.</p>
+      <div class="cdr-row" *ngFor="let row of panel.historial">
+        <span>{{ row.serie || '—' }}</span>
+        <span>{{ row.documentoCliente || '—' }}</span>
+        <strong class="estado" [ngClass]="estadoClase(row.estadoCdr)">{{ row.estadoCdr === 'ACEPTADO' ? 'Aceptado' : row.estadoCdr === 'RECHAZADO' ? 'Rechazado' : row.estadoCdr === 'ANULADO' ? 'Anulado' : 'Pendiente' }}</strong>
+        <strong [class]="montoClase(row)">{{ row.monto | pen }}</strong>
+      </div>
+    </section>
+    <section>
+      <h3>Acceso directo</h3>
+      <button type="button" class="access-link" (click)="emitir()">Emitir factura <span>›</span></button>
+      <button type="button" class="access-link" (click)="consultar(panel.historial?.[0])">Consultar validez de comprobante <span>›</span></button>
+      <p class="sunat-note">{{ panel.enlaceMensaje }}</p>
+    </section>
+  </div>
+</article>

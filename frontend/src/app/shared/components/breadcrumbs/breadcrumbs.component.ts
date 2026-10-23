@@ -34,6 +34,11 @@ export class BreadcrumbsComponent implements OnDestroy {
   }
 
   private rebuild(): void {
+    const path = this.router.url.split('?')[0];
+    if (path === '/inicio') {
+      this.crumbs = [];
+      return;
+    }
     let route = this.router.routerState.snapshot.root;
     let section = '';
     let label = '';

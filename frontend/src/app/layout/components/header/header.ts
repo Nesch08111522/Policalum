@@ -1,9 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
+import * as Api from '../../../core/api/openapi.types';
 import { AuthService } from '../../../services/auth.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { LayoutService } from '../../../shared/services/layout.service';
+import { LookupService } from '../../../shared/services/lookup.service';
+import { SedeFiltroService } from '../../../shared/services/sede-filtro.service';
 import { ThemeService } from '../../../shared/services/theme.service';
 import { NAV_SECTIONS, NavItem } from '../../navigation';
 
@@ -18,6 +21,8 @@ export class HeaderComponent implements OnInit {
   query = '';
   results: NavItem[] = [];
   menuOpen = false;
+  sedesAbiertas = false;
+  sedes: Api.SedeResponseDTO[] = [];
   userName = 'Usuario';
   userEmail = '';
   userRole = '';
@@ -26,8 +31,10 @@ export class HeaderComponent implements OnInit {
 
   constructor(
     readonly theme: ThemeService,
+    readonly sedeFiltro: SedeFiltroService,
     private readonly layout: LayoutService,
     private readonly auth: AuthService,
+    private readonly lookup: LookupService,
     private readonly router: Router,
   ) {}
 
@@ -39,6 +46,12 @@ export class HeaderComponent implements OnInit {
     this.userRole = role === 'ROLE_ADMIN' ? 'Administrador' : 'Multifuncional';
     this.initials = (this.userName || 'P').slice(0, 2).toUpperCase();
     this.items = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => !item.roles || item.roles.includes(role));
+    this.lookup.loadSedes().subscribe((rows) => { this.sedes = rows.filter((sede) => sede.activa !== false); });
+  }
+
+  elegirSede(id: string, nombre: string): void {
+    this.sedeFiltro.elegir(id, nombre);
+    this.sedesAbiertas = false;
   }
 
   onQuery(event: Event): void {
@@ -72,7 +85,10 @@ export class HeaderComponent implements OnInit {
   @HostListener('document:click', ['$event'])
   closeMenus(event: MouseEvent): void {
     const target = event.target as HTMLElement;
-    if (!target.closest('.dropdown')) this.menuOpen = false;
+    if (!target.closest('.dropdown')) {
+      this.menuOpen = false;
+      this.sedesAbiertas = false;
+    }
     if (!target.closest('.search-shell')) this.results = [];
   }
 }

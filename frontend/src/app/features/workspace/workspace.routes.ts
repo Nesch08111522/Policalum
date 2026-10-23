@@ -22,6 +22,7 @@ export const WORKSPACE_ROUTES: Routes = [
   { path: 'modules/turnos-caja', loadChildren: () => import('../turnos-caja/pages/turnos-caja-page.component').then((m) => m.TURNOS_CAJA_ROUTES) },
   { path: 'modules/cuentas-por-pagar', loadChildren: () => import('../cuentas-por-pagar/pages/cuentas-por-pagar-page.component').then((m) => m.CUENTAS_POR_PAGAR_ROUTES) },
   { path: 'modules/finanzas', loadChildren: () => import('../finanzas/pages/finanzas-page.component').then((m) => m.FINANZAS_ROUTES) },
+  { path: 'modules/facturacion-electronica', loadChildren: () => import('../facturacion-electronica/pages/facturacion-electronica-page.component').then((m) => m.FACTURACION_ELECTRONICA_ROUTES) },
   { path: 'modules/rrhh', loadChildren: () => import('../rrhh/pages/rrhh-page.component').then((m) => m.RRHH_ROUTES) },
   { path: 'modules/reportes', loadChildren: () => import('../reportes/pages/reportes-page.component').then((m) => m.REPORTES_ROUTES) },
   { path: 'modules/auditoria', loadChildren: () => import('../auditoria/pages/auditoria-page.component').then((m) => m.AUDITORIA_ROUTES) },
