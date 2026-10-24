@@ -26,8 +26,6 @@ export class VentasApiService {
   clientes(searchTerm = ''): Observable<Page<Cliente>> { return this.http.get<Page<Cliente>>(`${this.api}/clientes`, { params: { searchTerm, size: 30 } }); }
   sedes(): Observable<Page<Sede>> { return this.http.get<Page<Sede>>(`${this.api}/sedes`, { params: { size: 50 } }); }
   almacenes(sedeId: string): Observable<Almacen[]> { return this.http.get<Almacen[]>(`${this.api}/almacenes/sede/${sedeId}`); }
-  abrirCaja(data: { sedeId: string; montoInicial: number; observaciones?: string }): Observable<Turno> { return this.http.post<Turno>(`${this.api}/turnos-caja`, data); }
-  cerrarCaja(id: string, data: { montoFinalDeclarado: number; observaciones?: string }): Observable<unknown> { return this.http.post(`${this.api}/turnos-caja/${id}/cierre`, data); }
   registrarVenta(data: unknown): Observable<VentaRegistrada> { return this.http.post<VentaRegistrada>(`${this.api}/ventas`, data); }
   ventas(filters: Record<string, string | number | undefined>): Observable<Page<VentaListado>> { let params = new HttpParams({ fromObject: { size: 20, sort: 'createdAt,desc' } }); Object.entries(filters).forEach(([k, v]) => { if (v !== undefined && v !== '') params = params.set(k, String(v)); }); return this.http.get<Page<VentaListado>>(`${this.api}/ventas`, { params }); }
   anular(id: string, motivo: string): Observable<unknown> { return this.http.post(`${this.api}/ventas/${id}/anulacion`, { motivo }); }

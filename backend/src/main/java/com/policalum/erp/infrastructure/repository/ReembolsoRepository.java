@@ -37,10 +37,10 @@ public interface ReembolsoRepository extends JpaRepository<Reembolso, UUID> {
 
     @EntityGraph(attributePaths = {"devolucion", "venta", "cliente", "creadoPor", "procesadoPor"})
     @Query("SELECT r FROM Reembolso r WHERE " +
-            "(:sedeId IS NULL OR r.devolucion.sede.id = :sedeId) AND " +
-            "(:estado IS NULL OR r.estado = :estado) AND " +
-            "(:metodo IS NULL OR r.metodoReembolso = :metodo) AND " +
-            "r.createdAt >= :desde AND r.createdAt < :hasta")
+            "(CAST(:sedeId AS string) IS NULL OR r.devolucion.sede.id = :sedeId) AND " +
+            "(CAST(:estado AS string) IS NULL OR r.estado = :estado) AND " +
+            "(CAST(:metodo AS string) IS NULL OR r.metodoReembolso = :metodo) AND " +
+            "r.createdAt >= CAST(:desde AS timestamp) AND r.createdAt < CAST(:hasta AS timestamp)")
     Page<Reembolso> search(@Param("sedeId") UUID sedeId,
                            @Param("estado") EstadoReembolso estado,
                            @Param("metodo") MetodoReembolso metodo,
@@ -49,18 +49,18 @@ public interface ReembolsoRepository extends JpaRepository<Reembolso, UUID> {
                            Pageable pageable);
 
     @Query("SELECT COUNT(r) FROM Reembolso r WHERE r.estado = com.policalum.erp.domain.enums.EstadoReembolso.PENDIENTE " +
-            "AND (:sedeId IS NULL OR r.devolucion.sede.id = :sedeId)")
+            "AND (CAST(:sedeId AS string) IS NULL OR r.devolucion.sede.id = :sedeId)")
     long contarPendientes(@Param("sedeId") UUID sedeId);
 
     @Query("SELECT COALESCE(SUM(r.montoTotalReembolso), 0) FROM Reembolso r WHERE " +
             "r.estado = com.policalum.erp.domain.enums.EstadoReembolso.PENDIENTE AND " +
-            "(:sedeId IS NULL OR r.devolucion.sede.id = :sedeId)")
+            "(CAST(:sedeId AS string) IS NULL OR r.devolucion.sede.id = :sedeId)")
     BigDecimal sumarPendientes(@Param("sedeId") UUID sedeId);
 
     @Query("SELECT COALESCE(SUM(r.montoTotalReembolso), 0) FROM Reembolso r WHERE " +
             "r.estado = com.policalum.erp.domain.enums.EstadoReembolso.PROCESADO AND " +
-            "(:sedeId IS NULL OR r.devolucion.sede.id = :sedeId) AND " +
-            "r.fechaProcesado >= :desde AND r.fechaProcesado < :hasta")
+            "(CAST(:sedeId AS string) IS NULL OR r.devolucion.sede.id = :sedeId) AND " +
+            "r.fechaProcesado >= CAST(:desde AS timestamp) AND r.fechaProcesado < CAST(:hasta AS timestamp)")
     BigDecimal sumarProcesados(@Param("sedeId") UUID sedeId,
                                @Param("desde") LocalDateTime desde,
                                @Param("hasta") LocalDateTime hasta);
@@ -69,14 +69,14 @@ public interface ReembolsoRepository extends JpaRepository<Reembolso, UUID> {
 
     @Query("SELECT r.devolucion.sede.id AS sedeId, r.metodoReembolso AS metodo, COALESCE(SUM(r.montoTotalReembolso), 0) AS total " +
             "FROM Reembolso r WHERE r.estado = com.policalum.erp.domain.enums.EstadoReembolso.PROCESADO AND " +
-            "r.fechaProcesado >= :desde AND r.fechaProcesado < :hasta AND " +
-            "(:sedeId IS NULL OR r.devolucion.sede.id = :sedeId) GROUP BY r.devolucion.sede.id, r.metodoReembolso")
+            "r.fechaProcesado >= CAST(:desde AS timestamp) AND r.fechaProcesado < CAST(:hasta AS timestamp) AND " +
+            "(CAST(:sedeId AS string) IS NULL OR r.devolucion.sede.id = :sedeId) GROUP BY r.devolucion.sede.id, r.metodoReembolso")
     List<ReembolsoPorSedeMetodoProjection> procesadosPorSedeYMetodo(@Param("desde") LocalDateTime desde,
                                                                    @Param("hasta") LocalDateTime hasta,
                                                                    @Param("sedeId") UUID sedeId);
 
     @Query("SELECT r.devolucion.sede.id AS sedeId, COALESCE(SUM(r.montoTotalReembolso), 0) AS total FROM Reembolso r " +
             "WHERE r.estado = com.policalum.erp.domain.enums.EstadoReembolso.PENDIENTE AND " +
-            "(:sedeId IS NULL OR r.devolucion.sede.id = :sedeId) GROUP BY r.devolucion.sede.id")
+            "(CAST(:sedeId AS string) IS NULL OR r.devolucion.sede.id = :sedeId) GROUP BY r.devolucion.sede.id")
     List<MontoPorSedeProjection> pendientesPorSede(@Param("sedeId") UUID sedeId);
 }

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -25,11 +25,12 @@ import { PerfilApiService } from '../data-access/perfil.api';
 })
 export class PerfilPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly cd = inject(ChangeDetectorRef);
   readonly datos = this.fb.nonNullable.group({
-    nombre: ['', [Validators.required, Validators.maxLength(50)]],
-    apellido: ['', [Validators.required, Validators.maxLength(50)]],
-    email: ['', [Validators.required, Validators.email]],
-    celular: ['', [Validators.required, Validators.pattern(/^[0-9+() -]{6,20}$/)]],
+    nombre: ['', [Validators.required, Validators.maxLength(100)]],
+    apellido: ['', [Validators.required, Validators.maxLength(100)]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+    celular: ['', [Validators.required, Validators.maxLength(15), Validators.pattern(/^[0-9+() -]{6,15}$/)]],
     documento: ['', Validators.pattern(/^(\d{8}|\d{11})?$/)],
     sedeId: [''],
     biografia: ['', Validators.maxLength(500)],
@@ -64,6 +65,7 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.lookup.loadSedes().pipe(takeUntil(this.destroy$)).subscribe((rows) => {
       this.sedes = this.lookup.options(rows, (row) => (row as Api.SedeResponseDTO).nombre ?? 'Sede');
+      this.cd.markForCheck();
     });
     this.cargar();
   }
@@ -84,7 +86,7 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
   cargar(): void {
     this.api.actual().pipe(takeUntil(this.destroy$)).subscribe({
       next: (perfil) => this.pintar(perfil),
-      error: (error: unknown) => { this.errorDatos = problemText(error); },
+      error: (error: unknown) => { this.errorDatos = problemText(error); this.cd.markForCheck(); },
     });
   }
 
@@ -206,7 +208,7 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
 
   errorDe(nombre: 'nombre' | 'apellido' | 'email' | 'celular' | 'documento' | 'biografia'): string | null {
     return fieldError(this.datos.controls[nombre], {
-      pattern: nombre === 'celular' ? 'Usa entre 6 y 20 dígitos, espacios o guiones.' : 'Usa 8 dígitos para DNI o 11 para RUC.',
+      pattern: nombre === 'celular' ? 'Usa entre 6 y 15 dígitos, espacios o guiones.' : 'Usa 8 dígitos para DNI o 11 para RUC.',
     });
   }
 
@@ -234,11 +236,12 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
       this.datos.controls.diaCobro.disable();
     }
     this.aplicarSesion(perfil);
+    this.cd.markForCheck();
   }
 
   private aplicarSesion(perfil: Api.PerfilResponseDTO): void {
     if (perfil.token) this.tokens.setToken(perfil.token);
-    const actual = this.tokens.session();
+    const actual = this.tokens.getUser();
     if (!actual) return;
     this.tokens.setUser({
       ...actual,

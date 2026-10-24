@@ -387,6 +387,33 @@ public class ConfiguracionServiceImpl implements ConfiguracionService {
             reportesRepository.save(ConfiguracionReportes.builder().id(ID).build());
             registrarInicial(TABLA_REPORTES);
         }
+        seriesDeFabrica();
+    }
+
+    /** B001, F001 y T001 por sede, solo si esa sede todavía no tiene la serie de ese comprobante. */
+    private void seriesDeFabrica() {
+        for (Sede sede : sedeRepository.findAll()) {
+            asegurarSerie(sede, TipoComprobante.BOLETA, "B001");
+            asegurarSerie(sede, TipoComprobante.FACTURA, "F001");
+            asegurarSerie(sede, TipoComprobante.TICKET, "T001");
+        }
+    }
+
+    private void asegurarSerie(Sede sede, TipoComprobante tipo, String codigo) {
+        if (serieRepository.findParaActualizar(sede.getId(), tipo).isPresent()) return;
+        if (serieRepository.findBySerie(codigo).isPresent()) {
+            log.info("La serie {} ya existe y no se duplica para {}.", codigo, sede.getNombre());
+            return;
+        }
+        SerieComprobante serie = SerieComprobante.builder()
+                .sede(sede)
+                .tipoComprobante(tipo)
+                .serie(codigo)
+                .activa(true)
+                .build();
+        serieRepository.save(serie);
+        registrarInicial(TABLA_SERIES);
+        log.info("Serie {} ({}) creada para {}.", codigo, tipo, sede.getNombre());
     }
 
     private void registrarInicial(String tabla) {

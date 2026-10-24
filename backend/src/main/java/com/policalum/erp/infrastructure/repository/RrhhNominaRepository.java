@@ -34,7 +34,7 @@ public interface RrhhNominaRepository extends JpaRepository<RrhhNomina, UUID> {
 
     @Query("SELECT COALESCE(SUM(n.totalNeto), 0) FROM RrhhNomina n WHERE n.estado = :estado AND " +
             "n.periodo >= :periodoDesde AND n.periodo <= :periodoHasta AND " +
-            "(:sedeId IS NULL OR n.user.sede.id = :sedeId)")
+            "(CAST(:sedeId AS string) IS NULL OR n.user.sede.id = :sedeId)")
     BigDecimal sumarTotalNeto(
             @Param("estado") EstadoNomina estado,
             @Param("periodoDesde") String periodoDesde,
@@ -43,7 +43,7 @@ public interface RrhhNominaRepository extends JpaRepository<RrhhNomina, UUID> {
 
     @Query("SELECT COUNT(n) FROM RrhhNomina n WHERE n.estado = :estado AND " +
             "n.periodo >= :periodoDesde AND n.periodo <= :periodoHasta AND " +
-            "(:sedeId IS NULL OR n.user.sede.id = :sedeId)")
+            "(CAST(:sedeId AS string) IS NULL OR n.user.sede.id = :sedeId)")
     long contar(
             @Param("estado") EstadoNomina estado,
             @Param("periodoDesde") String periodoDesde,
@@ -64,10 +64,10 @@ public interface RrhhNominaRepository extends JpaRepository<RrhhNomina, UUID> {
 
     @EntityGraph(attributePaths = {"user", "sede"})
     @Query("SELECT n FROM RrhhNomina n WHERE " +
-            "(:periodo IS NULL OR n.periodo = :periodo) AND " +
-            "(:sedeId IS NULL OR n.user.sede.id = :sedeId) AND " +
-            "(:estado IS NULL OR n.estado = :estado) AND " +
-            "(:userId IS NULL OR n.user.id = :userId)")
+            "(CAST(:periodo AS string) IS NULL OR n.periodo = :periodo) AND " +
+            "(CAST(:sedeId AS string) IS NULL OR n.user.sede.id = :sedeId) AND " +
+            "(CAST(:estado AS string) IS NULL OR n.estado = :estado) AND " +
+            "(CAST(:userId AS string) IS NULL OR n.user.id = :userId)")
     Page<RrhhNomina> search(@Param("periodo") String periodo,
                             @Param("sedeId") UUID sedeId,
                             @Param("estado") EstadoNomina estado,
@@ -80,7 +80,7 @@ public interface RrhhNominaRepository extends JpaRepository<RrhhNomina, UUID> {
             "COALESCE(SUM(n.descuentos), 0) AS descuentos, " +
             "COALESCE(SUM(n.totalNeto), 0) AS neto " +
             "FROM RrhhNomina n WHERE n.periodo = :periodo AND " +
-            "(:sedeId IS NULL OR n.user.sede.id = :sedeId) GROUP BY n.estado")
+            "(CAST(:sedeId AS string) IS NULL OR n.user.sede.id = :sedeId) GROUP BY n.estado")
     List<NominaTotalesPorEstadoProjection> totalesPorEstado(@Param("periodo") String periodo,
                                                             @Param("sedeId") UUID sedeId);
 
@@ -89,7 +89,7 @@ public interface RrhhNominaRepository extends JpaRepository<RrhhNomina, UUID> {
     /** Nóminas PAGADAS por fecha de pago real en [desde, hasta), por sede y método. */
     @Query("SELECT n.user.sede.id AS sedeId, n.metodoPago AS metodo, COALESCE(SUM(n.totalNeto), 0) AS total " +
             "FROM RrhhNomina n WHERE n.estado = com.policalum.erp.domain.enums.EstadoNomina.PAGADA AND " +
-            "n.fechaPago >= :desde AND n.fechaPago < :hasta AND (:sedeId IS NULL OR n.user.sede.id = :sedeId) " +
+            "n.fechaPago >= CAST(:desde AS timestamp) AND n.fechaPago < CAST(:hasta AS timestamp) AND (CAST(:sedeId AS string) IS NULL OR n.user.sede.id = :sedeId) " +
             "GROUP BY n.user.sede.id, n.metodoPago")
     List<MontoPorSedeMetodoProjection> pagadasPorSedeYMetodo(@Param("desde") LocalDateTime desde,
                                                             @Param("hasta") LocalDateTime hasta,
@@ -97,7 +97,7 @@ public interface RrhhNominaRepository extends JpaRepository<RrhhNomina, UUID> {
 
     /** Nóminas aún no pagadas (PENDIENTE/APROBADA), por sede. */
     @Query("SELECT n.user.sede.id AS sedeId, COALESCE(SUM(n.totalNeto), 0) AS total FROM RrhhNomina n " +
-            "WHERE n.estado IN :estados AND (:sedeId IS NULL OR n.user.sede.id = :sedeId) GROUP BY n.user.sede.id")
+            "WHERE n.estado IN :estados AND (CAST(:sedeId AS string) IS NULL OR n.user.sede.id = :sedeId) GROUP BY n.user.sede.id")
     List<MontoPorSedeProjection> porPagarPorSede(@Param("estados") Collection<EstadoNomina> estados,
                                                  @Param("sedeId") UUID sedeId);
 }

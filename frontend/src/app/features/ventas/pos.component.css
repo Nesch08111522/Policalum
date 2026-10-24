@@ -8,7 +8,7 @@
 .banner.ok { background: var(--color-success-bg); color: var(--color-success); }
 .banner.bad { background: var(--color-danger-bg); color: var(--color-danger); }
 
-.filtros, .caja-cerrar { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.filtros { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
 .filtros label, .referencia { display: grid; gap: 6px; min-width: 180px; color: var(--color-text-muted); font-size: var(--text-sm); }
 .filtros select, .filtros input, .busqueda input, .referencia input, .stepper input {
   min-height: 40px;
@@ -18,24 +18,32 @@
   background: var(--color-bg-subtle);
   color: var(--color-text);
 }
-.caja-abierta {
+.caja-abierta, .caja-pendiente {
   margin-left: auto;
   align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 10px 14px;
   border-radius: var(--radius-md);
+}
+.caja-abierta {
   background: var(--color-success-bg);
   color: var(--color-success);
   font-weight: var(--weight-semibold);
 }
-.caja-cerrar button, .guardar button, .opciones button, .pagos button, .nota-venta, .fraccion, .pin, .quitar, .stepper button, .emitir {
+.caja-pendiente {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+}
+.caja-pendiente a { color: var(--color-primary); font-weight: var(--weight-semibold); text-decoration: none; }
+.guardar button, .opciones button, .pagos button, .nota-venta, .fraccion, .pin, .quitar, .stepper button, .emitir {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface-raised);
   color: var(--color-text);
   cursor: pointer;
 }
-.caja-cerrar button { min-height: 40px; padding: 0 14px; background: var(--color-primary); color: var(--color-primary-contrast); border-color: transparent; }
-
 .busqueda { display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
 .busqueda input { width: 100%; border: 0; background: transparent; }
 
@@ -101,7 +109,7 @@
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
-.emitir:disabled, .guardar button:disabled, .caja-cerrar button:disabled { opacity: 0.5; cursor: not-allowed; }
+.emitir:disabled, .guardar button:disabled { opacity: 0.5; cursor: not-allowed; }
 .guardar { margin-top: 8px; }
 .guardar button { background: transparent; color: var(--color-text-muted); }
 

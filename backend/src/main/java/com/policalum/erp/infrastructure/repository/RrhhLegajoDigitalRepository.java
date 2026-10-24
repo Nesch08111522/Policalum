@@ -22,7 +22,7 @@ public interface RrhhLegajoDigitalRepository extends JpaRepository<RrhhLegajoDig
 
     /** Legajos activos de usuarios activos; sedeId null = todas las sedes. (Módulo 9) */
     @Query("SELECT l FROM RrhhLegajoDigital l JOIN FETCH l.user u JOIN FETCH u.sede s " +
-            "WHERE l.activo = true AND u.activo = true AND (:sedeId IS NULL OR s.id = :sedeId) " +
+            "WHERE l.activo = true AND u.activo = true AND (CAST(:sedeId AS string) IS NULL OR s.id = :sedeId) " +
             "ORDER BY u.apellido, u.nombre")
     List<RrhhLegajoDigital> findActivos(@Param("sedeId") UUID sedeId);
 
@@ -38,11 +38,11 @@ public interface RrhhLegajoDigitalRepository extends JpaRepository<RrhhLegajoDig
      */
     @EntityGraph(attributePaths = {"user", "user.sede"})
     @Query("SELECT l FROM RrhhLegajoDigital l WHERE " +
-            "(:sedeId IS NULL OR l.user.sede.id = :sedeId) AND " +
-            "(:tipoContrato IS NULL OR l.tipoContrato = :tipoContrato) AND " +
-            "(:sistema IS NULL OR l.sistemaPension = :sistema) AND " +
-            "(:activo IS NULL OR l.activo = :activo) AND " +
-            "(LOWER(CONCAT(l.user.nombre, ' ', l.user.apellido)) LIKE :patron OR LOWER(l.user.email) LIKE :patron)")
+            "(CAST(:sedeId AS string) IS NULL OR l.user.sede.id = :sedeId) AND " +
+            "(CAST(:tipoContrato AS string) IS NULL OR l.tipoContrato = :tipoContrato) AND " +
+            "(CAST(:sistema AS string) IS NULL OR l.sistemaPension = :sistema) AND " +
+            "(CAST(:activo AS boolean) IS NULL OR l.activo = :activo) AND " +
+            "(LOWER(CONCAT(l.user.nombre, ' ', l.user.apellido)) LIKE CAST(:patron AS string) OR LOWER(l.user.email) LIKE CAST(:patron AS string))")
     Page<RrhhLegajoDigital> search(@Param("sedeId") UUID sedeId,
                                    @Param("tipoContrato") String tipoContrato,
                                    @Param("sistema") SistemaPension sistema,
@@ -51,10 +51,10 @@ public interface RrhhLegajoDigitalRepository extends JpaRepository<RrhhLegajoDig
                                    Pageable pageable);
 
     /** Todos los legajos (activos e inactivos) de la sede, para el dashboard. */
-    @Query("SELECT l FROM RrhhLegajoDigital l JOIN FETCH l.user u WHERE (:sedeId IS NULL OR u.sede.id = :sedeId)")
+    @Query("SELECT l FROM RrhhLegajoDigital l JOIN FETCH l.user u WHERE (CAST(:sedeId AS string) IS NULL OR u.sede.id = :sedeId)")
     List<RrhhLegajoDigital> findTodos(@Param("sedeId") UUID sedeId);
 
-    @Query("SELECT COUNT(u) FROM User u WHERE u.activo = true AND (:sedeId IS NULL OR u.sede.id = :sedeId) " +
+    @Query("SELECT COUNT(u) FROM User u WHERE u.activo = true AND (CAST(:sedeId AS string) IS NULL OR u.sede.id = :sedeId) " +
             "AND NOT EXISTS (SELECT 1 FROM RrhhLegajoDigital l WHERE l.user = u)")
     long contarUsuariosActivosSinLegajo(@Param("sedeId") UUID sedeId);
 }

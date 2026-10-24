@@ -24,10 +24,10 @@ public interface KardexRepository extends JpaRepository<KardexMovimiento, UUID> 
 
     @EntityGraph(attributePaths = {"producto", "almacen", "user"})
     @Query("SELECT k FROM KardexMovimiento k WHERE " +
-            "(:productoId IS NULL OR k.producto.id = :productoId) AND " +
-            "(:almacenId IS NULL OR k.almacen.id = :almacenId) AND " +
-            "k.createdAt >= :fechaInicio AND " +
-            "k.createdAt <= :fechaFin")
+            "(CAST(:productoId AS string) IS NULL OR k.producto.id = :productoId) AND " +
+            "(CAST(:almacenId AS string) IS NULL OR k.almacen.id = :almacenId) AND " +
+            "k.createdAt >= CAST(:fechaInicio AS timestamp) AND " +
+            "k.createdAt <= CAST(:fechaFin AS timestamp)")
     Page<KardexMovimiento> searchMovimientos(
             @Param("productoId") UUID productoId,
             @Param("almacenId") UUID almacenId,
@@ -45,7 +45,7 @@ public interface KardexRepository extends JpaRepository<KardexMovimiento, UUID> 
     @Query("SELECT COALESCE(SUM(k.cantidadMovida * k.producto.precioCompra), 0) FROM KardexMovimiento k " +
             "WHERE k.tipoReferencia = com.policalum.erp.domain.enums.TipoReferencia.MERMA AND " +
             "k.tipoMovimiento = com.policalum.erp.domain.enums.TipoMovimiento.SALIDA AND " +
-            "k.createdAt >= :desde AND k.createdAt < :hasta AND (:sedeId IS NULL OR k.almacen.sede.id = :sedeId)")
+            "k.createdAt >= CAST(:desde AS timestamp) AND k.createdAt < CAST(:hasta AS timestamp) AND (CAST(:sedeId AS string) IS NULL OR k.almacen.sede.id = :sedeId)")
     BigDecimal valorMermas(@Param("sedeId") UUID sedeId,
                            @Param("desde") LocalDateTime desde,
                            @Param("hasta") LocalDateTime hasta);
@@ -54,10 +54,10 @@ public interface KardexRepository extends JpaRepository<KardexMovimiento, UUID> 
     // Fechas siempre no nulas, rango semiabierto [desde, hasta). incluirSinFecha = true agrega
     // los movimientos antiguos guardados con created_at NULL (antes del fix del Módulo 10).
 
-    String FILTROS_KARDEX = "(:productoId IS NULL OR k.producto.id = :productoId) AND " +
-            "(:almacenId IS NULL OR k.almacen.id = :almacenId) AND " +
-            "(:tipoReferencia IS NULL OR k.tipoReferencia = :tipoReferencia) AND " +
-            "((k.createdAt >= :desde AND k.createdAt < :hasta) OR (:incluirSinFecha = true AND k.createdAt IS NULL))";
+    String FILTROS_KARDEX = "(CAST(:productoId AS string) IS NULL OR k.producto.id = :productoId) AND " +
+            "(CAST(:almacenId AS string) IS NULL OR k.almacen.id = :almacenId) AND " +
+            "(CAST(:tipoReferencia AS string) IS NULL OR k.tipoReferencia = :tipoReferencia) AND " +
+            "((k.createdAt >= CAST(:desde AS timestamp) AND k.createdAt < CAST(:hasta AS timestamp)) OR (:incluirSinFecha = true AND k.createdAt IS NULL))";
 
     @EntityGraph(attributePaths = {"producto", "almacen", "almacen.sede", "user"})
     @Query("SELECT k FROM KardexMovimiento k WHERE k.id = :id")
@@ -94,8 +94,8 @@ public interface KardexRepository extends JpaRepository<KardexMovimiento, UUID> 
             "FROM KardexMovimiento k JOIN k.producto p " +
             "WHERE k.tipoReferencia = com.policalum.erp.domain.enums.TipoReferencia.MERMA AND " +
             "k.tipoMovimiento = com.policalum.erp.domain.enums.TipoMovimiento.SALIDA AND " +
-            "(:productoId IS NULL OR p.id = :productoId) AND (:almacenId IS NULL OR k.almacen.id = :almacenId) AND " +
-            "((k.createdAt >= :desde AND k.createdAt < :hasta) OR (:incluirSinFecha = true AND k.createdAt IS NULL)) " +
+            "(CAST(:productoId AS string) IS NULL OR p.id = :productoId) AND (CAST(:almacenId AS string) IS NULL OR k.almacen.id = :almacenId) AND " +
+            "((k.createdAt >= CAST(:desde AS timestamp) AND k.createdAt < CAST(:hasta AS timestamp)) OR (:incluirSinFecha = true AND k.createdAt IS NULL)) " +
             "GROUP BY p.id, p.nombre, p.codigoSku, p.unidad ORDER BY COALESCE(SUM(k.cantidadMovida * p.precioCompra), 0) DESC")
     List<MermaProjection> mermasPorProducto(@Param("productoId") UUID productoId,
                                             @Param("almacenId") UUID almacenId,
@@ -105,8 +105,8 @@ public interface KardexRepository extends JpaRepository<KardexMovimiento, UUID> 
 
     /** Entradas y salidas de un producto en el rango (para el historial). */
     @Query("SELECT k.tipoMovimiento AS tipo, COALESCE(SUM(k.cantidadMovida), 0) AS cantidad, COUNT(k) AS movimientos " +
-            "FROM KardexMovimiento k WHERE k.producto.id = :productoId AND (:almacenId IS NULL OR k.almacen.id = :almacenId) AND " +
-            "((k.createdAt >= :desde AND k.createdAt < :hasta) OR (:incluirSinFecha = true AND k.createdAt IS NULL)) " +
+            "FROM KardexMovimiento k WHERE k.producto.id = :productoId AND (CAST(:almacenId AS string) IS NULL OR k.almacen.id = :almacenId) AND " +
+            "((k.createdAt >= CAST(:desde AS timestamp) AND k.createdAt < CAST(:hasta AS timestamp)) OR (:incluirSinFecha = true AND k.createdAt IS NULL)) " +
             "GROUP BY k.tipoMovimiento")
     List<TotalPorTipoMovimientoProjection> totalesPorTipo(@Param("productoId") UUID productoId,
                                                           @Param("almacenId") UUID almacenId,
@@ -118,13 +118,13 @@ public interface KardexRepository extends JpaRepository<KardexMovimiento, UUID> 
     @EntityGraph(attributePaths = {"producto", "almacen", "user"})
     @Query(value = "SELECT k FROM KardexMovimiento k WHERE k.tipoReferencia = com.policalum.erp.domain.enums.TipoReferencia.MERMA AND " +
             "k.tipoMovimiento = com.policalum.erp.domain.enums.TipoMovimiento.SALIDA AND " +
-            "(:productoId IS NULL OR k.producto.id = :productoId) AND (:almacenId IS NULL OR k.almacen.id = :almacenId) AND " +
-            "((k.createdAt >= :desde AND k.createdAt < :hasta) OR (:incluirSinFecha = true AND k.createdAt IS NULL)) " +
+            "(CAST(:productoId AS string) IS NULL OR k.producto.id = :productoId) AND (CAST(:almacenId AS string) IS NULL OR k.almacen.id = :almacenId) AND " +
+            "((k.createdAt >= CAST(:desde AS timestamp) AND k.createdAt < CAST(:hasta AS timestamp)) OR (:incluirSinFecha = true AND k.createdAt IS NULL)) " +
             "ORDER BY k.createdAt DESC NULLS LAST, k.id DESC",
             countQuery = "SELECT COUNT(k) FROM KardexMovimiento k WHERE k.tipoReferencia = com.policalum.erp.domain.enums.TipoReferencia.MERMA AND " +
             "k.tipoMovimiento = com.policalum.erp.domain.enums.TipoMovimiento.SALIDA AND " +
-            "(:productoId IS NULL OR k.producto.id = :productoId) AND (:almacenId IS NULL OR k.almacen.id = :almacenId) AND " +
-            "((k.createdAt >= :desde AND k.createdAt < :hasta) OR (:incluirSinFecha = true AND k.createdAt IS NULL))")
+            "(CAST(:productoId AS string) IS NULL OR k.producto.id = :productoId) AND (CAST(:almacenId AS string) IS NULL OR k.almacen.id = :almacenId) AND " +
+            "((k.createdAt >= CAST(:desde AS timestamp) AND k.createdAt < CAST(:hasta AS timestamp)) OR (:incluirSinFecha = true AND k.createdAt IS NULL))")
     Page<KardexMovimiento> buscarMermas(@Param("productoId") UUID productoId,
                                         @Param("almacenId") UUID almacenId,
                                         @Param("desde") LocalDateTime desde,
@@ -139,8 +139,8 @@ public interface KardexRepository extends JpaRepository<KardexMovimiento, UUID> 
 
     /** Movimientos por tipo en [desde, hasta) (para "movimientos del día"). */
     @Query("SELECT k.tipoMovimiento AS tipo, COALESCE(SUM(k.cantidadMovida), 0) AS cantidad, COUNT(k) AS movimientos " +
-            "FROM KardexMovimiento k WHERE k.createdAt >= :desde AND k.createdAt < :hasta AND " +
-            "(:sedeId IS NULL OR k.almacen.sede.id = :sedeId) GROUP BY k.tipoMovimiento")
+            "FROM KardexMovimiento k WHERE k.createdAt >= CAST(:desde AS timestamp) AND k.createdAt < CAST(:hasta AS timestamp) AND " +
+            "(CAST(:sedeId AS string) IS NULL OR k.almacen.sede.id = :sedeId) GROUP BY k.tipoMovimiento")
     List<TotalPorTipoMovimientoProjection> conteoPorTipo(@Param("sedeId") UUID sedeId,
                                                          @Param("desde") LocalDateTime desde,
                                                          @Param("hasta") LocalDateTime hasta);

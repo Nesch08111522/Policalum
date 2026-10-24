@@ -3,7 +3,6 @@ package com.policalum.erp.infrastructure.repository;
 import com.policalum.erp.domain.model.Servicio;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,16 +28,13 @@ public interface ServicioRepository extends JpaRepository<Servicio, UUID> {
     /**
      * El CAST a string evita que PostgreSQL trate el parámetro nulo como bytea
      * y falle con "function lower(bytea) does not exist".
-     * El grafo carga el equipo en la misma consulta: el listado leía colaboradores
-     * y usuario una vez por fila.
      */
-    @EntityGraph(attributePaths = {"colaboradores", "colaboradores.usuario"})
     @Query("SELECT s FROM Servicio s WHERE " +
-            "(:searchTerm IS NULL OR LOWER(s.nombre) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')) " +
+            "(CAST(:searchTerm AS string) IS NULL OR LOWER(s.nombre) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')) " +
             "OR LOWER(COALESCE(s.descripcion, '')) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%'))) AND " +
-            "(:activo IS NULL OR s.activo = :activo) AND " +
-            "(:precioMin IS NULL OR s.precio >= :precioMin) AND " +
-            "(:precioMax IS NULL OR s.precio <= :precioMax)")
+            "(CAST(:activo AS boolean) IS NULL OR s.activo = :activo) AND " +
+            "(CAST(:precioMin AS string) IS NULL OR s.precio >= CAST(CAST(:precioMin AS string) AS BigDecimal)) AND " +
+            "(CAST(:precioMax AS string) IS NULL OR s.precio <= CAST(CAST(:precioMax AS string) AS BigDecimal))")
     Page<Servicio> search(
             @Param("searchTerm") String searchTerm,
             @Param("activo") Boolean activo,

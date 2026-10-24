@@ -30,11 +30,11 @@ public interface AlmacenRepository extends JpaRepository<Almacen, UUID> {
      */
     @EntityGraph(attributePaths = "sede")
     @Query("SELECT a FROM Almacen a WHERE "
-            + "(:searchTerm IS NULL OR "
+            + "(CAST(:searchTerm AS string) IS NULL OR "
             + " LOWER(a.nombre) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')) OR "
             + " LOWER(COALESCE(a.descripcion, '')) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%'))) AND "
-            + "(:sedeId IS NULL OR a.sede.id = :sedeId) AND "
-            + "(:activo IS NULL OR a.activo = :activo)")
+            + "(CAST(:sedeId AS string) IS NULL OR a.sede.id = :sedeId) AND "
+            + "(CAST(:activo AS boolean) IS NULL OR a.activo = :activo)")
     Page<Almacen> search(@Param("searchTerm") String searchTerm,
                          @Param("sedeId") UUID sedeId,
                          @Param("activo") Boolean activo,

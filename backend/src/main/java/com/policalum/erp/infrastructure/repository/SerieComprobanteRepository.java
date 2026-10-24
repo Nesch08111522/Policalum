@@ -17,7 +17,7 @@ public interface SerieComprobanteRepository extends JpaRepository<SerieComproban
 
     /** Series con su sede (y quien actualizó) cargadas; sedeId null = todas. Orden: sede, tipo. */
     @Query("SELECT s FROM SerieComprobante s JOIN FETCH s.sede se LEFT JOIN FETCH s.actualizadoPor " +
-            "WHERE (:sedeId IS NULL OR se.id = :sedeId) ORDER BY se.nombre, s.tipoComprobante")
+            "WHERE (CAST(:sedeId AS string) IS NULL OR se.id = :sedeId) ORDER BY se.nombre, s.tipoComprobante")
     List<SerieComprobante> listar(@Param("sedeId") UUID sedeId);
 
     /** Serie de una sede y tipo, bloqueada para edición. */

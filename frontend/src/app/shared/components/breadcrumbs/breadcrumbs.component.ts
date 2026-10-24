@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 
@@ -11,9 +11,9 @@ interface Crumb { label: string; url?: string; }
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <nav class="breadcrumbs" aria-label="Miga de pan" *ngIf="crumbs.length">
+    <nav class="breadcrumbs" aria-label="Miga de pan" *ngIf="crumbs().length">
       <a routerLink="/inicio">Inicio</a>
-      <ng-container *ngFor="let crumb of crumbs">
+      <ng-container *ngFor="let crumb of crumbs()">
         <span aria-hidden="true">/</span>
         <a *ngIf="crumb.url" [routerLink]="crumb.url">{{ crumb.label }}</a>
         <span *ngIf="!crumb.url">{{ crumb.label }}</span>
@@ -22,7 +22,8 @@ interface Crumb { label: string; url?: string; }
   `,
 })
 export class BreadcrumbsComponent implements OnDestroy {
-  crumbs: Crumb[] = [];
+  /** Signal: el arranque es zoneless y NavigationEnd no repinta un arreglo plano. */
+  readonly crumbs = signal<Crumb[]>([]);
   private readonly sub: Subscription;
 
   constructor(private readonly router: Router) {
@@ -37,7 +38,7 @@ export class BreadcrumbsComponent implements OnDestroy {
   private rebuild(): void {
     const path = this.router.url.split('?')[0];
     if (path === '/inicio') {
-      this.crumbs = [];
+      this.crumbs.set([]);
       return;
     }
     let route = this.router.routerState.snapshot.root;
@@ -51,6 +52,6 @@ export class BreadcrumbsComponent implements OnDestroy {
     const crumbs: Crumb[] = [];
     if (section) crumbs.push({ label: section });
     if (label && label !== section) crumbs.push({ label });
-    this.crumbs = crumbs;
+    this.crumbs.set(crumbs);
   }
 }

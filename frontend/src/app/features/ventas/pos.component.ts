@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { forkJoin, of, Subject } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import { IconComponent } from '../../shared/components/icon/icon.component';
@@ -42,7 +43,7 @@ function redondear(valor: number, decimales = 2): number {
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-pos',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent, PenPipe],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, PenPipe],
   templateUrl: './pos.component.html',
   styleUrl: './pos.component.css',
 })
@@ -63,8 +64,6 @@ export class PosComponent implements OnInit, OnDestroy {
   almacenId = '';
   clienteId = '';
   turno?: Turno;
-  montoInicial = 0;
-  nombreTurno = '';
   busqueda = '';
   mensaje = '';
   error = '';
@@ -96,6 +95,7 @@ export class PosComponent implements OnInit, OnDestroy {
     private readonly preformas: PreformasApiService,
     private readonly cotizaciones: CotizacionesApiService,
     private readonly sunat: FacturacionElectronicaApiService,
+    private readonly cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -115,14 +115,16 @@ export class PosComponent implements OnInit, OnDestroy {
       next: (page) => {
         this.sedes = page.content.filter((sede) => sede.activa);
         if (this.sedes[0]) this.seleccionarSede(this.sedes[0].id);
+        this.refrescar();
       },
-      error: () => { this.error = 'No se pudieron cargar las sedes.'; },
+      error: () => { this.error = 'No se pudieron cargar las sedes.'; this.refrescar(); },
     });
     this.cargarCatalogos();
-    this.api.clientes().pipe(takeUntil(this.destroy$)).subscribe((page) => { this.clientes = page.content; });
+    this.api.clientes().pipe(takeUntil(this.destroy$)).subscribe((page) => { this.clientes = page.content; this.refrescar(); });
     this.sunat.panel().pipe(takeUntil(this.destroy$), catchError(() => of(null))).subscribe((panel) => {
       this.rucEmpresa = panel?.ruc?.trim() ?? '';
       this.rucEmpresa20 = panel?.rucEmpresa20 === true;
+      this.refrescar();
     });
   }
 
@@ -186,8 +188,9 @@ export class PosComponent implements OnInit, OnDestroy {
     this.api.productos(this.busqueda).pipe(takeUntil(this.destroy$)).subscribe((page) => {
       this.productos = page.content;
       this.cargarFracciones(page.content.filter((producto) => producto.esFraccionable));
+      this.refrescar();
     });
-    this.api.servicios(this.busqueda).pipe(takeUntil(this.destroy$)).subscribe((page) => { this.servicios = page.content; });
+    this.api.servicios(this.busqueda).pipe(takeUntil(this.destroy$)).subscribe((page) => { this.servicios = page.content; this.refrescar(); });
   }
 
   seleccionarSede(id: string): void {
@@ -201,6 +204,7 @@ export class PosComponent implements OnInit, OnDestroy {
     this.api.almacenes(id).pipe(takeUntil(this.destroy$)).subscribe((rows) => {
       this.almacenes = rows.filter((almacen) => almacen.activo);
       if (this.almacenes[0]) this.seleccionarAlmacen(this.almacenes[0].id);
+      this.refrescar();
     });
   }
 
@@ -215,7 +219,12 @@ export class PosComponent implements OnInit, OnDestroy {
         if (productoId) siguiente[productoId] = Number(fila.cantidad ?? 0);
       }
       this.stock = siguiente;
+      this.refrescar();
     });
+  }
+
+  private refrescar(): void {
+    this.cdr.detectChanges();
   }
 
   fraccionesDe(producto: Producto): Fraccion[] {
@@ -242,6 +251,11 @@ export class PosComponent implements OnInit, OnDestroy {
   inicial(nombre: string): string {
     return (nombre || 'P').trim().slice(0, 1).toUpperCase();
   }
+
+  trackProducto(_index: number, producto: Producto): string { return producto.id; }
+  trackServicio(_index: number, servicio: Servicio): string { return servicio.id; }
+  trackFraccion(_index: number, fraccion: Fraccion): string { return fraccion.id; }
+  trackLinea(_index: number, linea: Linea): string { return `${linea.tipo}:${linea.id}:${linea.fraccion?.id ?? ''}`; }
 
   esFavorito(id: string): boolean {
     return this.favoritos.has(id);
@@ -287,8 +301,14 @@ export class PosComponent implements OnInit, OnDestroy {
   fijarCantidad(index: number, valor: number): void {
     const cantidad = Number(valor);
     if (!Number.isFinite(cantidad) || cantidad <= 0) return;
+    const actual = this.carrito[index];
+    if (!actual) return;
+    if (actual.tipo === 'PRODUCTO' && !this.alcanzaStock(actual, cantidad, index)) {
+      this.error = 'No hay stock suficiente en el almacén seleccionado.';
+      return;
+    }
     const next = [...this.carrito];
-    next[index] = { ...next[index], cantidad };
+    next[index] = { ...actual, cantidad };
     this.carrito = next;
   }
 
@@ -302,35 +322,12 @@ export class PosComponent implements OnInit, OnDestroy {
     return { neto, igv: total - neto, total };
   }
 
-  abrirCaja(): void {
-    this.error = '';
-    if (!this.sedeId || this.montoInicial < 0) {
-      this.error = 'Elige una sede y un monto inicial válido.';
-      return;
-    }
-    this.api.abrirCaja({ sedeId: this.sedeId, montoInicial: this.montoInicial, observaciones: this.nombreTurno.trim() || undefined }).subscribe({
-      next: (turno) => {
-        this.turno = { ...turno, sede: turno.sede ?? { id: this.sedeId } };
-        this.caja.recordar({
-          id: turno.id,
-          montoInicial: turno.montoInicial,
-          estado: turno.estado,
-          fechaApertura: turno.fechaApertura,
-          observaciones: turno.observaciones,
-          sede: { id: this.sedeId },
-        });
-        this.mensaje = 'Caja abierta correctamente.';
-      },
-      error: (error: unknown) => { this.error = mensajeError(error); },
-    });
-  }
-
   cobrar(): void {
     this.error = '';
     this.mensaje = '';
     if (this.guardando) return;
     if (!this.turno || !this.almacenId || !this.carrito.length || !this.sedeId) {
-      this.error = 'Abre la caja, elige el almacén y agrega al menos una línea.';
+      this.error = 'Abre el turno en Caja, elige el almacén y agrega al menos una línea.';
       return;
     }
     if (this.turno.sede?.id && this.turno.sede.id !== this.sedeId) {
@@ -424,12 +421,31 @@ export class PosComponent implements OnInit, OnDestroy {
 
   private agregar(linea: Linea): void {
     this.error = '';
+    if (linea.tipo === 'PRODUCTO' && !this.almacenId) {
+      this.error = 'Elige el almacén para validar el stock.';
+      return;
+    }
     const index = this.carrito.findIndex((item) => item.tipo === linea.tipo && item.id === linea.id && item.fraccion?.id === linea.fraccion?.id);
     if (index >= 0) {
       this.ajustar(index, 1);
       return;
     }
+    if (linea.tipo === 'PRODUCTO' && !this.alcanzaStock(linea, linea.cantidad, -1)) {
+      this.error = 'No hay stock suficiente en el almacén seleccionado.';
+      return;
+    }
     this.carrito = [...this.carrito, linea];
+  }
+
+  /** El consumo de una fracción es su factor sobre el saldo en unidad base. */
+  private alcanzaStock(linea: Linea, cantidad: number, excepto: number): boolean {
+    const disponible = this.stock[linea.id] ?? 0;
+    const consumo = (item: Linea, unidades: number) => Number(item.fraccion?.factorDescuentoKardex ?? 1) * unidades;
+    const otros = this.carrito.reduce((suma, item, indice) => {
+      if (indice === excepto || item.tipo !== 'PRODUCTO' || item.id !== linea.id) return suma;
+      return suma + consumo(item, item.cantidad);
+    }, 0);
+    return otros + consumo(linea, cantidad) <= disponible + 1e-9;
   }
 
   private cargarFracciones(productos: Producto[]): void {

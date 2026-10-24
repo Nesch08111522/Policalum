@@ -27,10 +27,10 @@ public interface RrhhTurnoTrabajoRepository extends JpaRepository<RrhhTurnoTraba
     /** patron siempre no nulo ("%" = sin filtro) para evitar String nulos en lower()/like. */
     @EntityGraph(attributePaths = {"user", "sede"})
     @Query("SELECT t FROM RrhhTurnoTrabajo t WHERE " +
-            "(:sedeId IS NULL OR t.sede.id = :sedeId) AND " +
-            "(:userId IS NULL OR t.user.id = :userId) AND " +
-            "(:activo IS NULL OR t.activo = :activo) AND " +
-            "LOWER(t.nombreTurno) LIKE :patron")
+            "(CAST(:sedeId AS string) IS NULL OR t.sede.id = :sedeId) AND " +
+            "(CAST(:userId AS string) IS NULL OR t.user.id = :userId) AND " +
+            "(CAST(:activo AS boolean) IS NULL OR t.activo = :activo) AND " +
+            "LOWER(t.nombreTurno) LIKE CAST(:patron AS string)")
     Page<RrhhTurnoTrabajo> search(@Param("sedeId") UUID sedeId,
                                   @Param("userId") UUID userId,
                                   @Param("activo") Boolean activo,
@@ -38,6 +38,6 @@ public interface RrhhTurnoTrabajoRepository extends JpaRepository<RrhhTurnoTraba
                                   Pageable pageable);
 
     @Query("SELECT t FROM RrhhTurnoTrabajo t JOIN FETCH t.user u WHERE t.activo = true AND " +
-            "(:sedeId IS NULL OR t.sede.id = :sedeId)")
+            "(CAST(:sedeId AS string) IS NULL OR t.sede.id = :sedeId)")
     List<RrhhTurnoTrabajo> findActivosPorSede(@Param("sedeId") UUID sedeId);
 }
