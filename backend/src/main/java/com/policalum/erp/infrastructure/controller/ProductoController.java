@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -77,11 +78,20 @@ public class ProductoController {
      * @param requestDTO Datos actualizados del producto.
      * @return Producto actualizado.
      */
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ProductoResponseDTO> update(
             @PathVariable UUID id,
             @Valid @RequestBody ProductoRequestDTO requestDTO) {
         return ResponseEntity.ok(productoService.update(id, requestDTO));
+    }
+
+    /** Actualiza el producto y, si viene un archivo, guarda la imagen. Sin archivo, usa la URL del JSON. */
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductoResponseDTO> updateConImagen(
+            @PathVariable UUID id,
+            @RequestPart("producto") @Valid ProductoRequestDTO requestDTO,
+            @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
+        return ResponseEntity.ok(productoService.update(id, productoImagenService.aplicar(requestDTO, archivo)));
     }
 
     /**

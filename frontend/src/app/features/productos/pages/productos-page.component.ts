@@ -269,14 +269,18 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
       }
     }
     this.guardando = true;
-    if (this.modoImagen === 'archivo' && this.archivoPendiente) {
+    if (this.modoImagen === 'archivo' && this.archivoPendiente && !(this.editando && value.id)) {
       this.masivo.subirImagen(this.archivoPendiente).pipe(takeUntil(this.destroy$)).subscribe({
         next: (respuesta) => {
           this.form.controls.imagen.setValue(respuesta.ruta);
           this.archivoPendiente = null;
           this.persistir();
         },
-        error: (error: unknown) => { this.guardando = false; this.errorFormulario = problemText(error); },
+        error: (error: unknown) => {
+          this.guardando = false;
+          this.errorFormulario = problemText(error);
+          this.toast.error(this.errorFormulario);
+        },
       });
       return;
     }
@@ -286,10 +290,28 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
   private persistir(): void {
     const value = this.form.getRawValue();
     const body = this.cuerpo(value, value.id, this.fraccionesActuales);
-    const request = this.editando && value.id ? this.api.PutApiV1ProductosId({ id: value.id }, body) : this.api.PostApiV1Productos({}, body);
+    const archivo = this.modoImagen === 'archivo' ? this.archivoPendiente : null;
+    const request = this.editando && value.id && archivo
+      ? this.masivo.actualizarConImagen(value.id, body, archivo)
+      : this.editando && value.id
+        ? this.api.PutApiV1ProductosId({ id: value.id }, body)
+        : this.api.PostApiV1Productos({}, body);
     request.pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = false; this.lookup.invalidate('productos'); this.inventario.marcarCambio(); this.toast.success(this.editando ? 'Producto actualizado.' : 'Producto creado.'); this.cargar(); },
-      error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
+      next: () => {
+        this.guardando = false;
+        this.archivoPendiente = null;
+        this.modal = false;
+        this.lookup.invalidate('productos');
+        this.inventario.marcarCambio();
+        this.toast.success(this.editando ? 'Producto actualizado.' : 'Producto creado.');
+        this.cargar();
+      },
+      error: (error: unknown) => {
+        this.guardando = false;
+        applyServerErrors(this.form, error);
+        this.errorFormulario = problemText(error);
+        this.toast.error(this.errorFormulario);
+      },
     });
   }
   pedirEliminar(item: Api.ProductoResponseDTO): void { this.seleccionado = item; this.accion = 'eliminar'; this.confirmar = true; }

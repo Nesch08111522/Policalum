@@ -12,7 +12,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.*;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -51,7 +50,7 @@ public class FileStorageServiceImpl implements FileStorageService {
         String rutaRelativa = subcarpeta + "/" + fechaPath + "/" + nombreUnico;
 
         try {
-            Path basePath = Paths.get(props.getBasePath()).toAbsolutePath().normalize();
+            Path basePath = baseAbsoluta();
             Path destino = basePath.resolve(rutaRelativa).normalize();
 
             if (!destino.startsWith(basePath)) {
@@ -59,11 +58,15 @@ public class FileStorageServiceImpl implements FileStorageService {
             }
 
             Files.createDirectories(destino.getParent());
-            Files.copy(archivo.getInputStream(), destino, StandardCopyOption.REPLACE_EXISTING);
+            archivo.transferTo(destino);
 
             log.info("Archivo guardado: {}", rutaRelativa);
             return rutaRelativa;
 
+        } catch (InvalidPathException e) {
+            throw new FileStorageException("La ruta del archivo no es válida", e);
+        } catch (IllegalStateException e) {
+            throw new FileStorageException("No se pudo escribir la imagen en el disco", e);
         } catch (IOException e) {
             throw new FileStorageException("Error al guardar el archivo: " + e.getMessage(), e);
         }
@@ -72,7 +75,7 @@ public class FileStorageServiceImpl implements FileStorageService {
     @Override
     public Resource cargar(String rutaRelativa) {
         try {
-            Path basePath = Paths.get(props.getBasePath()).toAbsolutePath().normalize();
+            Path basePath = baseAbsoluta();
             Path archivo = basePath.resolve(rutaRelativa).normalize();
 
             if (!archivo.startsWith(basePath)) {
@@ -85,7 +88,9 @@ public class FileStorageServiceImpl implements FileStorageService {
             }
             throw new FileStorageException("Archivo no encontrado o no legible: " + rutaRelativa);
 
-        } catch (MalformedURLException e) {
+        } catch (InvalidPathException e) {
+            throw new FileStorageException("La ruta del archivo no es válida", e);
+        } catch (IOException e) {
             throw new FileStorageException("Error al cargar el archivo: " + e.getMessage(), e);
         }
     }
@@ -93,20 +98,42 @@ public class FileStorageServiceImpl implements FileStorageService {
     @Override
     public void eliminar(String rutaRelativa) {
         try {
-            Path basePath = Paths.get(props.getBasePath()).toAbsolutePath().normalize();
+            Path basePath = baseAbsoluta();
             Path archivo = basePath.resolve(rutaRelativa).normalize();
+            if (!archivo.startsWith(basePath)) return;
             Files.deleteIfExists(archivo);
             log.info("Archivo eliminado: {}", rutaRelativa);
-        } catch (IOException e) {
+        } catch (IOException | InvalidPathException e) {
             log.warn("No se pudo eliminar archivo {}: {}", rutaRelativa, e.getMessage());
         }
     }
 
     @Override
     public boolean existe(String rutaRelativa) {
-        Path basePath = Paths.get(props.getBasePath()).toAbsolutePath().normalize();
-        Path archivo = basePath.resolve(rutaRelativa).normalize();
-        return Files.exists(archivo);
+        try {
+            Path basePath = baseAbsoluta();
+            Path archivo = basePath.resolve(rutaRelativa).normalize();
+            return archivo.startsWith(basePath) && Files.exists(archivo);
+        } catch (IOException | InvalidPathException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Una ruta relativa se ancla al directorio de trabajo del proceso.
+     * Así {@code ./uploads} no depende de un path temporal del contenedor multipart.
+     */
+    private Path baseAbsoluta() throws IOException {
+        String configurada = props.getBasePath() == null || props.getBasePath().isBlank()
+                ? "uploads"
+                : props.getBasePath();
+        Path ruta = Paths.get(configurada);
+        if (!ruta.isAbsolute()) {
+            ruta = Paths.get(System.getProperty("user.dir")).resolve(ruta);
+        }
+        Path absoluta = ruta.toAbsolutePath().normalize();
+        Files.createDirectories(absoluta);
+        return absoluta;
     }
 
     private String extraerExtension(String nombre) {

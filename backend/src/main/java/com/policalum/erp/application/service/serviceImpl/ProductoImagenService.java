@@ -7,6 +7,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.policalum.erp.application.dto.request.ProductoRequestDTO;
 import com.policalum.erp.application.service.FileStorageService;
 import com.policalum.erp.exception.FileStorageException;
 
@@ -43,6 +44,30 @@ public class ProductoImagenService {
             throw new FileStorageException("El archivo no es una imagen");
         }
         return fileStorageService.guardar(archivo, "productos");
+    }
+
+    /** Si llega un archivo, guarda la ruta relativa. Si no, conserva la URL o la ruta que ya trae el DTO. */
+    public ProductoRequestDTO aplicar(ProductoRequestDTO dto, MultipartFile archivo) {
+        if (archivo == null || archivo.isEmpty()) {
+            return dto;
+        }
+        String ruta = guardar(archivo);
+        return new ProductoRequestDTO(
+                dto.categoriaId(),
+                dto.proveedorId(),
+                dto.codigoSku(),
+                dto.nombre(),
+                dto.descripcion(),
+                dto.tipo(),
+                dto.precioCompra(),
+                dto.precioVentaBase(),
+                dto.unidad(),
+                dto.esFraccionable(),
+                dto.activo(),
+                dto.incluyeIgv(),
+                dto.tipoAfectacion(),
+                dto.fracciones(),
+                ruta);
     }
 
     public Resource cargar(String ruta) {

@@ -68,6 +68,13 @@ export class ProductosMasivoApiService {
     return this.http.post<{ ruta: string }>(`${this.base}/api/v1/productos/imagenes`, cuerpo);
   }
 
+  actualizarConImagen(id: string, producto: unknown, archivo: File): Observable<unknown> {
+    const cuerpo = new FormData();
+    cuerpo.append('producto', new Blob([JSON.stringify(producto)], { type: 'application/json' }));
+    cuerpo.append('archivo', archivo);
+    return this.http.put(`${this.base}/api/v1/productos/${id}`, cuerpo);
+  }
+
   verImagen(ruta: string): Observable<Blob> {
     return this.http.get(`${this.base}/api/v1/productos/imagenes`, { params: { ruta }, responseType: 'blob' });
   }
