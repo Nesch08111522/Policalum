@@ -29,3 +29,10 @@ export function lineaProductoOServicio(control: AbstractControl): ValidationErro
   if (!producto && !servicio) return { linea: true };
   return null;
 }
+
+/** Una preforma acepta producto, servicio o fracción, y solo uno de ellos. */
+export function lineaProductoServicioOFraccion(control: AbstractControl): ValidationErrors | null {
+  const marcados = ['productoId', 'servicioId', 'fraccionId'].filter((campo) => control.get(campo)?.value).length;
+  if (marcados !== 1) return { lineaUnica: true };
+  return null;
+}

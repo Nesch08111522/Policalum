@@ -1,4 +1,5 @@
 import { signal } from '@angular/core';
+import { Observable } from 'rxjs';
 import { QueryMap } from '../../core/api/backend-api.service';
 
 /**
@@ -15,6 +16,7 @@ export class PageState<T> {
   private readonly loadingSignal = signal(false);
   private readonly errorSignal = signal<string | null>(null);
   private readonly statusSignal = signal<number | null>(null);
+  private generation = 0;
 
   get rows(): T[] { return this.rowsSignal(); }
   set rows(value: T[]) { this.rowsSignal.set(value); }
@@ -34,6 +36,19 @@ export class PageState<T> {
   set error(value: string | null) { this.errorSignal.set(value); }
   get status(): number | null { return this.statusSignal(); }
   set status(value: number | null) { this.statusSignal.set(value); }
+
+  /** Marca una consulta nueva. Las respuestas de consultas anteriores se descartan. */
+  begin(): number {
+    this.generation += 1;
+    this.loading = true;
+    this.error = null;
+    this.status = null;
+    return this.generation;
+  }
+
+  isCurrent(token: number): boolean {
+    return token === this.generation;
+  }
 
   reset(): void {
     this.rows = [];
@@ -67,4 +82,24 @@ export class PageState<T> {
     }
     return params;
   }
+}
+
+/** Ignora la respuesta si otra consulta del mismo listado se inició después. */
+export function ignoreStale<T>(state: PageState<unknown>) {
+  return (source: Observable<T>) =>
+    new Observable<T>((subscriber) => {
+      const token = state.begin();
+      const subscription = source.subscribe({
+        next: (value) => {
+          if (state.isCurrent(token)) subscriber.next(value);
+          else subscriber.complete();
+        },
+        error: (error: unknown) => {
+          if (state.isCurrent(token)) subscriber.error(error);
+          else subscriber.complete();
+        },
+        complete: () => subscriber.complete(),
+      });
+      return () => subscription.unsubscribe();
+    });
 }
