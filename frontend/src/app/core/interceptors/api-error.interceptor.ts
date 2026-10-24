@@ -8,6 +8,19 @@ import { ApiProblem } from '../api/openapi.types';
 
 const REQUEST_TIMEOUT_MS = 20000;
 
+const TECNICO = /jdbc|sql\s*\[|psql|syntax error|no se pudo determinar el tipo|could not determine data type|exception|nullpointer|stacktrace/i;
+
+function textoVisible(status: number, crudo: string | undefined): string {
+  const limpio = (crudo ?? '').replace(/\s+/g, ' ').trim();
+  if (status === 0) return 'No hay conexión con el servidor. Revisa que el backend esté encendido.';
+  if (status === 404) return 'No se encontró la información solicitada.';
+  if (status === 408) return 'La solicitud tardó demasiado. El servidor no respondió.';
+  if (status >= 500 || TECNICO.test(limpio)) return 'No se pudieron consultar los datos. Vuelve a intentar.';
+  if (status === 401) return limpio || 'Tu sesión expiró. Vuelve a iniciar sesión.';
+  if (status === 403) return limpio || 'No tienes permiso para esta operación.';
+  return limpio || 'La operación no pudo completarse.';
+}
+
 function normalize(error: HttpErrorResponse): ApiProblem {
   const body = error.error as {
     code?: string;
@@ -18,32 +31,18 @@ function normalize(error: HttpErrorResponse): ApiProblem {
     fieldErrors?: Record<string, string>;
     traceId?: string;
     errores?: Array<{ fila?: number; motivo?: string }>;
-  } | null;
-
-  let message = body?.message ?? body?.error;
-  if (body?.details && error.status >= 500) message = acotar(body.details);
-  if (error.status === 0) {
-    message = 'No hay conexión con el servidor. Puede estar apagado o la respuesta fue bloqueada (CORS).';
-  }
-  if (!message && error.status === 401) message = 'Tu sesión expiró. Vuelve a iniciar sesión.';
-  if (!message && error.status === 403) message = 'No tienes permiso para esta operación.';
-  if (!message && error.status === 404) message = body?.message || 'No se encontró el recurso solicitado.';
-  if (!message && error.status >= 500) message = 'El servidor no pudo completar la operación.';
-  if (!message) message = 'La operación no pudo completarse.';
+  } | string | null;
+  const objeto = body && typeof body === 'object' ? body : null;
+  const crudo = objeto?.message ?? objeto?.error ?? (typeof body === 'string' ? body : undefined);
 
   return {
     status: error.status,
-    code: body?.code ?? `HTTP_${error.status || 'NETWORK'}`,
-    message,
-    fieldErrors: body?.fieldErrors ?? body?.errors ?? {},
-    traceId: body?.traceId,
-    errores: body?.errores,
+    code: objeto?.code ?? `HTTP_${error.status || 'NETWORK'}`,
+    message: textoVisible(error.status, crudo),
+    fieldErrors: objeto?.fieldErrors ?? objeto?.errors ?? {},
+    traceId: objeto?.traceId,
+    errores: objeto?.errores,
   };
-}
-
-function acotar(texto: string): string {
-  const limpio = texto.replace(/\s+/g, ' ').trim();
-  return limpio.length > 240 ? `${limpio.slice(0, 237)}…` : limpio;
 }
 
 function esLogin(url: string): boolean {
@@ -80,7 +79,7 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
         tokenService.logout();
         return throwError(() => problem);
       }
-      avisar(toast, problem);
+      if (!esLogin(request.url)) avisar(toast, problem);
       return throwError(() => problem);
     }),
   );

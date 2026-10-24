@@ -27,7 +27,7 @@ export class ToastService {
   private push(kind: ToastKind, text: string): void {
     const clave = `${kind}|${text}`;
     const ahora = Date.now();
-    if (clave === this.ultimo && ahora - this.ultimoEn < 1500) return;
+    if (clave === this.ultimo && ahora - this.ultimoEn < 4000) return;
     this.ultimo = clave;
     this.ultimoEn = ahora;
     const id = ++this.seq;

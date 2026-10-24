@@ -33,7 +33,7 @@
         <span *ngFor="let etiqueta of etiquetas">{{ etiqueta }}</span>
       </div>
       <p class="eje-nota" *ngIf="!gastos.length">La serie de gastos operativos aparece con el acceso de finanzas.</p>
-      <p class="eje-nota" *ngIf="esAdmin && kpis">Utilidad del periodo {{ kpis.utilidadNeta | pen }}.</p>
+      <p class="eje-nota" *ngIf="esAdmin && kpis">Utilidad del periodo {{ (kpis.utilidadNeta ?? 0) | pen }}.</p>
     </article>
 
     <article class="tile">
@@ -55,7 +55,7 @@
       <div class="mini-grid">
         <a class="mini" routerLink="/ventas/pos">
           <span>Punto de venta</span>
-          <strong>{{ ventasHoy?.total | pen }}</strong>
+          <strong>{{ (ventasHoy?.total ?? 0) | pen }}</strong>
           <small>Ventas diarias</small>
         </a>
         <a class="mini" routerLink="/modules/cotizaciones">
@@ -82,8 +82,8 @@
         <span class="text-xs">Indicadores</span>
       </header>
       <div class="rendimiento">
-        <div><span>Ingresos netos</span><strong class="ok">{{ resumen?.neto | pen }}</strong></div>
-        <div><span>Devoluciones</span><strong class="bad">{{ resumen?.devoluciones | pen }}</strong></div>
+        <div><span>Ingresos netos</span><strong class="ok">{{ (resumen?.neto ?? 0) | pen }}</strong></div>
+        <div><span>Devoluciones</span><strong class="bad">{{ (resumen?.devoluciones ?? 0) | pen }}</strong></div>
         <div><span>Neto sobre el total</span><strong>{{ variacion }}</strong></div>
       </div>
     </article>
@@ -99,7 +99,7 @@
         <a routerLink="/modules/compras"><span>Compras</span><small>Abastecimiento controlado</small></a>
         <a routerLink="/modules/proveedores"><span>Proveedores</span><small>Cuentas del abastecimiento</small></a>
         <a routerLink="/modules/despachos"><span>Despachos</span><small>Un abastecimiento</small></a>
-        <a routerLink="/modules/cuentas-por-pagar"><span>Cuentas por pagar</span><small>{{ cxp?.vencidas ?? 0 }} vencidas · {{ cxp?.montoTotalVencido | pen }}</small></a>
+        <a routerLink="/modules/cuentas-por-pagar"><span>Cuentas por pagar</span><small>{{ cxp?.vencidas ?? 0 }} vencidas · {{ (cxp?.montoTotalVencido ?? 0) | pen }}</small></a>
       </div>
     </article>
 
