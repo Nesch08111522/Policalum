@@ -1,8 +1,6 @@
 // src/app/app.routes.ts
 import { Routes } from '@angular/router';
-import { AdminDashboardComponent } from './components/admin/admin-dashboard.component';
-import { AsistenciaComponent } from './components/asistencia/asistencia'; // ✅ Correcto
-import { EmpleadoDashboardComponent } from './components/empleado/empleado-dashboard.component';
+import { AsistenciaComponent } from './components/asistencia/asistencia';
 import { LoginComponent } from './components/login/login.component';
 import { AuthGuard } from './guards/auth.guard';
 import { RoleGuard } from './guards/role.guard';
@@ -20,18 +18,8 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     children: [
       { path: '', component: DashboardRedirectComponent },
-      {
-        path: 'admin',
-        component: AdminDashboardComponent,
-        canActivate: [RoleGuard],
-        data: { expectedRoles: ['ROLE_ADMIN'] },
-      },
-      {
-        path: 'empleado',
-        component: EmpleadoDashboardComponent,
-        canActivate: [RoleGuard],
-        data: { expectedRoles: ['ROLE_MULTIFUNCIONAL', 'ROLE_ADMIN'] },
-      },
+      { path: 'admin', redirectTo: 'inicio', pathMatch: 'full' },
+      { path: 'empleado', redirectTo: 'inicio', pathMatch: 'full' },
       {
         path: 'asistencias', // ✅ Ruta simplificada
         component: AsistenciaComponent,

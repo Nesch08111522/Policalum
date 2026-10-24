@@ -23,6 +23,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "POLICALUM.png",
+                "input": "src/assets",
+                "output": "/"
               }
             ],
             "styles": [

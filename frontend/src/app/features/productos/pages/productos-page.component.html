@@ -59,7 +59,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let fila of filas">
+              <tr *ngFor="let fila of filas; trackBy: trackFila">
                 <td>
                   <div class="sku">
                     <img *ngIf="vistaDe(fila.producto) as foto" class="foto" [src]="foto" alt="" (error)="ocultarVista(fila.producto)" />
@@ -72,14 +72,14 @@
                   <span class="badge badge-info" *ngIf="fila.producto?.categoria?.nombre">{{ fila.producto?.categoria?.nombre }}</span>
                 </td>
                 <td>
-                  <div class="corte" *ngFor="let corte of fila.cortes">
+                  <div class="corte" *ngFor="let corte of fila.cortes; trackBy: trackCorte">
                     <span>{{ corte.nombre }}</span>
                     <strong>{{ corte.precio | pen }}</strong>
                   </div>
                 </td>
                 <td>
                   <div class="saldo-base">Saldo {{ fila.cantidad | number:'1.0-2' }} {{ fila.unidad }}</div>
-                  <div class="corte" *ngFor="let corte of fila.cortes">
+                  <div class="corte" *ngFor="let corte of fila.cortes; trackBy: trackCorte">
                     <span>{{ corte.nombre }}</span>
                     <div class="barra"><span [style.width.%]="corte.ancho" [class.warn]="fila.estado === 'minimo'" [class.empty]="fila.estado === 'agotado'"></span></div>
                     <strong>{{ corte.equivalentes | number:'1.0-2' }}</strong>

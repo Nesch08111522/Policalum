@@ -201,34 +201,9 @@
    ENLACES INFERIORES
    ============================================= */
 .form-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.5rem;
+  margin: 0.75rem 0 0;
   font-size: 0.85rem;
-}
-
-.forgot-link {
   color: var(--color-bg-gray);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.forgot-link:hover {
-  color: var(--color-logo-bright);
-  text-decoration: underline;
-}
-
-.remember-me {
-  color: var(--color-bg-gray);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.remember-me input[type="checkbox"] {
-  accent-color: var(--color-cyan-light);
 }
 
 /* =============================================

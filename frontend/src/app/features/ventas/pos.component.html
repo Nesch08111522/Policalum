@@ -29,15 +29,10 @@
       </select>
     </label>
     <div class="caja caja-abierta" *ngIf="turno">{{ cajaTexto }}</div>
-    <form class="caja caja-cerrar" *ngIf="!turno" (ngSubmit)="abrirCaja()">
-      <label>Monto inicial
-        <input type="number" min="0" step="0.01" [(ngModel)]="montoInicial" name="montoInicial">
-      </label>
-      <label>Turno
-        <input type="text" maxlength="80" [(ngModel)]="nombreTurno" name="nombreTurno" placeholder="Nombre del turno">
-      </label>
-      <button type="submit">Abrir caja</button>
-    </form>
+    <div class="caja caja-pendiente" *ngIf="!turno">
+      <span>Sin turno de caja</span>
+      <a routerLink="/modules/turnos-caja">Abrir en Caja</a>
+    </div>
   </div>
 
   <label class="busqueda">
@@ -54,7 +49,7 @@
       </div>
 
       <div class="cards" *ngIf="catalogo !== 'servicios'">
-        <article class="card" *ngFor="let producto of productosVisibles">
+        <article class="card" *ngFor="let producto of productosVisibles; trackBy: trackProducto">
           <button type="button" class="pin" [class.on]="esFavorito(producto.id)" (click)="alternarFavorito(producto.id)" [attr.aria-label]="esFavorito(producto.id) ? 'Quitar de favoritos' : 'Marcar favorito'">★</button>
           <button type="button" class="card-main" (click)="agregarProducto(producto)">
             <span class="media">{{ inicial(producto.nombre) }}</span>
@@ -63,7 +58,7 @@
               <small>Stock: {{ stockDe(producto) }}</small>
               <span class="fracciones" *ngIf="fraccionesDe(producto).length">
                 <span class="fraccion-label">Fracciones:</span>
-                <span class="fraccion" *ngFor="let fraccion of fraccionesDe(producto)" (click)="$event.stopPropagation(); agregarProducto(producto, fraccion)">{{ fraccion.nombreFraccion }}</span>
+                <span class="fraccion" *ngFor="let fraccion of fraccionesDe(producto); trackBy: trackFraccion" (click)="$event.stopPropagation(); agregarProducto(producto, fraccion)">{{ fraccion.nombreFraccion }}</span>
               </span>
               <span class="precio">Precio: {{ precioDe(producto) | pen }}</span>
               <small *ngIf="mermaDe(producto) as merma">Merma: {{ merma }}</small>
@@ -74,7 +69,7 @@
       </div>
 
       <div class="cards" *ngIf="catalogo !== 'productos'">
-        <article class="card" *ngFor="let servicio of serviciosVisibles">
+        <article class="card" *ngFor="let servicio of serviciosVisibles; trackBy: trackServicio">
           <button type="button" class="pin" [class.on]="esFavorito(servicio.id)" (click)="alternarFavorito(servicio.id)" aria-label="Favorito">★</button>
           <button type="button" class="card-main" (click)="agregarServicio(servicio)">
             <span class="media servicio">{{ inicial(servicio.nombre) }}</span>
@@ -96,7 +91,7 @@
       </header>
       <div class="tabla" *ngIf="carrito.length; else sinLineas">
         <div class="fila head"><span>Descripción</span><span>Cant.</span><span>Precio unit.</span><span>Descto.</span><span>Total</span><span></span></div>
-        <div class="fila" *ngFor="let linea of carrito; let i = index">
+        <div class="fila" *ngFor="let linea of carrito; let i = index; trackBy: trackLinea">
           <span>{{ linea.nombre }}</span>
           <span class="stepper">
             <button type="button" (click)="ajustar(i, -1)" aria-label="Disminuir">−</button>

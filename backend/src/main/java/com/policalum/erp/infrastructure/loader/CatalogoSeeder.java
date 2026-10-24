@@ -23,10 +23,12 @@ import com.policalum.erp.domain.enums.TipoReferencia;
 import com.policalum.erp.domain.model.Almacen;
 import com.policalum.erp.domain.model.Categoria;
 import com.policalum.erp.domain.model.Producto;
+import com.policalum.erp.domain.model.Sede;
 import com.policalum.erp.domain.model.User;
 import com.policalum.erp.infrastructure.repository.AlmacenRepository;
 import com.policalum.erp.infrastructure.repository.CategoriaRepository;
 import com.policalum.erp.infrastructure.repository.ProductoRepository;
+import com.policalum.erp.infrastructure.repository.SedeRepository;
 import com.policalum.erp.infrastructure.repository.ServicioRepository;
 import com.policalum.erp.infrastructure.repository.UserRepository;
 
@@ -47,6 +49,7 @@ public class CatalogoSeeder implements CommandLineRunner {
     private final ProductoRepository productoRepository;
     private final ServicioRepository servicioRepository;
     private final AlmacenRepository almacenRepository;
+    private final SedeRepository sedeRepository;
     private final UserRepository userRepository;
     private final ProductoService productoService;
     private final ServicioService servicioService;
@@ -56,6 +59,8 @@ public class CatalogoSeeder implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         sembrarCategorias();
+        sembrarAlmacen();
+        quitarImagenesDeRelleno();
         sembrarProductos();
         sembrarServicio();
     }
@@ -86,7 +91,7 @@ public class CatalogoSeeder implements CommandLineRunner {
                 .orElse(null);
         User operador = userRepository.findByEmail("admin@policalum.com").orElse(null);
         if (almacen == null) {
-            log.info("No hay almacén: los productos se crean sin stock inicial. No se inventa un almacén.");
+            log.info("No hay almacén activo: los productos se crean sin stock inicial.");
         } else if (operador == null) {
             log.info("No está el usuario admin: los productos se crean sin movimiento de kardex.");
         }
@@ -147,13 +152,46 @@ public class CatalogoSeeder implements CommandLineRunner {
         log.info("Servicio inicial insertado: Servicio de corte. Colaboradores reales: {}.", equipo.size());
     }
 
+    private void sembrarAlmacen() {
+        if (almacenRepository.count() > 0) {
+            log.info("Almacenes ya tienen filas: no se insertan ni se modifican.");
+            return;
+        }
+        Sede sede = sedeRepository.findAll().stream()
+                .filter(item -> !Boolean.FALSE.equals(item.getActiva()))
+                .findFirst()
+                .orElse(null);
+        if (sede == null) {
+            log.info("No hay sede activa: no se crea el almacén principal.");
+            return;
+        }
+        almacenRepository.save(Almacen.builder()
+                .sede(sede)
+                .nombre("Almacén principal")
+                .descripcion("Almacén de " + sede.getNombre() + ". Sin stock hasta el primer ingreso.")
+                .activo(true)
+                .build());
+        log.info("Almacén principal creado para {}.", sede.getNombre());
+    }
+
+    /** Las fotos de placehold.co no son del catálogo. Se dejan en blanco para mostrar la inicial del nombre. */
+    private void quitarImagenesDeRelleno() {
+        List<Producto> tocados = new ArrayList<>();
+        for (Producto producto : productoRepository.findAll()) {
+            String imagen = producto.getImagen();
+            if (imagen != null && imagen.startsWith("https://placehold.co")) {
+                producto.setImagen(null);
+                tocados.add(producto);
+            }
+        }
+        if (tocados.isEmpty()) return;
+        productoRepository.saveAll(tocados);
+        log.info("Se quitaron {} imágenes de relleno del catálogo.", tocados.size());
+    }
+
     private void guardarCategoria(String nombre, String slug) {
         Categoria categoria = Categoria.builder().nombre(nombre).slug(slug).activa(true).build();
         categoriaRepository.save(categoria);
-    }
-
-    private static String urlImagen(String sku) {
-        return "https://placehold.co/80x80/1A1C2B/FFFFFF/png?text=" + sku;
     }
 
     private static List<Semilla> semillas() {
@@ -184,7 +222,7 @@ public class CatalogoSeeder implements CommandLineRunner {
         Semilla(String sku, String nombre, String descripcion, String slug, String compra, String venta,
                 String unidad, boolean fraccionable, String stock) {
             this(sku, nombre, descripcion, slug, new BigDecimal(compra), new BigDecimal(venta), unidad, fraccionable,
-                    new BigDecimal(stock), urlImagen(sku));
+                    new BigDecimal(stock), null);
         }
     }
 }

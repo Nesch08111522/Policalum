@@ -34,12 +34,12 @@ public interface TurnoCajaRepository extends JpaRepository<TurnoCaja, UUID> {
 
     /** Turnos abiertos en [desde, hasta) para el arqueo, más recientes primero, con sede y cajero cargados. */
     @Query(value = "SELECT t FROM TurnoCaja t JOIN FETCH t.sede JOIN FETCH t.user " +
-            "WHERE t.fechaApertura >= :desde AND t.fechaApertura < :hasta AND (:sedeId IS NULL OR t.sede.id = :sedeId) " +
-            "AND (:userId IS NULL OR t.user.id = :userId) AND (:estado IS NULL OR t.estado = :estado) " +
+            "WHERE t.fechaApertura >= CAST(:desde AS timestamp) AND t.fechaApertura < CAST(:hasta AS timestamp) AND (CAST(:sedeId AS string) IS NULL OR t.sede.id = :sedeId) " +
+            "AND (CAST(:userId AS string) IS NULL OR t.user.id = :userId) AND (CAST(:estado AS string) IS NULL OR t.estado = :estado) " +
             "ORDER BY t.fechaApertura DESC, t.id",
             countQuery = "SELECT COUNT(t) FROM TurnoCaja t " +
-            "WHERE t.fechaApertura >= :desde AND t.fechaApertura < :hasta AND (:sedeId IS NULL OR t.sede.id = :sedeId) " +
-            "AND (:userId IS NULL OR t.user.id = :userId) AND (:estado IS NULL OR t.estado = :estado)")
+            "WHERE t.fechaApertura >= CAST(:desde AS timestamp) AND t.fechaApertura < CAST(:hasta AS timestamp) AND (CAST(:sedeId AS string) IS NULL OR t.sede.id = :sedeId) " +
+            "AND (CAST(:userId AS string) IS NULL OR t.user.id = :userId) AND (CAST(:estado AS string) IS NULL OR t.estado = :estado)")
     Page<TurnoCaja> reporteArqueos(@Param("desde") LocalDateTime desde,
                                    @Param("hasta") LocalDateTime hasta,
                                    @Param("sedeId") UUID sedeId,

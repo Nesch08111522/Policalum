@@ -48,7 +48,7 @@ public interface ClienteRepository extends JpaRepository<Cliente, UUID> {
      * Ideal para autocompletado y búsquedas rápidas en CRM
      */
     @Query("SELECT c FROM Cliente c WHERE " +
-            "(:searchTerm IS NULL OR " +
+            "(CAST(:searchTerm AS string) IS NULL OR " +
             "LOWER(COALESCE(c.nombre, '')) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')) OR " +
             "COALESCE(c.numeroDocumento, '') LIKE CONCAT('%', CAST(:searchTerm AS string), '%'))")
     Page<Cliente> searchByNombreOrDocumento(@Param("searchTerm") String searchTerm, Pageable pageable);
@@ -107,7 +107,7 @@ public interface ClienteRepository extends JpaRepository<Cliente, UUID> {
      * Busca clientes por coincidencia parcial en dirección
      * Útil para rutas de entrega o zonificación
      */
-    @Query("SELECT c FROM Cliente c WHERE :direccion IS NULL OR " +
+    @Query("SELECT c FROM Cliente c WHERE CAST(:direccion AS string) IS NULL OR " +
             "LOWER(COALESCE(c.direccion, '')) LIKE LOWER(CONCAT('%', CAST(:direccion AS string), '%'))")
     List<Cliente> findByDireccionContainingIgnoreCase(@Param("direccion") String direccion);
 
@@ -148,7 +148,7 @@ public interface ClienteRepository extends JpaRepository<Cliente, UUID> {
         SELECT DISTINCT c2.id
         FROM Cliente c2
         JOIN c2.ventas v
-        WHERE v.createdAt >= :fechaDesde
+        WHERE v.createdAt >= CAST(:fechaDesde AS timestamp)
     )
 """)
     List<Cliente> findClientesSinComprasDesde(
@@ -164,7 +164,7 @@ public interface ClienteRepository extends JpaRepository<Cliente, UUID> {
     SELECT DISTINCT c
     FROM Cliente c
     JOIN c.ventas v
-    WHERE v.createdAt >= :fechaDesde
+    WHERE v.createdAt >= CAST(:fechaDesde AS timestamp)
 """)
     List<Cliente> findClientesConComprasDesde(
             @Param("fechaDesde") LocalDateTime fechaDesde
