@@ -11,6 +11,15 @@ public interface FileStorageService {
      */
     String guardar(MultipartFile archivo, String subcarpeta);
 
+    /**
+     * Escribe en una ruta fija, sin fecha ni UUID. La extensión sale del archivo.
+     * {@code empresa/logo} queda como {@code empresa/logo.png} y reemplaza ese mismo archivo.
+     */
+    String guardarFijo(MultipartFile archivo, String rutaSinExtension);
+
+    /** Borra otros archivos del mismo nombre y distinta extensión. Conserva {@code rutaConservada}. */
+    void descartarVariantes(String rutaConservada);
+
     /** Carga un archivo como Resource para descarga. */
     Resource cargar(String rutaRelativa);
 

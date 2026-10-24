@@ -35,6 +35,7 @@ import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -340,6 +341,14 @@ public class OrdenDespachoServiceImpl implements OrdenDespachoService {
     void validarEvidencia(MultipartFile foto, EvidenciaEntregaRequestDTO e) {
         if (foto == null || foto.isEmpty()) {
             throw new IllegalArgumentException("La foto de entrega es obligatoria");
+        }
+        String archivo = nombreArchivo(foto).toLowerCase(Locale.ROOT);
+        if (!(archivo.endsWith(".jpg") || archivo.endsWith(".jpeg") || archivo.endsWith(".png") || archivo.endsWith(".webp"))) {
+            throw new IllegalArgumentException("La evidencia debe ser una foto JPG, PNG o WEBP");
+        }
+        String tipo = foto.getContentType() == null ? "" : foto.getContentType().toLowerCase(Locale.ROOT);
+        if (!tipo.isBlank() && !tipo.startsWith("image/")) {
+            throw new IllegalArgumentException("La evidencia debe ser una foto");
         }
         if (e == null || e.recibidoPorNombre() == null || e.recibidoPorNombre().isBlank()) {
             throw new IllegalArgumentException("El nombre de quien recibe es obligatorio");

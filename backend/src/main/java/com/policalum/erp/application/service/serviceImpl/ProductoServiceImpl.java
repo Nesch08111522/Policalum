@@ -74,6 +74,7 @@ public class ProductoServiceImpl implements ProductoService {
     public ProductoResponseDTO update(UUID id, ProductoRequestDTO requestDTO) {
         Producto producto = findEntityById(id);
         validateSkuAvailability(requestDTO.codigoSku(), id);
+        String imagenAnterior = producto.getImagen();
 
         productoMapper.updateEntityFromDto(requestDTO, producto);
         resolverReferencias(producto, requestDTO);
@@ -83,6 +84,7 @@ public class ProductoServiceImpl implements ProductoService {
         procesarFracciones(producto, requestDTO);
 
         Producto productoActualizado = productoRepository.save(producto);
+        descartarImagenAnterior(imagenAnterior, productoActualizado.getImagen());
         return productoMapper.toResponseDto(productoActualizado);
     }
 
@@ -314,6 +316,13 @@ public class ProductoServiceImpl implements ProductoService {
             throw new ValidationException("No se encontró el archivo de imagen indicado");
         }
         return valor;
+    }
+
+    /** Una URL externa se conserva. Si la foto local cambió, se borra el archivo anterior. */
+    private void descartarImagenAnterior(String anterior, String nueva) {
+        if (anterior == null || anterior.isBlank() || anterior.equals(nueva)) return;
+        if (anterior.contains("..") || !anterior.startsWith("productos/")) return;
+        fileStorageService.eliminar(anterior);
     }
 
     /**

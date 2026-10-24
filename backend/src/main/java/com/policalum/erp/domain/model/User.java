@@ -56,7 +56,8 @@ public class User {
     @Column(length = 500)
     private String biografia;
 
-    @Column(columnDefinition = "text")
+    /** Ruta relativa del archivo (usuarios/{id}/foto.ext) o, en registros viejos, un data URL. */
+    @Column(name = "foto", columnDefinition = "text")
     private String foto;
 
     @Column(name = "ultimo_ip", length = 45)

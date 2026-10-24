@@ -70,7 +70,7 @@ export class ProductosMasivoApiService {
 
   actualizarConImagen(id: string, producto: unknown, archivo: File): Observable<unknown> {
     const cuerpo = new FormData();
-    cuerpo.append('producto', new Blob([JSON.stringify(producto)], { type: 'application/json' }));
+    cuerpo.append('producto', new Blob([JSON.stringify(producto)], { type: 'application/json' }), 'producto.json');
     cuerpo.append('archivo', archivo);
     return this.http.put(`${this.base}/api/v1/productos/${id}`, cuerpo);
   }

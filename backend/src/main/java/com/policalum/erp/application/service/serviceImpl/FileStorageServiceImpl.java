@@ -8,12 +8,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.*;
 import java.time.LocalDate;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -25,50 +26,50 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public String guardar(MultipartFile archivo, String subcarpeta) {
-        if (archivo == null || archivo.isEmpty()) {
-            throw new FileStorageException("El archivo está vacío");
-        }
-
-        if (archivo.getSize() > props.getMaxFileSizeBytes()) {
-            throw new FileStorageException("El archivo excede el tamaño máximo permitido ("
-                    + (props.getMaxFileSizeBytes() / 1024 / 1024) + " MB)");
-        }
-
-        String nombreOriginal = StringUtils.cleanPath(
-                archivo.getOriginalFilename() != null ? archivo.getOriginalFilename() : "archivo");
-        String extension = extraerExtension(nombreOriginal).toLowerCase();
-
-        if (!props.getAllowedExtensions().contains(extension)) {
-            throw new FileStorageException("Extensión no permitida: ." + extension
-                    + ". Permitidas: " + props.getAllowedExtensions());
-        }
-
-        // Ruta: compras/2026/05/uuid.ext
+        String extension = validar(archivo);
         LocalDate hoy = LocalDate.now();
         String fechaPath = String.format("%04d/%02d", hoy.getYear(), hoy.getMonthValue());
-        String nombreUnico = UUID.randomUUID() + "." + extension;
-        String rutaRelativa = subcarpeta + "/" + fechaPath + "/" + nombreUnico;
+        String rutaRelativa = subcarpeta + "/" + fechaPath + "/" + UUID.randomUUID() + "." + extension;
+        escribir(rutaRelativa, archivo);
+        log.info("Archivo guardado: {}", rutaRelativa);
+        return rutaRelativa;
+    }
 
+    @Override
+    public String guardarFijo(MultipartFile archivo, String rutaSinExtension) {
+        String extension = validar(archivo);
+        if (rutaSinExtension == null || rutaSinExtension.isBlank()
+                || rutaSinExtension.contains("..") || rutaSinExtension.startsWith("/") || rutaSinExtension.endsWith("/")) {
+            throw new FileStorageException("Ruta de destino inválida");
+        }
+        String rutaRelativa = rutaSinExtension + "." + extension;
+        escribir(rutaRelativa, archivo);
+        log.info("Archivo reemplazado: {}", rutaRelativa);
+        return rutaRelativa;
+    }
+
+    @Override
+    public void descartarVariantes(String rutaConservada) {
+        if (rutaConservada == null || rutaConservada.isBlank() || rutaConservada.contains("..")) return;
         try {
             Path basePath = baseAbsoluta();
-            Path destino = basePath.resolve(rutaRelativa).normalize();
-
-            if (!destino.startsWith(basePath)) {
-                throw new FileStorageException("Ruta de destino inválida");
+            Path archivo = basePath.resolve(rutaConservada).normalize();
+            if (!archivo.startsWith(basePath) || archivo.getParent() == null || archivo.getFileName() == null) return;
+            if (!Files.isDirectory(archivo.getParent())) return;
+            String nombre = archivo.getFileName().toString();
+            int punto = nombre.lastIndexOf('.');
+            if (punto <= 0) return;
+            String raiz = nombre.substring(0, punto);
+            try (DirectoryStream<Path> hermanos = Files.newDirectoryStream(archivo.getParent())) {
+                for (Path candidato : hermanos) {
+                    String actual = candidato.getFileName().toString();
+                    if (actual.startsWith(raiz + ".") && !candidato.equals(archivo)) {
+                        Files.deleteIfExists(candidato);
+                    }
+                }
             }
-
-            Files.createDirectories(destino.getParent());
-            archivo.transferTo(destino);
-
-            log.info("Archivo guardado: {}", rutaRelativa);
-            return rutaRelativa;
-
-        } catch (InvalidPathException e) {
-            throw new FileStorageException("La ruta del archivo no es válida", e);
-        } catch (IllegalStateException e) {
-            throw new FileStorageException("No se pudo escribir la imagen en el disco", e);
-        } catch (IOException e) {
-            throw new FileStorageException("Error al guardar el archivo: " + e.getMessage(), e);
+        } catch (IOException | InvalidPathException e) {
+            log.warn("No se pudieron descartar variantes de {}: {}", rutaConservada, e.getMessage());
         }
     }
 
@@ -134,6 +135,47 @@ public class FileStorageServiceImpl implements FileStorageService {
         Path absoluta = ruta.toAbsolutePath().normalize();
         Files.createDirectories(absoluta);
         return absoluta;
+    }
+
+    private String validar(MultipartFile archivo) {
+        if (archivo == null || archivo.isEmpty()) {
+            throw new FileStorageException("El archivo está vacío");
+        }
+        if (archivo.getSize() > props.getMaxFileSizeBytes()) {
+            throw new FileStorageException("El archivo excede el tamaño máximo permitido ("
+                    + (props.getMaxFileSizeBytes() / 1024 / 1024) + " MB)");
+        }
+        String nombreOriginal = archivo.getOriginalFilename() != null ? archivo.getOriginalFilename() : "archivo";
+        nombreOriginal = nombreOriginal.replace('\\', '/');
+        int barra = nombreOriginal.lastIndexOf('/');
+        if (barra >= 0) nombreOriginal = nombreOriginal.substring(barra + 1);
+        String extension = extraerExtension(nombreOriginal).toLowerCase(Locale.ROOT);
+        if (!props.getAllowedExtensions().contains(extension)) {
+            throw new FileStorageException("Extensión no permitida: ." + extension
+                    + ". Permitidas: " + props.getAllowedExtensions());
+        }
+        return extension;
+    }
+
+    /** Copia el flujo del multipart. No usa Part.write, que en Tomcat ignora la ruta absoluta. */
+    private void escribir(String rutaRelativa, MultipartFile archivo) {
+        try {
+            Path basePath = baseAbsoluta();
+            Path destino = basePath.resolve(rutaRelativa).normalize();
+            if (!destino.startsWith(basePath) || destino.getParent() == null) {
+                throw new FileStorageException("Ruta de destino inválida");
+            }
+            Files.createDirectories(destino.getParent());
+            try (InputStream entrada = archivo.getInputStream()) {
+                Files.copy(entrada, destino, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (InvalidPathException e) {
+            throw new FileStorageException("La ruta del archivo no es válida", e);
+        } catch (IllegalStateException e) {
+            throw new FileStorageException("No se pudo escribir la imagen en el disco", e);
+        } catch (IOException e) {
+            throw new FileStorageException("Error al guardar el archivo: " + e.getMessage(), e);
+        }
     }
 
     private String extraerExtension(String nombre) {

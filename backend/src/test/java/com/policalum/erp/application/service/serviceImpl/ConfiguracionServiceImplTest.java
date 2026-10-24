@@ -265,6 +265,34 @@ class ConfiguracionServiceImplTest {
     }
 
     @Test
+    void actualizarMarca_reemplazaElArchivoAnterior() {
+        ConfiguracionEmpresa actual = ConfiguracionEmpresa.builder().id(1L).nombreComercial("POLICALUM")
+                .logoUrl("empresa/logo.png").build();
+        when(empresaRepository.findParaActualizar(1L)).thenReturn(Optional.of(actual));
+        when(empresaRepository.save(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        service.actualizarMarca(new MarcaRequestDTO("POLICALUM", "empresa/logo.webp"));
+
+        assertEquals("empresa/logo.webp", actual.getLogoUrl());
+        verify(fileStorageService).eliminar("empresa/logo.png");
+        verify(fileStorageService).descartarVariantes("empresa/logo.webp");
+    }
+
+    @Test
+    void actualizarEmpresa_conservaElLogoAunqueElFormularioTraigaUnaUrl() {
+        ConfiguracionEmpresa actual = ConfiguracionEmpresa.builder().id(1L).nombreComercial("POLICALUM")
+                .logoUrl("empresa/logo.png").ruc(null).build();
+        when(empresaRepository.findParaActualizar(1L)).thenReturn(Optional.of(actual));
+        when(empresaRepository.save(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        service.actualizarEmpresa(new EmpresaRequestDTO(RUC_VALIDO, "Policalum S.A.C.", "POLICALUM",
+                "Av. España 123", "130101", null, null, "https://cdn.ejemplo/logo.png"));
+
+        assertEquals("empresa/logo.png", actual.getLogoUrl());
+        verify(fileStorageService, never()).eliminar(any());
+    }
+
+    @Test
     void actualizarMarca_sinCambios_noGuarda() {
         ConfiguracionEmpresa actual = ConfiguracionEmpresa.builder().id(1L).nombreComercial("POLICALUM").build();
         when(empresaRepository.findParaActualizar(1L)).thenReturn(Optional.of(actual));

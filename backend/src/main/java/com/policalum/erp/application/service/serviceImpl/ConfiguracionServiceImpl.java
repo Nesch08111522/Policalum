@@ -115,6 +115,7 @@ public class ConfiguracionServiceImpl implements ConfiguracionService {
         Optional<ConfiguracionEmpresa> actual = empresaRepository.findParaActualizar(ID);
         ConfiguracionEmpresa e = actual.orElseGet(ConfiguracionServiceImpl::empresaPorDefecto);
         Map<String, Object> antes = datosEmpresa(e);
+        String logoActual = e.getLogoUrl();
 
         mapper.updateEntityFromDto(r, e);
         e.setId(ID);
@@ -125,7 +126,7 @@ public class ConfiguracionServiceImpl implements ConfiguracionService {
         e.setUbigeo(r.ubigeo().trim());
         e.setTelefono(vacioANull(r.telefono()));
         e.setEmail(vacioANull(r.email()) != null ? r.email().trim().toLowerCase(Locale.ROOT) : null);
-        e.setLogoUrl(vacioANull(r.logoUrl()));
+        e.setLogoUrl(logoActual);
 
         Map<String, Object> despues = datosEmpresa(e);
         if (actual.isPresent() && antes.equals(despues)) {
@@ -160,6 +161,7 @@ public class ConfiguracionServiceImpl implements ConfiguracionService {
         Optional<ConfiguracionEmpresa> actual = empresaRepository.findParaActualizar(ID);
         ConfiguracionEmpresa e = actual.orElseGet(ConfiguracionServiceImpl::empresaPorDefecto);
         Map<String, Object> antes = datosEmpresa(e);
+        String logoAnterior = e.getLogoUrl();
         e.setId(ID);
         e.setNombreComercial(nombre);
         if (request.logoUrl() != null) {
@@ -175,6 +177,13 @@ public class ConfiguracionServiceImpl implements ConfiguracionService {
         e.setActualizadoPor(admin);
         ConfiguracionEmpresa guardada = empresaRepository.save(e);
         auditar(TABLA_EMPRESA, actual.isPresent() ? AccionAudit.UPDATE : AccionAudit.INSERT, antes, despues);
+        if (request.logoUrl() != null && logoAnterior != null && !logoAnterior.equals(logo)
+                && logoAnterior.startsWith("empresa/") && !logoAnterior.contains("..")) {
+            fileStorageService.eliminar(logoAnterior);
+        }
+        if (logo != null && logo.startsWith("empresa/")) {
+            fileStorageService.descartarVariantes(logo);
+        }
         return new ConfiguracionPublicaDTO(guardada.getNombreComercial(), guardada.getLogoUrl());
     }
 
@@ -197,7 +206,7 @@ public class ConfiguracionServiceImpl implements ConfiguracionService {
         if (!tipo.isBlank() && !tipo.startsWith("image/")) {
             throw new FileStorageException("El archivo no es una imagen");
         }
-        return fileStorageService.guardar(archivo, "empresa");
+        return fileStorageService.guardarFijo(archivo, "empresa/logo");
     }
 
     @Override

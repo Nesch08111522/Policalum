@@ -392,7 +392,15 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
   usarModoImagen(modo: 'archivo' | 'url'): void {
     this.modoImagen = modo;
     this.archivoPendiente = null;
-    if (modo === 'url') this.vistaPrevia = this.form.controls.imagen.value.trim() || null;
+    const actual = this.form.controls.imagen.value.trim();
+    if (modo === 'url') {
+      const externa = /^https?:\/\//i.test(actual);
+      if (!externa) this.form.controls.imagen.setValue('');
+      this.vistaPrevia = externa ? actual : null;
+      return;
+    }
+    this.vistaPrevia = null;
+    if (actual.startsWith('productos/')) this.cargarVistaPrevia(actual);
   }
 
   actualizarVistaUrl(): void {

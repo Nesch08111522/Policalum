@@ -47,7 +47,6 @@ export class ConfiguracionPageComponent implements OnInit, OnDestroy {
     ubigeo: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
     email: ['', Validators.email],
     telefono: [''],
-    logoUrl: [''],
   });
   readonly parametros = this.fb.nonNullable.group({
     mesesHistoricosProyeccion: [6, [Validators.required, Validators.min(1)]],
@@ -94,7 +93,7 @@ export class ConfiguracionPageComponent implements OnInit, OnDestroy {
     this.cargando = true;
     this.api.GetApiV1ConfiguracionEmpresa().pipe(takeUntil(this.destroy$)).subscribe({
       next: (data) => {
-        this.empresa.patchValue({ razonSocial: data.razonSocial ?? '', nombreComercial: data.nombreComercial ?? '', ruc: data.ruc ?? '', direccionFiscal: data.direccionFiscal ?? '', ubigeo: data.ubigeo ?? '', email: data.email ?? '', telefono: data.telefono ?? '', logoUrl: data.logoUrl ?? '' });
+        this.empresa.patchValue({ razonSocial: data.razonSocial ?? '', nombreComercial: data.nombreComercial ?? '', ruc: data.ruc ?? '', direccionFiscal: data.direccionFiscal ?? '', ubigeo: data.ubigeo ?? '', email: data.email ?? '', telefono: data.telefono ?? '' });
         this.marcaForm.patchValue({ nombreComercial: data.nombreComercial?.trim() || data.razonSocial?.trim() || 'POLICALUM' });
         this.marca.aplicar(data.nombreComercial, data.logoUrl);
         this.vistaLogo = this.marca.logoSrc();
@@ -145,13 +144,12 @@ export class ConfiguracionPageComponent implements OnInit, OnDestroy {
         this.marca.aplicar(data.nombreComercial, data.logoUrl);
         this.vistaLogo = this.marca.logoSrc();
         this.empresa.controls.nombreComercial.setValue(data.nombreComercial ?? '');
-        this.empresa.controls.logoUrl.setValue(data.logoUrl ?? '');
         this.toast.success('Marca actualizada.');
       },
       error: (error: unknown) => { this.guardandoMarca = false; this.toast.error(problemText(error)); },
     });
     if (!this.archivoLogo) {
-      publicar(this.empresa.controls.logoUrl.value.trim() || null);
+      publicar(null);
       return;
     }
     this.marca.subirLogo(this.archivoLogo).pipe(takeUntil(this.destroy$)).subscribe({
@@ -166,7 +164,7 @@ export class ConfiguracionPageComponent implements OnInit, OnDestroy {
     const value = this.empresa.getRawValue();
     const body: Api.EmpresaRequestDTO = {
       razonSocial: value.razonSocial.trim(), ruc: value.ruc.trim(), direccionFiscal: value.direccionFiscal.trim(), ubigeo: value.ubigeo.trim(),
-      nombreComercial: value.nombreComercial.trim() || undefined, email: value.email.trim() || undefined, telefono: value.telefono.trim() || undefined, logoUrl: value.logoUrl.trim() || undefined,
+      nombreComercial: value.nombreComercial.trim() || undefined, email: value.email.trim() || undefined, telefono: value.telefono.trim() || undefined,
     };
     this.guardando = true;
     this.api.PutApiV1ConfiguracionEmpresa({}, body).pipe(takeUntil(this.destroy$)).subscribe({

@@ -5,7 +5,7 @@
 
   <form *ngIf="tab === 'empresa'" class="card card-body marca-card" [formGroup]="marcaForm" (ngSubmit)="guardarMarca()">
     <h2>Marca de la empresa</h2>
-    <p class="text-muted">El nombre y el logo se ven en el menú, el acceso y los comprobantes.</p>
+    <p class="text-muted">El nombre y el logo se ven en el menú, el acceso y los comprobantes. El archivo nuevo reemplaza al anterior.</p>
     <div class="marca-row">
       <img class="marca-logo" [src]="vistaLogo" [alt]="marca.nombre()" (error)="marca.usarRespaldo()" />
       <app-form-field label="Nombre de la empresa" inputId="marca-nombre" [required]="true">
@@ -28,7 +28,6 @@
     <app-form-field class="span-2" label="Dirección fiscal" inputId="emp-dir" [required]="true" [error]="errorEmpresa('direccionFiscal')"><input id="emp-dir" class="input" formControlName="direccionFiscal" /></app-form-field>
     <app-form-field label="Correo" inputId="emp-mail" [error]="errorEmpresa('email')"><input id="emp-mail" class="input" type="email" formControlName="email" /></app-form-field>
     <app-form-field label="Teléfono" inputId="emp-tel"><input id="emp-tel" class="input" formControlName="telefono" /></app-form-field>
-    <app-form-field class="span-2" label="Logo" inputId="emp-logo"><input id="emp-logo" class="input" formControlName="logoUrl" /></app-form-field>
     <div class="filter-actions span-2"><button type="submit" class="btn btn-primary" [disabled]="empresa.invalid || guardando">Guardar empresa</button></div>
   </form>
 

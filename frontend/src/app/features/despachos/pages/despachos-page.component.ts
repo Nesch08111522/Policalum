@@ -16,6 +16,7 @@ import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { ignoreStale, PageState } from '../../../shared/utils/page-state';
+import { DespachoEvidenciaApi } from '../data-access/despacho-evidencia.api';
 import { DespachosApiService } from '../data-access/despachos.api';
 import { MovilidadesApiService } from '../../movilidades/data-access/movilidades.api';
 
@@ -55,7 +56,12 @@ export class DespachosPageComponent implements OnInit, OnDestroy {
     estado: ['EN_CAMINO' as Api.CambiarEstadoDespachoRequestDTO['estado'], Validators.required],
     fechaProgramada: [''],
     motivo: [''],
+    recibidoPorNombre: [''],
+    recibidoPorDocumento: [''],
   });
+  archivoEvidencia: File | null = null;
+  vistaEvidencia: string | null = null;
+  evidenciaAbierta = false;
   sedes: SelectOption[] = [];
   usuarios: SelectOption[] = [];
   movilidades: SelectOption[] = [];
@@ -70,6 +76,7 @@ export class DespachosPageComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly api: DespachosApiService,
+    private readonly evidencia: DespachoEvidenciaApi,
     private readonly movilidadesApi: MovilidadesApiService,
     private readonly lookup: LookupService,
     private readonly toast: ToastService,
@@ -156,14 +163,54 @@ export class DespachosPageComponent implements OnInit, OnDestroy {
   abrirEstado(row: unknown): void {
     const item = row as Api.OrdenDespachoResponseDTO;
     this.seleccionado = item;
-    this.cambio.reset({ estado: item.estado && item.estado !== 'PENDIENTE' ? item.estado : 'EN_CAMINO', fechaProgramada: (item.fechaProgramada ?? '').slice(0, 10), motivo: '' });
+    this.archivoEvidencia = null;
+    this.vistaEvidencia = null;
+    this.cambio.reset({
+      estado: item.estado && item.estado !== 'PENDIENTE' && item.estado !== 'ENTREGADO' ? item.estado : 'EN_CAMINO',
+      fechaProgramada: (item.fechaProgramada ?? '').slice(0, 10),
+      motivo: '',
+      recibidoPorNombre: item.contactoNombre ?? '',
+      recibidoPorDocumento: '',
+    });
     this.estadoAbierto = true;
+  }
+
+  elegirEvidencia(event: Event): void {
+    const archivo = (event.target as HTMLInputElement).files?.[0];
+    if (!archivo) return;
+    const permitida = ['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type);
+    if (!permitida || archivo.size > 2 * 1024 * 1024) {
+      this.toast.error('La evidencia debe ser una foto JPG, PNG o WEBP de hasta 2 MB.');
+      return;
+    }
+    this.archivoEvidencia = archivo;
+    const lector = new FileReader();
+    lector.onload = () => { this.vistaEvidencia = String(lector.result ?? ''); };
+    lector.readAsDataURL(archivo);
+  }
+
+  verEvidencia(row: unknown): void {
+    const item = row as Api.OrdenDespachoResponseDTO;
+    if (!item.id) return;
+    this.evidencia.ver(item.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (blob) => {
+        this.seleccionado = item;
+        this.vistaEvidencia = URL.createObjectURL(blob);
+        this.estadoAbierto = false;
+        this.evidenciaAbierta = true;
+      },
+      error: (error: unknown) => this.toast.error(problemText(error)),
+    });
   }
 
   cambiarEstado(): void {
     this.cambio.markAllAsTouched();
     if (!this.seleccionado?.id || this.cambio.invalid) return;
     const value = this.cambio.getRawValue();
+    if (value.estado === 'ENTREGADO') {
+      this.registrarEntrega(value.recibidoPorNombre, value.recibidoPorDocumento);
+      return;
+    }
     this.guardando = true;
     this.api.PatchApiV1DespachosIdEstado({ id: this.seleccionado.id }, {
       estado: value.estado,
@@ -176,6 +223,33 @@ export class DespachosPageComponent implements OnInit, OnDestroy {
   }
 
   errorDe(nombre: 'ventaId' | 'direccionEntrega'): string | null { return fieldError(this.form.controls[nombre]); }
+
+  private registrarEntrega(nombre: string, documento: string): void {
+    if (!this.seleccionado?.id) return;
+    if (this.seleccionado.estado !== 'EN_CAMINO') {
+      this.toast.error('La foto de entrega solo se registra cuando el despacho está en camino.');
+      return;
+    }
+    if (!this.archivoEvidencia) {
+      this.toast.error('Adjunta la foto de la entrega.');
+      return;
+    }
+    if (!nombre.trim()) {
+      this.toast.error('Indica quién recibe el pedido.');
+      return;
+    }
+    this.guardando = true;
+    this.evidencia.registrar(this.seleccionado.id, this.archivoEvidencia, nombre.trim(), documento).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.guardando = false;
+        this.estadoAbierto = false;
+        this.archivoEvidencia = null;
+        this.toast.success('Entrega registrada con la foto.');
+        this.cargar();
+      },
+      error: (error: unknown) => { this.guardando = false; this.toast.error(problemText(error)); },
+    });
+  }
 }
 
 export const DESPACHOS_ROUTES: Routes = [

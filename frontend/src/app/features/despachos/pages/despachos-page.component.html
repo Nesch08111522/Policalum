@@ -17,6 +17,7 @@
     <ng-template #rowActions let-row>
       <button type="button" class="btn btn-ghost btn-sm" (click)="abrirAsignar(row)">Asignar</button>
       <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEstado(row)">Estado</button>
+      <button type="button" class="btn btn-ghost btn-sm" *ngIf="row.tieneEvidencia" (click)="verEvidencia(row)">Ver foto</button>
     </ng-template>
   </app-data-table>
 </section>
@@ -49,9 +50,23 @@
 
 <app-modal [open]="estadoAbierto" title="Cambiar estado" (closed)="estadoAbierto = false">
   <form class="form-grid" [formGroup]="cambio">
-    <app-form-field label="Estado" inputId="des-nuevo"><select id="des-nuevo" class="select" formControlName="estado"><option value="PENDIENTE">Pendiente</option><option value="EN_CAMINO">En camino</option><option value="ENTREGADO">Entregado</option><option value="FALLIDO">Fallido</option></select></app-form-field>
+    <app-form-field label="Estado" inputId="des-nuevo"><select id="des-nuevo" class="select" formControlName="estado"><option value="PENDIENTE">Pendiente</option><option value="EN_CAMINO">En camino</option><option value="ENTREGADO" [disabled]="seleccionado?.estado !== 'EN_CAMINO'">Entregado</option><option value="FALLIDO">Fallido</option></select></app-form-field>
     <app-form-field label="Reprogramar" inputId="des-repro"><input id="des-repro" class="input" type="date" formControlName="fechaProgramada" /></app-form-field>
     <app-form-field class="span-2" label="Motivo" inputId="des-motivo" [required]="cambio.controls.estado.value === 'FALLIDO'"><textarea id="des-motivo" class="textarea" formControlName="motivo"></textarea></app-form-field>
+    <ng-container *ngIf="cambio.controls.estado.value === 'ENTREGADO'">
+      <app-form-field label="Quién recibe" inputId="des-recibe" [required]="true"><input id="des-recibe" class="input" formControlName="recibidoPorNombre" /></app-form-field>
+      <app-form-field label="Documento" inputId="des-doc"><input id="des-doc" class="input" formControlName="recibidoPorDocumento" /></app-form-field>
+      <label class="file-field span-2" for="des-foto">
+        <input id="des-foto" class="file-input" type="file" accept="image/png,image/jpeg,image/webp" (change)="elegirEvidencia($event)" />
+        <span>{{ archivoEvidencia ? archivoEvidencia.name : 'Subir foto de la entrega' }}</span>
+      </label>
+      <img *ngIf="vistaEvidencia" class="vista-evidencia span-2" [src]="vistaEvidencia" alt="Vista previa de la evidencia" />
+      <p class="ayuda span-2">La foto es obligatoria. Se guarda en el servidor y el despacho conserva la ruta.</p>
+    </ng-container>
   </form>
   <div modalFooter><button type="button" class="btn btn-ghost" (click)="estadoAbierto = false">Cancelar</button><button type="button" class="btn btn-primary" (click)="cambiarEstado()" [disabled]="cambio.invalid || guardando">Guardar</button></div>
+</app-modal>
+
+<app-modal [open]="evidenciaAbierta" title="Foto de la entrega" (closed)="evidenciaAbierta = false">
+  <img *ngIf="vistaEvidencia" class="vista-evidencia" [src]="vistaEvidencia" alt="Evidencia de la entrega" />
 </app-modal>

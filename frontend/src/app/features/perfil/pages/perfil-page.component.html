@@ -8,9 +8,10 @@
         <img *ngIf="vistaFoto" [src]="vistaFoto" alt="Foto de perfil" />
         <span *ngIf="!vistaFoto">{{ iniciales }}</span>
         <label class="btn btn-ghost btn-sm">
-          Cambiar foto
+          {{ archivoFoto ? archivoFoto.name : 'Subir foto' }}
           <input type="file" accept="image/jpeg,image/png,image/webp" (change)="elegirFoto($event)" />
         </label>
+        <p class="ayuda">JPG, PNG o WEBP de hasta 2 MB. Se guarda el archivo y en la cuenta solo queda la ruta.</p>
         <button type="button" class="btn btn-ghost btn-sm" *ngIf="vistaFoto" (click)="quitarFoto()">Quitar foto</button>
       </div>
       <h2>{{ perfil.nombre }} {{ perfil.apellido }}</h2>

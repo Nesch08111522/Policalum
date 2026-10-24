@@ -168,6 +168,46 @@ class ProductoServiceImplTest {
         assertThrows(ResourceNotFoundException.class, () -> service.update(id, request("x", false, null)));
     }
 
+    @Test
+    void create_urlExterna_seGuardaSinDescargarElArchivo() {
+        Producto producto = mapeado("PC-6", false, "150.00");
+        producto.setImagen("https://imagenes.com/foto.jpg");
+        when(productoRepository.findByCodigoSkuIgnoreCase("PC-6")).thenReturn(Optional.empty());
+
+        service.create(request("PC-6", false, null));
+
+        assertEquals("https://imagenes.com/foto.jpg", guardado().getImagen());
+        verify(fileStorageService, never()).existe(any());
+    }
+
+    @Test
+    void create_dataUrl_seRechaza() {
+        Producto producto = mapeado("PC-6", false, "150.00");
+        producto.setImagen("data:image/png;base64,aaaa");
+        when(productoRepository.findByCodigoSkuIgnoreCase(any())).thenReturn(Optional.empty());
+
+        assertThrows(ValidationException.class, () -> service.create(request("PC-6", false, null)));
+        verify(productoRepository, never()).save(any());
+    }
+
+    @Test
+    void update_alReemplazarArchivoPorUrl_borraLaRutaAnterior() {
+        Producto producto = Producto.builder().id(id).codigoSku("PC-6").nombre("x").esFraccionable(false)
+                .precioVentaBase(new BigDecimal("100.00")).imagen("productos/2026/10/vieja.png").build();
+        when(productoRepository.findWithRelationsById(id)).thenReturn(Optional.of(producto));
+        when(productoRepository.findByCodigoSkuIgnoreCase("PC-6")).thenReturn(Optional.of(producto));
+        doAnswer(invocacion -> {
+            Producto destino = invocacion.getArgument(1);
+            destino.setImagen("https://imagenes.com/nueva.jpg");
+            return null;
+        }).when(productoMapper).updateEntityFromDto(any(), any());
+
+        service.update(id, request("PC-6", false, null));
+
+        verify(fileStorageService).eliminar("productos/2026/10/vieja.png");
+        assertEquals("https://imagenes.com/nueva.jpg", producto.getImagen());
+    }
+
     // ---------------------------------------------------------------- otros
 
     @Test

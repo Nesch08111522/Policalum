@@ -161,4 +161,19 @@ class FileStorageServiceImplTest {
 
         assertTrue(Files.exists(fuera));
     }
+
+    @Test
+    void guardarFijo_reemplazaElMismoNombreYDescartaLaOtraExtension() throws IOException {
+        MockMultipartFile png = new MockMultipartFile("archivo", "C:\\Users\\Nancy\\logo.PNG", "image/png", new byte[]{1, 2, 3});
+        assertEquals("empresa/logo.png", service.guardarFijo(png, "empresa/logo"));
+
+        MockMultipartFile webp = new MockMultipartFile("archivo", "logo.webp", "image/webp", new byte[]{9, 8});
+        String segunda = service.guardarFijo(webp, "empresa/logo");
+        service.descartarVariantes(segunda);
+
+        assertEquals("empresa/logo.webp", segunda);
+        assertTrue(Files.exists(base.resolve("empresa/logo.webp")));
+        assertFalse(Files.exists(base.resolve("empresa/logo.png")));
+        assertEquals(2, Files.size(base.resolve("empresa/logo.webp")));
+    }
 }

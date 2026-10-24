@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Observable, of, Subject, switchMap, takeUntil } from 'rxjs';
 import * as Api from '../../../core/api/openapi.types';
 import { TokenService } from '../../../services/token.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -45,7 +45,8 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
   perfil: Api.PerfilResponseDTO | null = null;
   sedes: SelectOption[] = [];
   vistaFoto = '';
-  private fotoEnvio: string | null = null;
+  archivoFoto: File | null = null;
+  private fotoQuitada = false;
   guardando = false;
   cambiandoClave = false;
   cerrando = false;
@@ -103,7 +104,7 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
       documento: value.documento.trim(),
       biografia: value.biografia.trim(),
       sedeId: value.sedeId || undefined,
-      foto: this.fotoEnvio ?? undefined,
+      foto: this.fotoQuitada && !this.archivoFoto ? '' : undefined,
     };
     if (this.perfil?.puedeEditarLaboral) {
       body.sueldoBase = value.sueldoBase === '' ? undefined : Number(value.sueldoBase);
@@ -111,10 +112,12 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
     }
     this.guardando = true;
     this.errorDatos = null;
-    this.api.actualizar(body).pipe(takeUntil(this.destroy$)).subscribe({
+    const subir: Observable<unknown> = this.archivoFoto ? this.api.subirFoto(this.archivoFoto) : of(null);
+    subir.pipe(switchMap(() => this.api.actualizar(body)), takeUntil(this.destroy$)).subscribe({
       next: (perfil) => {
         this.guardando = false;
-        this.fotoEnvio = null;
+        this.archivoFoto = null;
+        this.fotoQuitada = false;
         this.pintar(perfil);
         this.toast.success('Perfil actualizado.');
       },
@@ -148,7 +151,7 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
     const activo = (event.target as HTMLInputElement).checked;
     this.api.totp({ activo }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (perfil) => {
-        this.perfil = { ...this.perfil, ...perfil, foto: this.perfil?.foto };
+        this.perfil = { ...this.perfil, ...perfil, foto: perfil.foto ?? this.perfil?.foto };
         this.secreto = perfil.totpSecreto ?? '';
         this.aplicarSesion(perfil);
         this.toast.success(activo ? 'Doble factor activado.' : 'Doble factor desactivado.');
@@ -176,22 +179,22 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
   elegirFoto(event: Event): void {
     const archivo = (event.target as HTMLInputElement).files?.[0];
     if (!archivo) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type) || archivo.size > 120_000) {
-      this.toast.error('La foto debe ser JPG, PNG o WebP de hasta 120 KB.');
+    const permitida = ['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type);
+    if (!permitida || archivo.size > 2 * 1024 * 1024) {
+      this.toast.error('La foto debe ser JPG, PNG o WEBP de hasta 2 MB.');
       return;
     }
+    this.archivoFoto = archivo;
+    this.fotoQuitada = false;
     const lector = new FileReader();
-    lector.onload = () => {
-      const foto = String(lector.result ?? '');
-      this.vistaFoto = foto;
-      this.fotoEnvio = foto;
-    };
+    lector.onload = () => { this.vistaFoto = String(lector.result ?? ''); this.cd.markForCheck(); };
     lector.readAsDataURL(archivo);
   }
 
   quitarFoto(): void {
     this.vistaFoto = '';
-    this.fotoEnvio = '';
+    this.archivoFoto = null;
+    this.fotoQuitada = true;
   }
 
   cancelar(): void {
@@ -216,9 +219,24 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
     return fieldError(this.clave.controls[nombre], { pattern: 'Incluye mayúscula, minúscula, número y un símbolo.' });
   }
 
+  private mostrarFoto(foto: string | undefined): void {
+    if (!foto) {
+      this.vistaFoto = '';
+      return;
+    }
+    if (foto.startsWith('data:image/') || /^https?:\/\//i.test(foto)) {
+      this.vistaFoto = foto;
+      return;
+    }
+    this.api.verFoto().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (blob) => { this.vistaFoto = URL.createObjectURL(blob); this.cd.markForCheck(); },
+      error: () => { this.vistaFoto = ''; this.cd.markForCheck(); },
+    });
+  }
+
   private pintar(perfil: Api.PerfilResponseDTO): void {
     this.perfil = perfil;
-    this.vistaFoto = perfil.foto ?? '';
+    this.mostrarFoto(perfil.foto);
     this.datos.reset({
       nombre: perfil.nombre ?? '',
       apellido: perfil.apellido ?? '',

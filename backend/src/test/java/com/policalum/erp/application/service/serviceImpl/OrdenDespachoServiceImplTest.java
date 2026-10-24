@@ -306,6 +306,14 @@ class OrdenDespachoServiceImplTest {
     }
 
     @Test
+    void registrarEntrega_pdf_noEsEvidenciaFotografica() {
+        MockMultipartFile pdf = new MockMultipartFile("archivo", "informe.pdf", "application/pdf", new byte[]{1, 2});
+        assertThrows(IllegalArgumentException.class, () -> service.registrarEntrega(ordenId, pdf,
+                new EvidenciaEntregaRequestDTO("Rosa", null, null, null, null)));
+        verifyNoInteractions(fileStorageService);
+    }
+
+    @Test
     void registrarEntrega_sinNombreDeQuienRecibe_lanzaIllegalArgument() {
         assertThrows(IllegalArgumentException.class, () -> service.registrarEntrega(ordenId, foto(),
                 new EvidenciaEntregaRequestDTO("  ", null, null, null, null)));

@@ -166,10 +166,14 @@
         <button type="button" [class.active]="modoImagen === 'archivo'" (click)="usarModoImagen('archivo')">Subir archivo</button>
         <button type="button" [class.active]="modoImagen === 'url'" (click)="usarModoImagen('url')">Pegar URL</button>
       </div>
-      <input *ngIf="modoImagen === 'archivo'" id="prod-archivo" class="input" type="file" accept="image/jpeg,image/png,image/webp" (change)="elegirImagen($event)" />
+      <label *ngIf="modoImagen === 'archivo'" class="file-field" for="prod-archivo">
+        <input id="prod-archivo" class="file-input" type="file" accept="image/png,image/jpeg,image/webp" (change)="elegirImagen($event)" />
+        <span>{{ archivoPendiente ? archivoPendiente.name : 'Elegir imagen PNG, JPG o WEBP' }}</span>
+      </label>
       <input *ngIf="modoImagen === 'url'" id="prod-imagen-url" class="input" type="url" formControlName="imagen" placeholder="https://…" (input)="actualizarVistaUrl()" />
       <img *ngIf="vistaPrevia" class="vista-previa" [src]="vistaPrevia" alt="Vista previa de la imagen del producto" />
-      <p class="ayuda">JPG, PNG o WEBP de hasta 2 MB, o una URL http(s). Se guarda la ruta o la URL, no el archivo dentro de la base.</p>
+      <p class="ayuda" *ngIf="modoImagen === 'archivo'">El archivo queda en el servidor. En la base solo se guarda la ruta.</p>
+      <p class="ayuda" *ngIf="modoImagen === 'url'">Pega un enlace http(s). El servidor no descarga la imagen.</p>
     </div>
     <app-form-field label="Activo" inputId="prod-act"><input id="prod-act" class="switch" type="checkbox" formControlName="activo" /></app-form-field>
     <app-form-field label="Fraccionable" inputId="prod-esfrac"><input id="prod-esfrac" class="switch" type="checkbox" formControlName="esFraccionable" /></app-form-field>
