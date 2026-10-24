@@ -1,42 +1,32 @@
-// src/app/app.routes.ts
 import { Routes } from '@angular/router';
-import { AdminDashboardComponent } from './components/admin/admin-dashboard.component';
-import { AsistenciaComponent } from './components/asistencia/asistencia'; // ✅ Correcto
-import { EmpleadoDashboardComponent } from './components/empleado/empleado-dashboard.component';
+import { AsistenciaComponent } from './components/asistencia/asistencia';
 import { LoginComponent } from './components/login/login.component';
+import { PosComponent } from './features/ventas/pos.component';
 import { AuthGuard } from './guards/auth.guard';
 import { RoleGuard } from './guards/role.guard';
 import { AuthenticatedLayoutComponent } from './layout/authenticated-layout.component';
-import { DashboardRedirectComponent } from './shared/components/dashboard-redirect/dashboard-redirect';
-import { PosComponent } from './features/ventas/pos.component';
-import { WORKSPACE_ROUTES } from './features/workspace/workspace.routes';
+import { MODULE_ROUTES } from './module.routes';
+
+const operacion = ['ROLE_ADMIN', 'ROLE_MULTIFUNCIONAL'];
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  { path: '', pathMatch: 'full', redirectTo: '/login' },
   { path: 'login', component: LoginComponent },
+  { path: 'recuperar-password', redirectTo: '/login', pathMatch: 'full' },
   {
     path: '',
     component: AuthenticatedLayoutComponent,
     canActivate: [AuthGuard],
     children: [
-      { path: '', component: DashboardRedirectComponent },
+      { path: '', pathMatch: 'full', redirectTo: 'inicio' },
+      { path: 'admin', pathMatch: 'full', redirectTo: 'inicio' },
+      { path: 'empleado', pathMatch: 'full', redirectTo: 'inicio' },
+      { path: 'dashboard', pathMatch: 'full', redirectTo: 'inicio' },
       {
-        path: 'admin',
-        component: AdminDashboardComponent,
-        canActivate: [RoleGuard],
-        data: { expectedRoles: ['ROLE_ADMIN'] },
-      },
-      {
-        path: 'empleado',
-        component: EmpleadoDashboardComponent,
-        canActivate: [RoleGuard],
-        data: { expectedRoles: ['ROLE_MULTIFUNCIONAL', 'ROLE_ADMIN'] },
-      },
-      {
-        path: 'asistencias', // ✅ Ruta simplificada
+        path: 'asistencias',
         component: AsistenciaComponent,
         canActivate: [RoleGuard],
-        data: { expectedRoles: ['ROLE_ADMIN', 'ROLE_MULTIFUNCIONAL'] },
+        data: { expectedRoles: operacion },
       },
       {
         path: 'cuenta/perfil',
@@ -46,33 +36,32 @@ export const routes: Routes = [
         path: 'ventas/pos',
         component: PosComponent,
         canActivate: [RoleGuard],
-        data: { expectedRoles: ['ROLE_ADMIN', 'ROLE_MULTIFUNCIONAL'] },
+        data: { expectedRoles: operacion },
       },
       { path: 'workspace/:module', redirectTo: ({ params }) => `/modules/${params['module']}` },
-      ...WORKSPACE_ROUTES,
-      { path: 'dashboard', redirectTo: 'inicio', pathMatch: 'full' },
-      { path: 'ventas/cotizaciones', redirectTo: 'modules/cotizaciones', pathMatch: 'full' },
-      { path: 'ventas/clientes', redirectTo: 'modules/clientes', pathMatch: 'full' },
-      { path: 'inventario/productos', redirectTo: 'modules/productos', pathMatch: 'full' },
-      { path: 'inventario/servicios', redirectTo: 'modules/servicios', pathMatch: 'full' },
-      { path: 'inventario/stock', redirectTo: 'modules/stock', pathMatch: 'full' },
-      { path: 'inventario/kardex', redirectTo: 'modules/kardex', pathMatch: 'full' },
-      { path: 'compras/ordenes', redirectTo: 'modules/compras', pathMatch: 'full' },
-      { path: 'compras/proveedores', redirectTo: 'modules/proveedores', pathMatch: 'full' },
-      { path: 'compras/despachos', redirectTo: 'modules/despachos', pathMatch: 'full' },
-      { path: 'compras/movilidades', redirectTo: 'modules/movilidades', pathMatch: 'full' },
-      { path: 'finanzas/turnos', redirectTo: 'modules/turnos-caja', pathMatch: 'full' },
-      { path: 'finanzas/cuentas-pagar', redirectTo: 'modules/cuentas-por-pagar', pathMatch: 'full' },
-      { path: 'finanzas/pagos', redirectTo: 'modules/finanzas', pathMatch: 'full' },
-      { path: 'finanzas/retiro-socios', redirectTo: 'modules/finanzas', pathMatch: 'full' },
-      { path: 'rrhh/legajo', redirectTo: 'modules/rrhh', pathMatch: 'full' },
-      { path: 'rrhh/nominas', redirectTo: 'modules/rrhh', pathMatch: 'full' },
-      { path: 'reportes/ventas', redirectTo: 'modules/reportes', pathMatch: 'full' },
-      { path: 'reportes/financieros', redirectTo: 'modules/finanzas', pathMatch: 'full' },
-      { path: 'config/sedes', redirectTo: 'modules/sedes', pathMatch: 'full' },
-      { path: 'config/usuarios', redirectTo: 'modules/users', pathMatch: 'full' },
-      { path: 'config/parametros', redirectTo: 'modules/configuracion', pathMatch: 'full' },
-      { path: 'config/auditoria', redirectTo: 'modules/auditoria', pathMatch: 'full' },
+      ...MODULE_ROUTES,
+      { path: 'ventas/cotizaciones', pathMatch: 'full', redirectTo: 'modules/cotizaciones' },
+      { path: 'ventas/clientes', pathMatch: 'full', redirectTo: 'modules/clientes' },
+      { path: 'inventario/productos', pathMatch: 'full', redirectTo: 'modules/productos' },
+      { path: 'inventario/servicios', pathMatch: 'full', redirectTo: 'modules/servicios' },
+      { path: 'inventario/stock', pathMatch: 'full', redirectTo: 'modules/stock' },
+      { path: 'inventario/kardex', pathMatch: 'full', redirectTo: 'modules/kardex' },
+      { path: 'compras/ordenes', pathMatch: 'full', redirectTo: 'modules/compras' },
+      { path: 'compras/proveedores', pathMatch: 'full', redirectTo: 'modules/proveedores' },
+      { path: 'compras/despachos', pathMatch: 'full', redirectTo: 'modules/despachos' },
+      { path: 'compras/movilidades', pathMatch: 'full', redirectTo: 'modules/movilidades' },
+      { path: 'finanzas/turnos', pathMatch: 'full', redirectTo: 'modules/turnos-caja' },
+      { path: 'finanzas/cuentas-pagar', pathMatch: 'full', redirectTo: 'modules/cuentas-por-pagar' },
+      { path: 'finanzas/pagos', pathMatch: 'full', redirectTo: 'modules/finanzas' },
+      { path: 'finanzas/retiro-socios', pathMatch: 'full', redirectTo: 'modules/finanzas' },
+      { path: 'rrhh/legajo', pathMatch: 'full', redirectTo: 'modules/rrhh' },
+      { path: 'rrhh/nominas', pathMatch: 'full', redirectTo: 'modules/rrhh' },
+      { path: 'reportes/ventas', pathMatch: 'full', redirectTo: 'modules/reportes' },
+      { path: 'reportes/financieros', pathMatch: 'full', redirectTo: 'modules/finanzas' },
+      { path: 'config/sedes', pathMatch: 'full', redirectTo: 'modules/sedes' },
+      { path: 'config/usuarios', pathMatch: 'full', redirectTo: 'modules/users' },
+      { path: 'config/parametros', pathMatch: 'full', redirectTo: 'modules/configuracion' },
+      { path: 'config/auditoria', pathMatch: 'full', redirectTo: 'modules/auditoria' },
     ],
   },
   { path: '**', redirectTo: '/login' },

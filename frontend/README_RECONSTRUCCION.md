@@ -16,9 +16,9 @@ features/<modulo>/
     └── <modulo>-page.component.css
 ```
 
-Los 24 módulos generados son:
+Los módulos con pantalla propia son:
 
-`ventas`, `clientes`, `cotizaciones`, `productos`, `servicios`, `categorias`, `catalogo-fracciones`, `stock`, `kardex`, `almacenes`, `compras`, `proveedores`, `despachos`, `movilidades`, `turnos-caja`, `cuentas-por-pagar`, `finanzas`, `rrhh`, `reportes`, `auditoria`, `configuracion`, `users`, `roles` y `sedes`.
+`dashboard`, `ventas`, `clientes`, `cotizaciones`, `preformas`, `devoluciones`, `reembolsos`, `productos`, `servicios`, `categorias`, `catalogo-fracciones`, `stock`, `kardex`, `almacenes`, `compras`, `proveedores`, `despachos`, `movilidades`, `turnos-caja`, `cuentas-por-pagar`, `finanzas`, `facturacion-electronica`, `rrhh`, `reportes`, `auditoria`, `configuracion`, `users`, `roles`, `sedes` y `perfil`.
 
 ## Clases comunes
 
@@ -27,8 +27,7 @@ Los 24 módulos generados son:
 - `core/api/backend-api.service.ts`: sustitución de parámetros, query string y body HTTP.
 - `features/<modulo>/data-access/<modulo>.api.ts`: servicio Angular explícito por dominio, con métodos tipados para sus endpoints.
 - `features/<modulo>/pages/<modulo>-page.component.ts`: componente standalone independiente por dominio.
-- `features/workspace/workspace-page.component.*`: UI responsive compartida para consultar/ejecutar la operación seleccionada.
-- `features/workspace/workspace.routes.ts`: 24 rutas standalone bajo `/modules/<modulo>`.
+- `app/module.routes.ts`: rutas reales de cada módulo bajo `/modules/<modulo>`. El panel está en `/inicio` y el perfil en `/cuenta/perfil`.
 
 ## Ejemplos de uso
 
@@ -46,9 +45,10 @@ export class VentaFacade {
 ```
 
 ```text
+/inicio
 /modules/ventas
 /modules/compras
-/modules/inventario
+/cuenta/perfil
 ```
 
 Las rutas reales disponibles son `/modules/<id>` usando los IDs listados arriba.
