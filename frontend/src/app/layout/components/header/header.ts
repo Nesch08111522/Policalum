@@ -1,66 +1,99 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Component, HostListener, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
+import * as Api from '../../../core/api/openapi.types';
 import { AuthService } from '../../../services/auth.service';
-import { interval, Subscription } from 'rxjs';
+import { TokenService } from '../../../services/token.service';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { LayoutService } from '../../../shared/services/layout.service';
+import { LookupService } from '../../../shared/services/lookup.service';
+import { SedeFiltroService } from '../../../shared/services/sede-filtro.service';
+import { ThemeService } from '../../../shared/services/theme.service';
+import { NAV_SECTIONS, NavItem } from '../../navigation';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, IconComponent],
   templateUrl: './header.html',
-  styleUrls: ['./header.css']
+  styleUrls: ['./header.css'],
 })
-export class HeaderComponent implements OnInit, OnDestroy {
-  currentTime: string = '';
-  currentDate: string = '';
-  userEmail: string = 'admin@policalum.com';
-  userRole: string = 'Administrador';
-  isProfileMenuOpen = false;
+export class HeaderComponent implements OnInit {
+  query = '';
+  results: NavItem[] = [];
+  menuOpen = false;
+  sedesAbiertas = false;
+  sedes: Api.SedeResponseDTO[] = [];
+  private items: NavItem[] = [];
 
-  private timerSubscription!: Subscription;
-
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    readonly theme: ThemeService,
+    readonly sedeFiltro: SedeFiltroService,
+    private readonly layout: LayoutService,
+    private readonly auth: AuthService,
+    private readonly tokens: TokenService,
+    private readonly lookup: LookupService,
+    private readonly router: Router,
+  ) {}
 
   ngOnInit(): void {
-    const user = this.authService.getCurrentUser();
-    if (user) {
-      this.userEmail = user.email;
-      this.userRole = user.rol;
-    }
-
-    this.timerSubscription = interval(1000).subscribe(() => {
-      this.updateDateTime();
-    });
-    this.updateDateTime();
+    const role = this.tokens.session()?.rol ?? '';
+    this.items = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => !item.roles || item.roles.includes(role));
+    this.lookup.loadSedes().subscribe((rows) => { this.sedes = rows.filter((sede) => sede.activa !== false); });
   }
 
-  ngOnDestroy(): void {
-    this.timerSubscription?.unsubscribe();
+  elegirSede(id: string, nombre: string): void {
+    this.sedeFiltro.elegir(id, nombre);
+    this.sedesAbiertas = false;
   }
 
-  private updateDateTime(): void {
-    const now = new Date();
-    this.currentTime = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    this.currentDate = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  onQuery(event: Event): void {
+    this.query = (event.target as HTMLInputElement).value;
+    const term = this.query.trim().toLowerCase();
+    this.results = term ? this.items.filter((item) => (item.label ?? '').toLowerCase().includes(term)).slice(0, 6) : [];
   }
 
-  toggleProfileMenu(): void {
-    this.isProfileMenuOpen = !this.isProfileMenuOpen;
+  goFirst(): void {
+    const target = this.results[0];
+    if (!target) return;
+    void this.router.navigateByUrl(target.path);
+    this.clear();
   }
 
-  closeProfileMenu(): void {
-    this.isProfileMenuOpen = false;
+  clear(): void {
+    this.query = '';
+    this.results = [];
+  }
+
+  toggleMenu(): void {
+    if (window.innerWidth <= 900) this.layout.toggleMobile();
+    else this.layout.toggleCollapsed();
+  }
+
+  get userName(): string { return this.tokens.session()?.nombre || 'Usuario'; }
+  get userEmail(): string { return this.tokens.session()?.email || ''; }
+  get userRole(): string { return this.tokens.session()?.rol === 'ROLE_ADMIN' ? 'Administrador' : this.tokens.session() ? 'Multifuncional' : ''; }
+  get initials(): string { return (this.userName || 'P').slice(0, 2).toUpperCase(); }
+  get esAdmin(): boolean { return this.tokens.session()?.rol === 'ROLE_ADMIN'; }
+
+  ir(ruta: string): void {
+    this.menuOpen = false;
+    void this.router.navigateByUrl(ruta);
   }
 
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
-    this.closeProfileMenu();
+    this.auth.logout();
+    this.menuOpen = false;
   }
 
-  goToProfile(): void {
-    this.router.navigate(['/perfil']);
-    this.closeProfileMenu();
+  @HostListener('document:click', ['$event'])
+  closeMenus(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.dropdown')) {
+      this.menuOpen = false;
+      this.sedesAbiertas = false;
+    }
+    if (!target.closest('.search-shell')) this.results = [];
   }
 }

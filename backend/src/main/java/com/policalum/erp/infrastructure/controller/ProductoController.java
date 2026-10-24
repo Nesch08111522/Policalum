@@ -2,12 +2,17 @@ package com.policalum.erp.infrastructure.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.URI;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,11 +23,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.policalum.erp.application.dto.request.ProductoImportacionFilaDTO;
+import com.policalum.erp.application.dto.request.ProductoImportacionRequestDTO;
 import com.policalum.erp.application.dto.request.ProductoRequestDTO;
+import com.policalum.erp.application.dto.response.ProductoImportacionResultadoDTO;
 import com.policalum.erp.application.dto.response.ProductoResponseDTO;
+import com.policalum.erp.application.service.ProductoImportacionService;
 import com.policalum.erp.application.service.ProductoService;
+import com.policalum.erp.application.service.serviceImpl.ProductoImagenService;
 import com.policalum.erp.domain.enums.TipoProducto;
 
 import jakarta.validation.Valid;
@@ -38,6 +49,8 @@ import lombok.RequiredArgsConstructor;
 public class ProductoController {
 
     private final ProductoService productoService;
+    private final ProductoImportacionService productoImportacionService;
+    private final ProductoImagenService productoImagenService;
 
     /**
      * Registra un nuevo producto en el sistema.
@@ -143,5 +156,47 @@ public class ProductoController {
     @GetMapping("/dashboard/statistics")
     public ResponseEntity<Map<String, Object>> getDashboardStatistics() {
         return ResponseEntity.ok(productoService.getDashboardStatistics());
+    }
+
+    /**
+     * Importa el catálogo desde JSON (el Excel se lee en el navegador).
+     * Si una fila falla, no se guarda ninguna.
+     */
+    @PostMapping("/importacion-masiva")
+    public ResponseEntity<ProductoImportacionResultadoDTO> importar(@Valid @RequestBody ProductoImportacionRequestDTO request) {
+        return ResponseEntity.ok(productoImportacionService.importar(request));
+    }
+
+    /** Catálogo en el mismo formato de la importación, para que Angular arme el archivo. */
+    @GetMapping("/exportacion")
+    public ResponseEntity<List<ProductoImportacionFilaDTO>> exportar(
+            @RequestParam(required = false) String searchTerm,
+            @RequestParam(required = false) UUID categoriaId,
+            @RequestParam(required = false) TipoProducto tipo,
+            @RequestParam(required = false) Boolean activo,
+            @RequestParam(required = false) Boolean esFraccionable) {
+        return ResponseEntity.ok(productoImportacionService.exportar(searchTerm, categoriaId, tipo, activo, esFraccionable));
+    }
+
+    @PostMapping(value = "/imagenes", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, String>> subirImagen(@RequestParam("archivo") MultipartFile archivo) {
+        return ResponseEntity.ok(Map.of("ruta", productoImagenService.guardar(archivo)));
+    }
+
+    @GetMapping("/imagenes")
+    public ResponseEntity<Resource> verImagen(@RequestParam String ruta) {
+        Resource resource = productoImagenService.cargar(ruta);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + (resource.getFilename() != null ? resource.getFilename() : "imagen") + "\"")
+                .contentType(tipoImagen(resource.getFilename()))
+                .body(resource);
+    }
+
+    private MediaType tipoImagen(String nombre) {
+        String lower = nombre == null ? "" : nombre.toLowerCase(Locale.ROOT);
+        if (lower.endsWith(".png")) return MediaType.IMAGE_PNG;
+        if (lower.endsWith(".webp")) return MediaType.parseMediaType("image/webp");
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return MediaType.IMAGE_JPEG;
+        return MediaType.APPLICATION_OCTET_STREAM;
     }
 }

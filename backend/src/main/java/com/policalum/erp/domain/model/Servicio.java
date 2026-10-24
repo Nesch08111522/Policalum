@@ -3,14 +3,18 @@ package com.policalum.erp.domain.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.hibernate.annotations.UuidGenerator;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -44,6 +48,11 @@ public class Servicio {
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    /** Personas reales (users) que instalaron o ayudaron. No se inventan empleados. */
+    @Builder.Default
+    @OneToMany(mappedBy = "servicio", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ServicioColaborador> colaboradores = new ArrayList<>();
 
     /**
      * FIX deuda técnica: @Builder (y MapStruct, que usa el builder) ignora los inicializadores

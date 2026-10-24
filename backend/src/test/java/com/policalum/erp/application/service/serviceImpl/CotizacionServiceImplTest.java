@@ -12,6 +12,7 @@ import com.policalum.erp.application.dto.response.ParametrosVentasDTO;
 import com.policalum.erp.application.dto.response.VentaProcesadaResponseDTO;
 import com.policalum.erp.application.mapper.*;
 import com.policalum.erp.application.service.*;
+import com.policalum.erp.application.service.support.RangosConsulta;
 import com.policalum.erp.domain.enums.*;
 import com.policalum.erp.domain.model.*;
 import com.policalum.erp.infrastructure.repository.*;
@@ -151,7 +152,7 @@ class CotizacionServiceImplTest {
     void search_mapeaListadoConClienteOpcional() {
         Pageable p = PageRequest.of(0, 10);
         Cotizacion c = cotizacion(EstadoCotizacion.EMITIDA);
-        when(cotizacionRepository.buscar(null, sedeId, EstadoCotizacion.EMITIDA, null, null, p)).thenReturn(new PageImpl<>(List.of(c)));
+        when(cotizacionRepository.buscar(null, sedeId, EstadoCotizacion.EMITIDA, RangosConsulta.DESDE_ABIERTO, RangosConsulta.HASTA_ABIERTO, p)).thenReturn(new PageImpl<>(List.of(c)));
 
         Page<CotizacionListadoDTO> r = service.search(null, sedeId, EstadoCotizacion.EMITIDA, null, null, p);
 

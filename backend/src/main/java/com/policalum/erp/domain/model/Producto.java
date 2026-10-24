@@ -73,6 +73,13 @@ public class Producto {
     @Column(name = "tipo_afectacion", length = 10)
     private String tipoAfectacion = "10";
 
+    /**
+     * Ruta relativa dentro del almacén de archivos (por ejemplo productos/2026/10/uuid.jpg)
+     * o una URL http(s). No se guarda el binario en la columna.
+     */
+    @Column(length = 500)
+    private String imagen;
+
 
     @Builder.Default
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -80,11 +87,18 @@ public class Producto {
 
 
     public void addFraccion(CatalogoFraccion fraccion){
+        if (fracciones == null) {
+            fracciones = new ArrayList<>();
+        }
         fracciones.add(fraccion);
         fraccion.setProducto(this);
     }
 
     public void clearFracciones(){
+        if (fracciones == null) {
+            fracciones = new ArrayList<>();
+            return;
+        }
         fracciones.clear();
     }
 

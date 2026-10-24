@@ -40,8 +40,8 @@ public interface StockRepository extends JpaRepository<Stock, UUID> {
     @EntityGraph(attributePaths = {"producto", "almacen"})
     @Query("SELECT s FROM Stock s WHERE s.almacen.id = :almacenId AND " +
             "(:searchTerm IS NULL OR " +
-            " LOWER(s.producto.nombre) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-            " LOWER(COALESCE(s.producto.codigoSku, '')) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) AND " +
+            " LOWER(COALESCE(s.producto.nombre, '')) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')) OR " +
+            " LOWER(COALESCE(s.producto.codigoSku, '')) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%'))) AND " +
             "(:soloBajoStock = false OR s.cantidad <= s.stockMinimo)")
     Page<Stock> searchByAlmacen(
             @Param("almacenId") UUID almacenId,

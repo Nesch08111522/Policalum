@@ -53,6 +53,10 @@ public class RrhhLegajoDigital {
     @Column(name = "sueldo_base", nullable = false, precision = 12, scale = 2)
     private BigDecimal sueldoBase = BigDecimal.ZERO;
 
+    /** Día del mes en que se cobra, del 1 al 31. Null si aún no está definido. */
+    @Column(name = "dia_cobro")
+    private Integer diaCobro;
+
     @Column(name = "porcentaje_comision", precision = 5, scale = 2)
     private BigDecimal porcentajeComision = BigDecimal.ZERO;
 

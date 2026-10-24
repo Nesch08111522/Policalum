@@ -1,326 +1,109 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
-import { ApiProblem } from '../../../core/api/openapi.types';
-import { CatalogoFraccionesApiService } from '../data-access/catalogo-fracciones.api';
-import { ProductosApiService } from '../../productos/data-access/productos.api';
+import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Routes } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import * as Api from '../../../core/api/openapi.types';
-
-interface Filtros {
-  productoId: string;
-  searchTerm: string;
-  activo: string;
-}
-
-interface FraccionForm {
-  id?: string;
-  productoId: string;
-  nombreFraccion: string;
-  factorDescuentoKardex: number | null;
-  precioVenta: number | null;
-  activo: boolean;
-}
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
+import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { SelectComponent } from '../../../shared/components/select/select.component';
+import { ColumnDef, SelectOption } from '../../../shared/models/ui.models';
+import { LookupService } from '../../../shared/services/lookup.service';
+import { ToastService } from '../../../shared/services/toast.service';
+import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
+import { ignoreStale, PageState } from '../../../shared/utils/page-state';
+import { CatalogoFraccionesApiService } from '../data-access/catalogo-fracciones.api';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-catalogo-fracciones-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent],
   templateUrl: './catalogo-fracciones-page.component.html',
   styleUrls: ['./catalogo-fracciones-page.component.css'],
 })
 export class CatalogoFraccionesPageComponent implements OnInit, OnDestroy {
-  fracciones: Api.CatalogoFraccionResponseDTO[] = [];
-  totalElementos = 0;
-  totalPaginas = 0;
-  page = 0;
-  size = 20;
-  sort = 'nombreFraccion,asc';
-  loading = false;
-  error: ApiProblem | null = null;
-  exito: string | null = null;
-
-  filtros: Filtros = {
-    productoId: '',
-    searchTerm: '',
-    activo: '',
-  };
-
-  // Productos fraccionables para los selects
-  productos: Api.ProductoResponseDTO[] = [];
-
-  private readonly searchSubject = new Subject<string>();
-  private readonly destroy$ = new Subject<void>();
-
-  mostrarFormulario = false;
-  modoEdicion = false;
+  private readonly fb = inject(FormBuilder);
+  readonly state = new PageState<Api.CatalogoFraccionResponseDTO>();
+  readonly columns: ColumnDef[] = [
+    { key: 'productoNombre', label: 'Producto' },
+    { key: 'nombreFraccion', label: 'Fracción', sortable: true },
+    { key: 'factorDescuentoKardex', label: 'Factor', kind: 'number', align: 'end' },
+    { key: 'precioVenta', label: 'Precio', kind: 'money', align: 'end' },
+    { key: 'activo', label: 'Activo', kind: 'bool' },
+  ];
+  readonly filtros = this.fb.nonNullable.group({ searchTerm: [''], productoId: [''], activo: [''] });
+  readonly form = this.fb.nonNullable.group({
+    id: [''],
+    productoId: ['', Validators.required],
+    nombreFraccion: ['', [Validators.required, Validators.maxLength(50)]],
+    factorDescuentoKardex: [1, [Validators.required, Validators.min(0.0001)]],
+    precioVenta: [0, Validators.min(0)],
+    activo: [true],
+  });
+  productos: SelectOption[] = [];
+  modal = false;
+  editando = false;
   guardando = false;
   errorFormulario: string | null = null;
-  form: FraccionForm = this.formVacio();
-
-  mostrarConfirmacion = false;
-  fraccionAEliminar: Api.CatalogoFraccionResponseDTO | null = null;
+  confirmar = false;
   eliminando = false;
+  seleccionado: Api.CatalogoFraccionResponseDTO | null = null;
+  private readonly destroy$ = new Subject<void>();
 
-  constructor(
-    private readonly catalogoFraccionesApi: CatalogoFraccionesApiService,
-    private readonly productosApi: ProductosApiService,
-  ) {}
-
+  constructor(private readonly api: CatalogoFraccionesApiService, private readonly lookup: LookupService, private readonly toast: ToastService) { this.state.sort = 'nombreFraccion,asc'; }
   ngOnInit(): void {
-    this.cargarFracciones();
-    this.cargarProductos();
-
-    this.searchSubject
-      .pipe(debounceTime(400), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe((termino) => {
-        this.filtros.searchTerm = termino;
-        this.page = 0;
-        this.cargarFracciones();
-      });
+    this.cargar();
+    this.lookup.loadProductos().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.productos = this.lookup.options(rows, (row) => (row as Api.ProductoResponseDTO).nombre ?? 'Producto'); });
   }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  cargarFracciones(): void {
-    this.loading = true;
-    this.error = null;
-    const params = this.construirParams();
-    this.catalogoFraccionesApi.GetApiV1CatalogoFracciones(params).subscribe({
-      next: (respuesta) => {
-        this.fracciones = respuesta.content ?? [];
-        this.totalElementos = respuesta.totalElements ?? 0;
-        this.totalPaginas = respuesta.totalPages ?? 0;
-        this.page = respuesta.number ?? 0;
-        this.loading = false;
-      },
-      error: (err: ApiProblem) => {
-        this.error = err;
-        this.fracciones = [];
-        this.totalElementos = 0;
-        this.totalPaginas = 0;
-        this.loading = false;
-      },
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+  cargar(): void {
+    this.api.GetApiV1CatalogoFracciones(this.state.query(this.filtros.getRawValue())).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
+      next: (page) => this.state.apply(page),
+      error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
   }
-
-  private construirParams(): Record<string, string | number> {
-    const params: Record<string, string | number> = {
-      page: this.page,
-      size: this.size,
-      sort: this.sort,
-    };
-    if (this.filtros.productoId) params['productoId'] = this.filtros.productoId;
-    if (this.filtros.searchTerm.trim()) params['searchTerm'] = this.filtros.searchTerm.trim();
-    if (this.filtros.activo !== '') params['activo'] = this.filtros.activo;
-    return params;
-  }
-
-  private cargarProductos(): void {
-    // Solo traemos productos fraccionables, porque solo ellos pueden tener fracciones.
-    this.productosApi.GetApiV1Productos({ page: 0, size: 500, esFraccionable: true }).subscribe({
-      next: (respuesta) => (this.productos = respuesta.content ?? []),
-      error: () => (this.productos = []),
-    });
-  }
-
-  onBuscarInput(valor: string): void {
-    this.searchSubject.next(valor);
-  }
-
-  aplicarFiltros(): void {
-    this.page = 0;
-    this.cargarFracciones();
-  }
-
-  limpiarFiltros(): void {
-    this.filtros = {
-      productoId: '',
-      searchTerm: '',
-      activo: '',
-    };
-    this.page = 0;
-    this.cargarFracciones();
-  }
-
-  cambiarPage(nuevaPage: number): void {
-    if (nuevaPage < 0 || nuevaPage >= this.totalPaginas) return;
-    this.page = nuevaPage;
-    this.cargarFracciones();
-  }
-
-  cambiarSize(nuevoSize: number): void {
-    this.size = Number(nuevoSize);
-    this.page = 0;
-    this.cargarFracciones();
-  }
-
-  abrirFormularioNuevo(): void {
-    this.form = this.formVacio();
-    // Preselecciona el producto que esté filtrado, si hay uno
-    if (this.filtros.productoId) {
-      this.form.productoId = this.filtros.productoId;
-    }
-    this.modoEdicion = false;
+  filtrar(): void { this.state.page = 0; this.cargar(); }
+  limpiar(): void { this.filtros.reset({ searchTerm: '', productoId: '', activo: '' }); this.filtrar(); }
+  cambiarPagina(page: number): void { this.state.page = page; this.cargar(); }
+  cambiarTamano(size: number): void { this.state.size = size; this.state.page = 0; this.cargar(); }
+  abrirCrear(): void { this.editando = false; this.errorFormulario = null; this.form.reset({ id: '', productoId: '', nombreFraccion: '', factorDescuentoKardex: 1, precioVenta: 0, activo: true }); this.modal = true; }
+  abrirEditar(row: unknown): void {
+    const item = row as Api.CatalogoFraccionResponseDTO;
+    this.editando = true;
     this.errorFormulario = null;
-    this.mostrarFormulario = true;
+    this.form.reset({ id: item.id ?? '', productoId: item.productoId ?? '', nombreFraccion: item.nombreFraccion ?? '', factorDescuentoKardex: item.factorDescuentoKardex ?? 1, precioVenta: item.precioVenta ?? 0, activo: item.activo ?? true });
+    this.modal = true;
   }
-
-  abrirFormularioEditar(fraccion: Api.CatalogoFraccionResponseDTO): void {
-    this.form = {
-      id: fraccion.id,
-      // Como el DTO de respuesta no trae productoId, usamos el filtro actual como fallback.
-      // Si no hay filtro, el usuario tendrá que volver a elegirlo.
-      productoId: this.filtros.productoId || '',
-      nombreFraccion: fraccion.nombreFraccion ?? '',
-      factorDescuentoKardex: fraccion.factorDescuentoKardex ?? null,
-      precioVenta: fraccion.precioVenta ?? null,
-      activo: fraccion.activo ?? true,
-    };
-    this.modoEdicion = true;
-    this.errorFormulario = null;
-    this.mostrarFormulario = true;
-  }
-
-  cerrarFormulario(): void {
+  guardar(): void {
     if (this.guardando) return;
-    this.mostrarFormulario = false;
-  }
-
-  guardarFraccion(): void {
-    this.errorFormulario = null;
-
-    if (!this.form.productoId) {
-      this.errorFormulario = 'Debes seleccionar un producto.';
-      return;
-    }
-    if (!this.form.nombreFraccion.trim()) {
-      this.errorFormulario = 'El nombre de la fracción es obligatorio.';
-      return;
-    }
-    if (this.form.factorDescuentoKardex === null || this.form.factorDescuentoKardex <= 0 || this.form.factorDescuentoKardex > 1) {
-      this.errorFormulario = 'El factor debe ser mayor que 0 y menor o igual que 1.';
-      return;
-    }
-
-    const body: Api.CatalogoFraccionRequestDTO = {
-      productoId: this.form.productoId,
-      nombreFraccion: this.form.nombreFraccion.trim(),
-      factorDescuentoKardex: this.form.factorDescuentoKardex,
-      precioVenta: this.form.precioVenta ?? undefined,
-      activo: this.form.activo,
-    };
-
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+    const value = this.form.getRawValue();
+    const body: Api.CatalogoFraccionRequestDTO = { productoId: value.productoId, nombreFraccion: value.nombreFraccion.trim(), factorDescuentoKardex: Number(value.factorDescuentoKardex), precioVenta: Number(value.precioVenta), activo: value.activo };
     this.guardando = true;
-    if (this.modoEdicion && this.form.id) {
-      this.catalogoFraccionesApi.PutApiV1CatalogoFraccionesId({ id: this.form.id }, body).subscribe({
-        next: () => {
-          this.guardando = false;
-          this.mostrarFormulario = false;
-          this.mostrarExito('Fracción actualizada correctamente.');
-          this.cargarFracciones();
-        },
-        error: (err: ApiProblem) => {
-          this.guardando = false;
-          this.errorFormulario = this.mensajeError(err);
-        },
-      });
-    } else {
-      this.catalogoFraccionesApi.PostApiV1CatalogoFracciones({}, body).subscribe({
-        next: () => {
-          this.guardando = false;
-          this.mostrarFormulario = false;
-          this.mostrarExito('Fracción creada correctamente.');
-          this.cargarFracciones();
-        },
-        error: (err: ApiProblem) => {
-          this.guardando = false;
-          this.errorFormulario = this.mensajeError(err);
-        },
-      });
-    }
-  }
-
-  confirmarEliminar(fraccion: Api.CatalogoFraccionResponseDTO): void {
-    this.fraccionAEliminar = fraccion;
-    this.mostrarConfirmacion = true;
-  }
-
-  cerrarConfirmacion(): void {
-    if (this.eliminando) return;
-    this.mostrarConfirmacion = false;
-    this.fraccionAEliminar = null;
-  }
-
-  eliminarFraccion(): void {
-    if (!this.fraccionAEliminar?.id) return;
-    this.eliminando = true;
-    this.catalogoFraccionesApi.DeleteApiV1CatalogoFraccionesId({ id: this.fraccionAEliminar.id }).subscribe({
-      next: () => {
-        this.eliminando = false;
-        this.mostrarConfirmacion = false;
-        this.fraccionAEliminar = null;
-        this.mostrarExito('Fracción eliminada correctamente.');
-        this.cargarFracciones();
-      },
-      error: (err: ApiProblem) => {
-        this.eliminando = false;
-        this.mostrarConfirmacion = false;
-        this.error = err;
-      },
+    const request = this.editando && value.id ? this.api.PutApiV1CatalogoFraccionesId({ id: value.id }, body) : this.api.PostApiV1CatalogoFracciones({}, body);
+    request.pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.guardando = false; this.modal = false; this.toast.success(this.editando ? 'Fracción actualizada.' : 'Fracción creada.'); this.cargar(); },
+      error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
     });
   }
-
-  private formVacio(): FraccionForm {
-    return {
-      productoId: '',
-      nombreFraccion: '',
-      factorDescuentoKardex: null,
-      precioVenta: null,
-      activo: true,
-    };
+  pedirEliminar(row: unknown): void { this.seleccionado = row as Api.CatalogoFraccionResponseDTO; this.confirmar = true; }
+  eliminar(): void {
+    if (!this.seleccionado?.id) return;
+    this.eliminando = true;
+    this.api.DeleteApiV1CatalogoFraccionesId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.eliminando = false; this.confirmar = false; this.toast.success('Fracción eliminada.'); this.cargar(); },
+      error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
+    });
   }
-
-  private mostrarExito(mensaje: string): void {
-    this.exito = mensaje;
-    setTimeout(() => (this.exito = null), 4000);
-  }
-
-  private mensajeError(err: ApiProblem): string {
-    if (err.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
-      return Object.entries(err.fieldErrors)
-        .map(([campo, mensaje]) => `${campo}: ${mensaje}`)
-        .join(' · ');
-    }
-    return err.message ?? 'No se pudo completar la operación.';
-  }
-
-  formatearPrecio(valor?: number | null): string {
-    if (valor === null || valor === undefined) return '—';
-    return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(valor);
-  }
-
-  rangoMostrado(): string {
-    if (this.totalElementos === 0) return '0';
-    const inicio = this.page * this.size + 1;
-    const fin = Math.min((this.page + 1) * this.size, this.totalElementos);
-    return `${inicio}–${fin} de ${this.totalElementos}`;
-  }
-
-  paginasVisibles(): number[] {
-    const total = this.totalPaginas;
-    const actual = this.page;
-    const rango: number[] = [];
-    const inicio = Math.max(0, actual - 2);
-    const fin = Math.min(total - 1, actual + 2);
-    for (let i = inicio; i <= fin; i++) rango.push(i);
-    return rango;
-  }
-
-  trackById(_index: number, item: { id?: string }): string {
-    return item.id ?? String(_index);
-  }
+  errorDe(nombre: 'productoId' | 'nombreFraccion' | 'factorDescuentoKardex'): string | null { return fieldError(this.form.controls[nombre]); }
 }
+
+export const CATALOGO_FRACCIONES_ROUTES: Routes = [
+  { path: '', component: CatalogoFraccionesPageComponent, title: 'Fracciones', data: { section: 'Inventario', breadcrumb: 'Fracciones' } },
+];

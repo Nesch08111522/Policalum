@@ -53,6 +53,9 @@ public record ProductoRequestDTO(
 
         // CAMPO FALTANTE: Lista de fracciones para la API
         @Valid
-        List<CatalogoFraccionRequestDTO> fracciones
+        List<CatalogoFraccionRequestDTO> fracciones,
+
+        @Size(max = 500, message = "La imagen no puede exceder 500 caracteres")
+        String imagen
 ) {
 }

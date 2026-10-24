@@ -1,6 +1,6 @@
 // src/app/components/qr-publico/qr-publico.component.ts
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AsistenciaService } from '../../services/asistencia.service';
 import { TokenService } from '../../services/token.service';
@@ -8,6 +8,7 @@ import { TokenService } from '../../services/token.service';
 declare var QRCode: any;
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-qr-publico',
   standalone: true,
   imports: [CommonModule, FormsModule],
@@ -40,12 +41,10 @@ export class QrPublicoComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit(): void {
-    console.log('🔄 ngOnInit - QR');
   }
 
   // ✅ USAR NGAFTERVIEWINIT PARA CARGAR EL QR
   ngAfterViewInit(): void {
-    console.log('🔄 ngAfterViewInit - Cargando QR...');
     setTimeout(() => {
       this.cargarQR();
       this.iniciarActualizacion();
@@ -63,7 +62,6 @@ export class QrPublicoComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   cargarQR(): void {
-    console.log('📡 Cargando QR...');
     this.isLoading = true;
     this.error = null;
 
@@ -76,7 +74,6 @@ export class QrPublicoComponent implements OnInit, OnDestroy, AfterViewInit {
 
     this.asistenciaService.obtenerQr().subscribe({
       next: (data) => {
-        console.log('✅ QR recibido:', data);
         this.qrData = data;
         this.segundosRestantes = data.segundosRestantes || 60; // ← REINICIAR CONTADOR
         this.isLoading = false;
@@ -97,7 +94,6 @@ export class QrPublicoComponent implements OnInit, OnDestroy, AfterViewInit {
 
   generarQRCode(texto: string): void {
     const container = document.getElementById('qrcode');
-    console.log('📦 Contenedor QR:', container);
 
     if (!container) {
       console.warn('⚠️ Contenedor QR no encontrado, reintentando...');
@@ -115,7 +111,6 @@ export class QrPublicoComponent implements OnInit, OnDestroy, AfterViewInit {
         colorLight: '#FFFFFF',
         correctLevel: QRCode.CorrectLevel.H,
       });
-      console.log('✅ QR generado correctamente');
       this.cdr.detectChanges();
     } catch (error) {
       console.error('❌ Error generando QR:', error);
@@ -129,7 +124,6 @@ export class QrPublicoComponent implements OnInit, OnDestroy, AfterViewInit {
     this.timerInterval = setInterval(() => {
       // ✅ Cuando llegue a 0, recargar el QR
       if (this.segundosRestantes <= 0) {
-        console.log('🔄 QR expirado, recargando...');
         this.cargarQR();
       } else {
         this.segundosRestantes--;

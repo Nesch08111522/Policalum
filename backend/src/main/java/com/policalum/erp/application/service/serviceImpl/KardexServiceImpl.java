@@ -14,6 +14,7 @@ import com.policalum.erp.application.dto.response.ValorizacionProductoDTO;
 import com.policalum.erp.application.mapper.KardexConsultaMapper;
 import com.policalum.erp.application.service.AuditService;
 import com.policalum.erp.application.service.ConfiguracionService;
+import com.policalum.erp.application.service.support.RangosConsulta;
 import com.policalum.erp.domain.enums.AccionAudit;
 import com.policalum.erp.domain.enums.RolNombre;
 import com.policalum.erp.infrastructure.repository.projection.MermaProjection;
@@ -208,7 +209,7 @@ public class KardexServiceImpl implements KardexService {
             LocalDateTime fechaFin,
             Pageable pageable) {
 
-        return kardexRepository.searchMovimientos(productoId, almacenId, fechaInicio, fechaFin, pageable)
+        return kardexRepository.searchMovimientos(productoId, almacenId, RangosConsulta.desde(fechaInicio), RangosConsulta.hasta(fechaFin), pageable)
                 .map(kardexMapper::toResponseDto);
     }
 

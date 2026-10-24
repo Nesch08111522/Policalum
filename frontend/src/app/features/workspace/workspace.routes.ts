@@ -1,52 +1,33 @@
 import { Routes } from '@angular/router';
-import { VentasPageComponent } from '../ventas/pages/ventas-page.component';
-import { ClientesPageComponent } from '../clientes/pages/clientes-page.component';
-import { CotizacionesPageComponent } from '../cotizaciones/pages/cotizaciones-page.component';
-import { ProductosPageComponent } from '../productos/pages/productos-page.component';
-import { ServiciosPageComponent } from '../servicios/pages/servicios-page.component';
-import { CategoriasPageComponent } from '../categorias/pages/categorias-page.component';
-import { CatalogoFraccionesPageComponent } from '../catalogo-fracciones/pages/catalogo-fracciones-page.component';
-import { StockPageComponent } from '../stock/pages/stock-page.component';
-import { KardexPageComponent } from '../kardex/pages/kardex-page.component';
-import { AlmacenesPageComponent } from '../almacenes/pages/almacenes-page.component';
-import { ComprasPageComponent } from '../compras/pages/compras-page.component';
-import { ProveedoresPageComponent } from '../proveedores/pages/proveedores-page.component';
-import { DespachosPageComponent } from '../despachos/pages/despachos-page.component';
-import { MovilidadesPageComponent } from '../movilidades/pages/movilidades-page.component';
-import { TurnosCajaPageComponent } from '../turnos-caja/pages/turnos-caja-page.component';
-import { CuentasPorPagarPageComponent } from '../cuentas-por-pagar/pages/cuentas-por-pagar-page.component';
-import { FinanzasPageComponent } from '../finanzas/pages/finanzas-page.component';
-import { RrhhPageComponent } from '../rrhh/pages/rrhh-page.component';
-import { ReportesPageComponent } from '../reportes/pages/reportes-page.component';
-import { AuditoriaPageComponent } from '../auditoria/pages/auditoria-page.component';
-import { ConfiguracionPageComponent } from '../configuracion/pages/configuracion-page.component';
-import { UsersPageComponent } from '../users/pages/users-page.component';
-import { RolesPageComponent } from '../roles/pages/roles-page.component';
-import { SedesPageComponent } from '../sedes/pages/sedes-page.component';
 
 export const WORKSPACE_ROUTES: Routes = [
-  { path: 'modules/ventas', component: VentasPageComponent },
-  { path: 'modules/clientes', component: ClientesPageComponent },
-  { path: 'modules/cotizaciones', component: CotizacionesPageComponent },
-  { path: 'modules/productos', component: ProductosPageComponent },
-  { path: 'modules/servicios', component: ServiciosPageComponent },
-  { path: 'modules/categorias', component: CategoriasPageComponent },
-  { path: 'modules/catalogo-fracciones', component: CatalogoFraccionesPageComponent },
-  { path: 'modules/stock', component: StockPageComponent },
-  { path: 'modules/kardex', component: KardexPageComponent },
-  { path: 'modules/almacenes', component: AlmacenesPageComponent },
-  { path: 'modules/compras', component: ComprasPageComponent },
-  { path: 'modules/proveedores', component: ProveedoresPageComponent },
-  { path: 'modules/despachos', component: DespachosPageComponent },
-  { path: 'modules/movilidades', component: MovilidadesPageComponent },
-  { path: 'modules/turnos-caja', component: TurnosCajaPageComponent },
-  { path: 'modules/cuentas-por-pagar', component: CuentasPorPagarPageComponent },
-  { path: 'modules/finanzas', component: FinanzasPageComponent },
-  { path: 'modules/rrhh', component: RrhhPageComponent },
-  { path: 'modules/reportes', component: ReportesPageComponent },
-  { path: 'modules/auditoria', component: AuditoriaPageComponent },
-  { path: 'modules/configuracion', component: ConfiguracionPageComponent },
-  { path: 'modules/users', component: UsersPageComponent },
-  { path: 'modules/roles', component: RolesPageComponent },
-  { path: 'modules/sedes', component: SedesPageComponent },
+  { path: 'inicio', loadChildren: () => import('../dashboard/pages/dashboard-page.component').then((m) => m.DASHBOARD_ROUTES) },
+  { path: 'modules/ventas', loadChildren: () => import('../ventas/pages/ventas-page.component').then((m) => m.VENTAS_ROUTES) },
+  { path: 'modules/clientes', loadChildren: () => import('../clientes/pages/clientes-page.component').then((m) => m.CLIENTES_ROUTES) },
+  { path: 'modules/cotizaciones', loadChildren: () => import('../cotizaciones/pages/cotizaciones-page.component').then((m) => m.COTIZACIONES_ROUTES) },
+  { path: 'modules/preformas', loadChildren: () => import('../preformas/pages/preformas-page.component').then((m) => m.PREFORMAS_ROUTES) },
+  { path: 'modules/devoluciones', loadChildren: () => import('../devoluciones/pages/devoluciones-page.component').then((m) => m.DEVOLUCIONES_ROUTES) },
+  { path: 'modules/reembolsos', loadChildren: () => import('../reembolsos/pages/reembolsos-page.component').then((m) => m.REEMBOLSOS_ROUTES) },
+  { path: 'modules/productos', loadChildren: () => import('../productos/pages/productos-page.component').then((m) => m.PRODUCTOS_ROUTES) },
+  { path: 'modules/servicios', loadChildren: () => import('../servicios/pages/servicios-page.component').then((m) => m.SERVICIOS_ROUTES) },
+  { path: 'modules/categorias', loadChildren: () => import('../categorias/pages/categorias-page.component').then((m) => m.CATEGORIAS_ROUTES) },
+  { path: 'modules/catalogo-fracciones', loadChildren: () => import('../catalogo-fracciones/pages/catalogo-fracciones-page.component').then((m) => m.CATALOGO_FRACCIONES_ROUTES) },
+  { path: 'modules/stock', loadChildren: () => import('../stock/pages/stock-page.component').then((m) => m.STOCK_ROUTES) },
+  { path: 'modules/kardex', loadChildren: () => import('../kardex/pages/kardex-page.component').then((m) => m.KARDEX_ROUTES) },
+  { path: 'modules/almacenes', loadChildren: () => import('../almacenes/pages/almacenes-page.component').then((m) => m.ALMACENES_ROUTES) },
+  { path: 'modules/compras', loadChildren: () => import('../compras/pages/compras-page.component').then((m) => m.COMPRAS_ROUTES) },
+  { path: 'modules/proveedores', loadChildren: () => import('../proveedores/pages/proveedores-page.component').then((m) => m.PROVEEDORES_ROUTES) },
+  { path: 'modules/despachos', loadChildren: () => import('../despachos/pages/despachos-page.component').then((m) => m.DESPACHOS_ROUTES) },
+  { path: 'modules/movilidades', loadChildren: () => import('../movilidades/pages/movilidades-page.component').then((m) => m.MOVILIDADES_ROUTES) },
+  { path: 'modules/turnos-caja', loadChildren: () => import('../turnos-caja/pages/turnos-caja-page.component').then((m) => m.TURNOS_CAJA_ROUTES) },
+  { path: 'modules/cuentas-por-pagar', loadChildren: () => import('../cuentas-por-pagar/pages/cuentas-por-pagar-page.component').then((m) => m.CUENTAS_POR_PAGAR_ROUTES) },
+  { path: 'modules/finanzas', loadChildren: () => import('../finanzas/pages/finanzas-page.component').then((m) => m.FINANZAS_ROUTES) },
+  { path: 'modules/facturacion-electronica', loadChildren: () => import('../facturacion-electronica/pages/facturacion-electronica-page.component').then((m) => m.FACTURACION_ELECTRONICA_ROUTES) },
+  { path: 'modules/rrhh', loadChildren: () => import('../rrhh/pages/rrhh-page.component').then((m) => m.RRHH_ROUTES) },
+  { path: 'modules/reportes', loadChildren: () => import('../reportes/pages/reportes-page.component').then((m) => m.REPORTES_ROUTES) },
+  { path: 'modules/auditoria', loadChildren: () => import('../auditoria/pages/auditoria-page.component').then((m) => m.AUDITORIA_ROUTES) },
+  { path: 'modules/configuracion', loadChildren: () => import('../configuracion/pages/configuracion-page.component').then((m) => m.CONFIGURACION_ROUTES) },
+  { path: 'modules/users', loadChildren: () => import('../users/pages/users-page.component').then((m) => m.USERS_ROUTES) },
+  { path: 'modules/roles', loadChildren: () => import('../roles/pages/roles-page.component').then((m) => m.ROLES_ROUTES) },
+  { path: 'modules/sedes', loadChildren: () => import('../sedes/pages/sedes-page.component').then((m) => m.SEDES_ROUTES) },
 ];

@@ -26,8 +26,8 @@ public interface CompraRepository extends JpaRepository<Compra, UUID> {
             "(:proveedorId IS NULL OR c.proveedor.id = :proveedorId) AND " +
             "(:sedeId IS NULL OR c.sede.id = :sedeId) AND " +
             "(:estado IS NULL OR c.estadoCompra = :estado) AND " +
-            "(:desde IS NULL OR c.fechaEmision >= :desde) AND " +
-            "(:hasta IS NULL OR c.fechaEmision <= :hasta)")
+            "c.fechaEmision >= :desde AND " +
+            "c.fechaEmision <= :hasta")
     Page<Compra> search(
             @Param("proveedorId") UUID proveedorId,
             @Param("sedeId") UUID sedeId,

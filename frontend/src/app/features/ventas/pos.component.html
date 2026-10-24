@@ -1,1 +1,151 @@
-<section class="erp-page"><header><h1>Punto de venta</h1><p>Registra productos, fracciones y servicios con salida automática de inventario.</p></header><p class="success" *ngIf="mensaje">{{mensaje}}</p><p class="error" *ngIf="error">{{error}}</p><div class="toolbar"><select [(ngModel)]="sedeId" (ngModelChange)="seleccionarSede($event)"><option value="">Seleccione sede</option><option *ngFor="let s of sedes" [value]="s.id">{{s.nombre}}</option></select><select [(ngModel)]="almacenId"><option value="">Seleccione almacén</option><option *ngFor="let a of almacenes" [value]="a.id">{{a.nombre}}</option></select><select [(ngModel)]="clienteId"><option value="">Cliente ocasional</option><option *ngFor="let c of clientes" [value]="c.id">{{c.nombre}}</option></select></div><div class="cash" *ngIf="!turno"><label>Monto inicial <input type="number" min="0" [(ngModel)]="montoInicial"></label><button (click)="abrirCaja()">Abrir caja</button></div><div class="cash open" *ngIf="turno">Caja abierta desde {{turno.fechaApertura | date:'short'}}.</div><div class="pos-grid"><div><input class="search" [(ngModel)]="busqueda" (ngModelChange)="cargarCatalogos()" placeholder="Buscar producto o servicio"><h2>Productos</h2><button class="catalog-item" *ngFor="let p of productos" (click)="agregarProducto(p)"><span>{{p.nombre}}</span><strong>S/ {{p.precioVentaBase | number:'1.2-2'}}</strong></button><h2>Servicios</h2><button class="catalog-item" *ngFor="let s of servicios" (click)="agregarServicio(s)"><span>{{s.nombre}}</span><strong>S/ {{s.precio | number:'1.2-2'}}</strong></button></div><aside class="cart"><h2>Venta actual</h2><p *ngIf="!carrito.length">Agrega artículos del catálogo.</p><div class="line" *ngFor="let x of carrito;let i=index"><span>{{x.nombre}} <small *ngIf="x.fraccion">{{x.fraccion.nombreFraccion}}</small></span><input type="number" min="0.0001" step="0.25" [(ngModel)]="x.cantidad"><strong>S/ {{x.precio*x.cantidad | number:'1.2-2'}}</strong><button (click)="carrito.splice(i,1)">×</button></div><footer>Total <strong>S/ {{total() | number:'1.2-2'}}</strong></footer><button class="primary" [disabled]="!turno||!carrito.length" (click)="cobrar()">Cobrar en efectivo</button></aside></div></section>
+<section class="pos">
+  <header class="pos-title">
+    <div>
+      <h1>Punto de venta</h1>
+      <p>Registra productos, fracciones y servicios con salida automática de inventario.</p>
+    </div>
+  </header>
+
+  <p class="banner ok" *ngIf="mensaje">{{ mensaje }}</p>
+  <p class="banner bad" *ngIf="error">{{ error }}</p>
+
+  <div class="filtros">
+    <label>Sede
+      <select [ngModel]="sedeId" (ngModelChange)="seleccionarSede($event)">
+        <option value="">Seleccione sede</option>
+        <option *ngFor="let sede of sedes" [value]="sede.id">{{ sede.nombre }}</option>
+      </select>
+    </label>
+    <label>Almacén
+      <select [ngModel]="almacenId" (ngModelChange)="seleccionarAlmacen($event)">
+        <option value="">Seleccione almacén</option>
+        <option *ngFor="let almacen of almacenes" [value]="almacen.id">{{ almacen.nombre }}</option>
+      </select>
+    </label>
+    <label>Cliente
+      <select [(ngModel)]="clienteId">
+        <option value="">Cliente ocasional / RUC/DNI</option>
+        <option *ngFor="let cliente of clientes" [value]="cliente.id">{{ cliente.nombre }}<ng-container *ngIf="cliente.numeroDocumento"> · {{ cliente.numeroDocumento }}</ng-container></option>
+      </select>
+    </label>
+    <div class="caja caja-abierta" *ngIf="turno">{{ cajaTexto }}</div>
+    <form class="caja caja-cerrar" *ngIf="!turno" (ngSubmit)="abrirCaja()">
+      <label>Monto inicial
+        <input type="number" min="0" step="0.01" [(ngModel)]="montoInicial" name="montoInicial">
+      </label>
+      <label>Turno
+        <input type="text" maxlength="80" [(ngModel)]="nombreTurno" name="nombreTurno" placeholder="Nombre del turno">
+      </label>
+      <button type="submit">Abrir caja</button>
+    </form>
+  </div>
+
+  <label class="busqueda">
+    <app-icon name="search"></app-icon>
+    <input #buscador type="search" [ngModel]="busqueda" (ngModelChange)="busqueda = $event; buscar()" placeholder="Buscar producto, fracción o servicio (F2)…" />
+  </label>
+
+  <div class="tablero">
+    <section class="catalogo">
+      <div class="tabs" role="tablist">
+        <button type="button" [class.activo]="catalogo === 'productos'" (click)="catalogo = 'productos'"><app-icon name="box"></app-icon> Productos</button>
+        <button type="button" [class.activo]="catalogo === 'servicios'" (click)="catalogo = 'servicios'"><app-icon name="wrench"></app-icon> Servicios</button>
+        <button type="button" [class.activo]="catalogo === 'favoritos'" (click)="catalogo = 'favoritos'"><app-icon name="check"></app-icon> Favoritos</button>
+      </div>
+
+      <div class="cards" *ngIf="catalogo !== 'servicios'">
+        <article class="card" *ngFor="let producto of productosVisibles">
+          <button type="button" class="pin" [class.on]="esFavorito(producto.id)" (click)="alternarFavorito(producto.id)" [attr.aria-label]="esFavorito(producto.id) ? 'Quitar de favoritos' : 'Marcar favorito'">★</button>
+          <button type="button" class="card-main" (click)="agregarProducto(producto)">
+            <span class="media">{{ inicial(producto.nombre) }}</span>
+            <span class="card-copy">
+              <strong>{{ producto.nombre }}</strong>
+              <small>Stock: {{ stockDe(producto) }}</small>
+              <span class="fracciones" *ngIf="fraccionesDe(producto).length">
+                <span class="fraccion-label">Fracciones:</span>
+                <span class="fraccion" *ngFor="let fraccion of fraccionesDe(producto)" (click)="$event.stopPropagation(); agregarProducto(producto, fraccion)">{{ fraccion.nombreFraccion }}</span>
+              </span>
+              <span class="precio">Precio: {{ precioDe(producto) | pen }}</span>
+              <small *ngIf="mermaDe(producto) as merma">Merma: {{ merma }}</small>
+            </span>
+          </button>
+        </article>
+        <p class="vacio" *ngIf="!productosVisibles.length">No hay productos para esta búsqueda.</p>
+      </div>
+
+      <div class="cards" *ngIf="catalogo !== 'productos'">
+        <article class="card" *ngFor="let servicio of serviciosVisibles">
+          <button type="button" class="pin" [class.on]="esFavorito(servicio.id)" (click)="alternarFavorito(servicio.id)" aria-label="Favorito">★</button>
+          <button type="button" class="card-main" (click)="agregarServicio(servicio)">
+            <span class="media servicio">{{ inicial(servicio.nombre) }}</span>
+            <span class="card-copy">
+              <strong>{{ servicio.nombre }}</strong>
+              <small *ngIf="servicio.descripcion">{{ servicio.descripcion }}</small>
+              <span class="precio">Precio: {{ servicio.precio | pen }}</span>
+            </span>
+          </button>
+        </article>
+        <p class="vacio" *ngIf="!serviciosVisibles.length">No hay servicios para esta búsqueda.</p>
+      </div>
+    </section>
+
+    <section class="venta">
+      <header>
+        <h2>Venta actual</h2>
+        <p>Agrega artículos del catálogo.</p>
+      </header>
+      <div class="tabla" *ngIf="carrito.length; else sinLineas">
+        <div class="fila head"><span>Descripción</span><span>Cant.</span><span>Precio unit.</span><span>Descto.</span><span>Total</span><span></span></div>
+        <div class="fila" *ngFor="let linea of carrito; let i = index">
+          <span>{{ linea.nombre }}</span>
+          <span class="stepper">
+            <button type="button" (click)="ajustar(i, -1)" aria-label="Disminuir">−</button>
+            <input type="number" min="0.0001" step="1" [ngModel]="linea.cantidad" (ngModelChange)="fijarCantidad(i, $event)">
+            <button type="button" (click)="ajustar(i, 1)" aria-label="Aumentar">+</button>
+          </span>
+          <span>{{ linea.precio | pen }}</span>
+          <span>—</span>
+          <span>{{ importe(linea).total | pen }}</span>
+          <button type="button" class="quitar" (click)="quitar(i)" aria-label="Quitar línea">×</button>
+        </div>
+      </div>
+      <ng-template #sinLineas><p class="vacio">Agrega artículos del catálogo.</p></ng-template>
+      <footer class="totales">
+        <div><span>Subtotal</span><strong>{{ subtotal | pen }}</strong></div>
+        <div><span>IGV (18%)</span><strong>{{ igv | pen }}</strong></div>
+        <div class="gran-total"><span>Total:</span><strong>{{ total | pen }}</strong></div>
+      </footer>
+    </section>
+
+    <aside class="cobro">
+      <h2>Seleccionar tipo de comprobante</h2>
+      <div class="opciones">
+        <button type="button" [attr.aria-pressed]="comprobante === 'BOLETA'" (click)="comprobante = 'BOLETA'">Boleta</button>
+        <button type="button" [attr.aria-pressed]="comprobante === 'FACTURA'" (click)="comprobante = 'FACTURA'">Factura</button>
+      </div>
+      <p class="sunat-chip">
+        <span>{{ rucEmpresa20 ? 'RUC 20 de la SUNAT' : (rucEmpresa ? 'RUC ' + rucEmpresa : 'RUC 20·········') }}</span>
+        <strong>SUNAT</strong>
+      </p>
+      <p class="nota" *ngIf="comprobante === 'FACTURA' && clienteSeleccionado?.tipoDocumento !== 'RUC'">La factura conviene con un cliente RUC. La emisión externa espera la API.</p>
+      <button type="button" class="nota-venta" [attr.aria-pressed]="comprobante === 'TICKET'" (click)="comprobante = 'TICKET'">Nota de venta</button>
+
+      <h2>Métodos de pago</h2>
+      <div class="pagos">
+        <button type="button" *ngFor="let pago of metodos" [attr.aria-pressed]="metodo === pago.id" (click)="metodo = pago.id">
+          <app-icon [name]="pago.icon"></app-icon>
+          {{ pago.label }}
+        </button>
+      </div>
+      <label class="referencia" *ngIf="metodo !== 'EFECTIVO'">Referencia
+        <input type="text" maxlength="80" [(ngModel)]="referencia" placeholder="Nro. de operación">
+      </label>
+
+      <button type="button" class="emitir" [disabled]="guardando || !turno || !carrito.length" (click)="cobrar()">Cobrar y emitir (F10)</button>
+      <div class="guardar">
+        <button type="button" (click)="guardarPreforma()" [disabled]="guardando || !carrito.length">Guardar preforma</button>
+        <button type="button" (click)="guardarCotizacion()" [disabled]="guardando || !carrito.length">Guardar cotización</button>
+      </div>
+    </aside>
+  </div>
+</section>

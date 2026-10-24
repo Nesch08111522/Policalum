@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -15,12 +16,15 @@ import org.springframework.transaction.annotation.Transactional;
 import com.policalum.erp.application.dto.request.ProductoRequestDTO;
 import com.policalum.erp.application.dto.response.ProductoResponseDTO;
 import com.policalum.erp.application.mapper.ProductoMapper;
+import com.policalum.erp.application.service.FileStorageService;
 import com.policalum.erp.application.service.ProductoService;
 import com.policalum.erp.domain.enums.TipoProducto;
 import com.policalum.erp.domain.model.CatalogoFraccion;
 import com.policalum.erp.domain.model.Producto;
 import com.policalum.erp.exception.ResourceNotFoundException;
+import com.policalum.erp.infrastructure.repository.CategoriaRepository;
 import com.policalum.erp.infrastructure.repository.ProductoRepository;
+import com.policalum.erp.infrastructure.repository.ProveedorRepository;
 
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +44,10 @@ public class ProductoServiceImpl implements ProductoService {
     private static final String ENTITY_NAME = "Producto";
 
     private final ProductoRepository productoRepository;
+    private final CategoriaRepository categoriaRepository;
+    private final ProveedorRepository proveedorRepository;
     private final ProductoMapper productoMapper;
+    private final FileStorageService fileStorageService;
 
     /**
      * {@inheritDoc}
@@ -50,6 +57,7 @@ public class ProductoServiceImpl implements ProductoService {
         validateSkuAvailability(requestDTO.codigoSku(), null);
 
         Producto producto = productoMapper.toEntity(requestDTO);
+        resolverReferencias(producto, requestDTO);
         normalize(producto);
 
         // Aplica el cálculo algorítmico si el producto es fraccionable
@@ -68,6 +76,7 @@ public class ProductoServiceImpl implements ProductoService {
         validateSkuAvailability(requestDTO.codigoSku(), id);
 
         productoMapper.updateEntityFromDto(requestDTO, producto);
+        resolverReferencias(producto, requestDTO);
         normalize(producto);
 
         // Recalcula o elimina el catálogo de fracciones según el nuevo estado del DTO
@@ -258,6 +267,21 @@ public class ProductoServiceImpl implements ProductoService {
      *
      * @param producto Entidad a normalizar.
      */
+    private void resolverReferencias(Producto producto, ProductoRequestDTO request) {
+        if (request.categoriaId() == null) {
+            producto.setCategoria(null);
+        } else {
+            producto.setCategoria(categoriaRepository.findById(request.categoriaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada")));
+        }
+        if (request.proveedorId() == null) {
+            producto.setProveedor(null);
+        } else {
+            producto.setProveedor(proveedorRepository.findById(request.proveedorId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado")));
+        }
+    }
+
     private void normalize(Producto producto) {
         if (producto.getCodigoSku() != null) {
             producto.setCodigoSku(producto.getCodigoSku().trim());
@@ -268,6 +292,28 @@ public class ProductoServiceImpl implements ProductoService {
         if (producto.getUnidad() != null) {
             producto.setUnidad(producto.getUnidad().trim().toUpperCase());
         }
+        producto.setImagen(normalizarImagen(producto.getImagen()));
+    }
+
+    private String normalizarImagen(String imagen) {
+        if (imagen == null || imagen.isBlank()) {
+            return null;
+        }
+        String valor = imagen.trim();
+        if (valor.length() > 500) {
+            throw new ValidationException("La imagen no puede exceder 500 caracteres");
+        }
+        String lower = valor.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("https://") || lower.startsWith("http://")) {
+            return valor;
+        }
+        if (lower.startsWith("data:") || lower.contains("://") || valor.startsWith("/") || valor.contains("..") || !valor.startsWith("productos/")) {
+            throw new ValidationException("La imagen debe ser una URL http(s) o una ruta relativa del directorio de productos");
+        }
+        if (!fileStorageService.existe(valor)) {
+            throw new ValidationException("No se encontró el archivo de imagen indicado");
+        }
+        return valor;
     }
 
     /**

@@ -5,10 +5,12 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.policalum.erp.application.dto.request.ServicioRequestDTO;
+import com.policalum.erp.application.dto.response.ServicioResponseDTO;
 import com.policalum.erp.application.mapper.ServicioMapper;
 import com.policalum.erp.domain.model.Servicio;
 import com.policalum.erp.exception.ResourceNotFoundException;
 import com.policalum.erp.infrastructure.repository.ServicioRepository;
+import com.policalum.erp.infrastructure.repository.UserRepository;
 import jakarta.validation.ValidationException;
 import java.math.BigDecimal;
 import java.util.*;
@@ -24,6 +26,7 @@ class ServicioServiceImplTest {
 
     @Mock ServicioRepository servicioRepository;
     @Mock ServicioMapper servicioMapper;
+    @Mock UserRepository userRepository;
     @InjectMocks ServicioServiceImpl service;
 
     Servicio corte;
@@ -33,10 +36,14 @@ class ServicioServiceImplTest {
         corte = Servicio.builder().id(UUID.randomUUID()).nombre("Corte").precio(new BigDecimal("10.00")).activo(true).build();
         lenient().when(servicioRepository.findById(corte.getId())).thenReturn(Optional.of(corte));
         lenient().when(servicioRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        lenient().when(servicioMapper.toResponseDto(any())).thenAnswer(inv -> {
+            Servicio s = inv.getArgument(0);
+            return new ServicioResponseDTO(s.getId(), s.getNombre(), s.getDescripcion(), s.getPrecio(), s.getActivo(), s.getCreatedAt(), List.of());
+        });
     }
 
     private ServicioRequestDTO request(String nombre, String precio, boolean activo) {
-        return new ServicioRequestDTO(nombre, "desc", new BigDecimal(precio), activo);
+        return new ServicioRequestDTO(nombre, "desc", new BigDecimal(precio), activo, null);
     }
 
     @Test

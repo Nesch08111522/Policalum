@@ -1,6 +1,6 @@
 // src/app/components/admin/admin-dashboard.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { DashboardAsistenciaDTO, RrhhAsistenciaResponseDTO } from '../../models/asistencia.model';
 import { AsistenciaService } from '../../services/asistencia.service';
@@ -9,6 +9,7 @@ import { TokenService } from '../../services/token.service';
 // import { QrPublicoComponent } from '../qr-publico/qr-publico.component';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-admin-dashboard',
   standalone: true,
   imports: [CommonModule], // ✅ Solo CommonModule
@@ -55,7 +56,6 @@ export class AdminDashboardComponent implements OnInit {
   cargarDashboard(): void {
     this.asistenciaService.obtenerDashboard().subscribe({
       next: (data: DashboardAsistenciaDTO) => {
-        console.log('📊 Datos del dashboard:', data);
         
         this.totalEmpleados = data.totalEmpleados;
         this.presentesHoy = data.presentesHoy;

@@ -1,6 +1,6 @@
 // src/app/components/empleado/empleado-dashboard.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
@@ -14,6 +14,7 @@ import { TokenService } from '../../services/token.service';
 declare var Html5Qrcode: any;
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-empleado-dashboard',
   standalone: true,
   imports: [CommonModule, FormsModule],
@@ -113,7 +114,6 @@ export class EmpleadoDashboardComponent implements OnInit, OnDestroy {
         { facingMode: 'environment' },
         config,
         (decodedText: string) => {
-          console.log('📱 QR escaneado:', decodedText);
           this.marcarAsistencia(decodedText);
         },
         (errorMessage: any) => {
@@ -134,7 +134,6 @@ export class EmpleadoDashboardComponent implements OnInit, OnDestroy {
         this.html5QrCode.stop();
         this.html5QrCode.clear();
       } catch (error) {
-        console.log('Error deteniendo escáner:', error);
       }
     }
     this.escanerActivo = false;
@@ -150,7 +149,6 @@ export class EmpleadoDashboardComponent implements OnInit, OnDestroy {
 
     this.asistenciaService.marcarAsistenciaQr(payload).subscribe({
       next: (response) => {
-        console.log('✅ Asistencia registrada:', response);
         this.isLoadingEscaneo = false;
         this.mensajeEscaneo = `✅ ${response.tipoMarcacion} registrada a las ${new Date(response.fechaHora).toLocaleTimeString()}`;
 
@@ -230,7 +228,6 @@ export class EmpleadoDashboardComponent implements OnInit, OnDestroy {
         this.totalElements = response.totalElements || 0;
         this.totalPages = response.totalPages || 0;
         this.isLoadingAsistencias = false;
-        console.log('✅ Mis asistencias cargadas:', this.asistencias.length);
       },
       error: (err) => {
         console.error('Error cargando mis asistencias:', err);

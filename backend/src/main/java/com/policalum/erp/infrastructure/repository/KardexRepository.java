@@ -26,8 +26,8 @@ public interface KardexRepository extends JpaRepository<KardexMovimiento, UUID> 
     @Query("SELECT k FROM KardexMovimiento k WHERE " +
             "(:productoId IS NULL OR k.producto.id = :productoId) AND " +
             "(:almacenId IS NULL OR k.almacen.id = :almacenId) AND " +
-            "(:fechaInicio IS NULL OR k.createdAt >= :fechaInicio) AND " +
-            "(:fechaFin IS NULL OR k.createdAt <= :fechaFin)")
+            "k.createdAt >= :fechaInicio AND " +
+            "k.createdAt <= :fechaFin")
     Page<KardexMovimiento> searchMovimientos(
             @Param("productoId") UUID productoId,
             @Param("almacenId") UUID almacenId,

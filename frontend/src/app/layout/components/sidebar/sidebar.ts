@@ -1,37 +1,90 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { Component, DestroyRef, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { filter } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
-import { WORKSPACE_MODULES, WorkspaceModule } from '../../../features/workspace/workspace.config';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { LayoutService } from '../../../shared/services/layout.service';
+import { NAV_SECTIONS, NavSection } from '../../navigation';
+
+const GROUPS_KEY = 'erp-nav-groups';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, IconComponent],
   templateUrl: './sidebar.html',
   styleUrls: ['./sidebar.css'],
 })
 export class SidebarComponent implements OnInit {
-  modules: WorkspaceModule[] = [];
-  isCollapsed = false;
-  userRole = 'ROLE_MULTIFUNCIONAL';
+  sections: NavSection[] = [];
+  userName = 'Usuario';
+  userRole = '';
+  initials = 'P';
+  readonly openGroups = signal<Record<string, boolean>>({});
 
-  constructor(private readonly router: Router, private readonly authService: AuthService) {}
+  private readonly destroyRef = inject(DestroyRef);
+
+  constructor(
+    readonly layout: LayoutService,
+    private readonly auth: AuthService,
+    private readonly router: Router,
+  ) {}
 
   ngOnInit(): void {
-    this.userRole = this.authService.getCurrentUser()?.rol ?? 'ROLE_MULTIFUNCIONAL';
-    this.modules = WORKSPACE_MODULES.filter((module) => !module.roles || module.roles.includes(this.userRole));
+    const user = this.auth.getCurrentUser();
+    const role = user?.rol ?? '';
+    this.userName = user?.nombre || user?.email || 'Usuario';
+    this.userRole = role === 'ROLE_ADMIN' ? 'Administrador' : role === 'ROLE_MULTIFUNCIONAL' ? 'Multifuncional' : 'Usuario';
+    this.initials = this.userName.slice(0, 2).toUpperCase();
+    this.sections = NAV_SECTIONS
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => !item.roles || item.roles.includes(role)),
+      }))
+      .filter((section) => section.items.length > 0);
+    this.openGroups.set(this.readGroups());
+    this.expandActive(this.router.url);
+    this.router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe((event) => {
+      this.expandActive((event as NavigationEnd).urlAfterRedirects);
+    });
   }
 
-  toggleCollapse(): void {
-    this.isCollapsed = !this.isCollapsed;
+  isOpen(id: string): boolean {
+    return this.openGroups()[id] !== false;
   }
 
-  open(module: WorkspaceModule): void {
-    void this.router.navigate(['/modules', module.id]);
+  toggleGroup(id: string): void {
+    this.openGroups.update((groups) => {
+      const next = { ...groups, [id]: groups[id] === false };
+      if (typeof localStorage !== 'undefined') localStorage.setItem(GROUPS_KEY, JSON.stringify(next));
+      return next;
+    });
   }
 
   logout(): void {
-    this.authService.logout();
+    this.layout.closeMobile();
+    this.auth.logout();
+  }
+
+  private readGroups(): Record<string, boolean> {
+    if (typeof localStorage === 'undefined') return {};
+    try {
+      const raw = localStorage.getItem(GROUPS_KEY);
+      return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private expandActive(url: string): void {
+    const section = this.sections.find((item) => item.items.some((link) => url === link.path || url.startsWith(`${link.path}/`)));
+    if (!section || this.isOpen(section.id)) return;
+    this.toggleGroup(section.id);
   }
 }

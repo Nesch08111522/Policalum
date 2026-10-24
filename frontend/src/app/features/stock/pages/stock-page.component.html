@@ -1,1 +1,53 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Stock" subtitle="Existencias, ajustes firmados y transferencias entre almacenes."></app-page-header>
+  <div class="stats-grid" *ngIf="dashboard">
+    <app-stat-card label="Valor de inventario" [value]="(dashboard.valorInventario | pen)" icon="box"></app-stat-card>
+    <app-stat-card label="Bajo mínimo" [value]="dashboard.alertasBajoMinimo ?? 0" icon="alert"></app-stat-card>
+    <app-stat-card label="Agotados" [value]="dashboard.agotados ?? 0" icon="x"></app-stat-card>
+    <app-stat-card label="Movimientos hoy" [value]="dashboard.movimientosHoy ?? 0" icon="layers"></app-stat-card>
+  </div>
+  <div class="cluster">
+    <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
+    <span class="flex-1"></span>
+    <button type="button" class="btn btn-ghost" (click)="abrirTransferencia()">Transferir</button>
+    <button type="button" class="btn btn-primary" (click)="abrirAjuste()">Ajustar stock</button>
+  </div>
+  <app-filter-bar>
+    <app-form-field label="Búsqueda" inputId="stock-q"><input id="stock-q" class="input" [formControl]="filtros.controls.busqueda" placeholder="Nombre o SKU" /></app-form-field>
+    <app-form-field label="Sede" inputId="stock-sede"><app-select inputId="stock-sede" [options]="sedes" placeholder="Todas" [formControl]="filtros.controls.sedeId"></app-select></app-form-field>
+    <app-form-field label="Almacén" inputId="stock-alm"><app-select inputId="stock-alm" [options]="almacenes" placeholder="Todos" [formControl]="filtros.controls.almacenId"></app-select></app-form-field>
+    <app-form-field label="Producto" inputId="stock-prod"><app-select inputId="stock-prod" [options]="productos" placeholder="Todos" [formControl]="filtros.controls.productoId"></app-select></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" emptyTitle="Sin movimientos de stock" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()"></app-data-table>
+</section>
+<app-modal [closable]="!guardando" [open]="modal === 'ajuste'" title="Ajuste de stock" (closed)="modal = null">
+  <p class="text-sm text-muted mb-2">Cantidad positiva suma stock. Cantidad negativa lo descuenta. Si el valor supera el umbral, el backend exige justificación.</p>
+  <form class="form-grid" [formGroup]="ajuste">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field label="Producto" inputId="aj-prod" [required]="true" [error]="errorAjuste('productoId')"><app-select inputId="aj-prod" [options]="productos" formControlName="productoId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Almacén" inputId="aj-alm" [required]="true" [error]="errorAjuste('almacenId')"><app-select inputId="aj-alm" [options]="almacenes" formControlName="almacenId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Cantidad" inputId="aj-cant" [required]="true" [error]="errorAjuste('cantidad')"><input id="aj-cant" class="input" type="number" step="0.0001" formControlName="cantidad" /></app-form-field>
+    <app-form-field label="Motivo" inputId="aj-motivo" [required]="true" [error]="errorAjuste('motivo')"><input id="aj-motivo" class="input" formControlName="motivo" /></app-form-field>
+    <app-form-field class="span-2" label="Justificación" inputId="aj-just"><textarea id="aj-just" class="textarea" formControlName="justificacion"></textarea></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = null">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardarAjuste()" [disabled]="ajuste.invalid || guardando">Registrar</button>
+  </div>
+</app-modal>
+<app-modal [closable]="!guardando" [open]="modal === 'transferencia'" title="Transferir stock" (closed)="modal = null">
+  <form class="form-grid" [formGroup]="transferencia">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field class="span-2" label="Producto" inputId="tr-prod" [required]="true"><app-select inputId="tr-prod" [options]="productos" formControlName="productoId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Origen" inputId="tr-ori" [required]="true"><app-select inputId="tr-ori" [options]="almacenes" formControlName="almacenOrigenId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Destino" inputId="tr-des" [required]="true"><app-select inputId="tr-des" [options]="almacenes" formControlName="almacenDestinoId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Cantidad" inputId="tr-cant" [required]="true"><input id="tr-cant" class="input" type="number" min="0.0001" step="0.0001" formControlName="cantidad" /></app-form-field>
+    <app-form-field label="Motivo" inputId="tr-motivo"><input id="tr-motivo" class="input" formControlName="motivo" /></app-form-field>
+    <app-form-field class="span-2" label="Documento" inputId="tr-doc"><input id="tr-doc" class="input" formControlName="referenciaDocumento" /></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = null">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardarTransferencia()" [disabled]="transferencia.invalid || guardando">Transferir</button>
+  </div>
+</app-modal>

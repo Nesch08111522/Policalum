@@ -1,9 +1,12 @@
 package com.policalum.erp.exception;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -12,12 +15,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ValidationException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestControllerAdvice
+@RequiredArgsConstructor
 @Slf4j
 public class GlobalExceptionHandler {
+
+    private final Environment environment;
 
     /**
      * Maneja ResourceNotFoundException (404)
@@ -118,10 +126,30 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.UNAUTHORIZED.value());
+        response.put("error", "Unauthorized");
+        response.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
     /**
      * Maneja AccessDeniedException (403). Sin este handler, el @ExceptionHandler(Exception.class)
      * la convertía en un 500 (aplica tanto a @PreAuthorize como a validaciones de rol en servicios).
      */
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<Map<String, Object>> handleSecurity(SecurityException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.FORBIDDEN.value());
+        response.put("error", "Forbidden");
+        response.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
         Map<String, Object> response = new HashMap<>();
@@ -157,9 +185,31 @@ public class GlobalExceptionHandler {
      * Determina si estamos en entorno de desarrollo
      */
     private boolean isDevelopmentEnvironment() {
-        // Puedes implementar esto con un perfil de Spring
-        // return Arrays.asList(environment.getActiveProfiles()).contains("dev");
-        return true; // Cambiar según necesidad
+        return Arrays.stream(environment.getActiveProfiles()).anyMatch(profile -> "dev".equals(profile) || "local".equals(profile));
+    }
+
+    @ExceptionHandler(ImportacionRechazadaException.class)
+    public ResponseEntity<Map<String, Object>> handleImportacionRechazada(ImportacionRechazadaException ex) {
+        List<Map<String, Object>> errores = ex.getErrores().stream().map(error -> {
+            Map<String, Object> fila = new HashMap<>();
+            fila.put("fila", error.fila());
+            fila.put("motivo", error.motivo());
+            return fila;
+        }).toList();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("error", "Importación rechazada");
+        response.put("message", ex.getMessage());
+        response.put("errores", errores);
+        if (!errores.isEmpty()) {
+            Object fila = errores.get(0).get("fila");
+            Object motivo = errores.get(0).get("motivo");
+            response.put("fila", fila);
+            response.put("motivo", motivo);
+        }
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(FileStorageException.class)

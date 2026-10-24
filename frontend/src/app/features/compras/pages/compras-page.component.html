@@ -1,1 +1,91 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Compras" subtitle="Órdenes a proveedores, recepción de mercadería y anulación." actionLabel="Nueva compra" (action)="abrirCrear()"></app-page-header>
+  <div class="stats-grid" *ngIf="dashboard">
+    <app-stat-card label="Registradas" [value]="dash('total')" icon="truck"></app-stat-card>
+    <app-stat-card label="Pendientes" [value]="dash('pendientes')" icon="alert"></app-stat-card>
+    <app-stat-card label="Recibidas" [value]="dash('recibidas')" icon="check"></app-stat-card>
+  </div>
+  <app-filter-bar>
+    <app-form-field label="Proveedor" inputId="cmp-prov"><app-select inputId="cmp-prov" [options]="proveedores" placeholder="Todos" [formControl]="filtros.controls.proveedorId"></app-select></app-form-field>
+    <app-form-field label="Sede" inputId="cmp-sede"><app-select inputId="cmp-sede" [options]="sedes" placeholder="Todas" [formControl]="filtros.controls.sedeId"></app-select></app-form-field>
+    <app-form-field label="Estado" inputId="cmp-estado">
+      <select id="cmp-estado" class="select" [formControl]="filtros.controls.estado"><option value="">Todos</option><option value="BORRADOR">Borrador</option><option value="RECIBIDA">Recibida</option><option value="ANULADA">Anulada</option></select>
+    </app-form-field>
+    <app-form-field label="Desde" inputId="cmp-desde"><input id="cmp-desde" class="input" type="date" [formControl]="filtros.controls.desde" /></app-form-field>
+    <app-form-field label="Hasta" inputId="cmp-hasta"><input id="cmp-hasta" class="input" type="date" [formControl]="filtros.controls.hasta" /></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" [sortField]="state.sort.split(',')[0]" [sortDirection]="state.sort.endsWith('desc') ? 'desc' : 'asc'" emptyTitle="No hay compras" emptyMessage="Registra una orden para reponer inventario." emptyAction="Nueva compra" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (sortChange)="ordenar($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="ver(row)">Ver</button>
+      <button type="button" class="btn btn-ghost btn-sm" *ngIf="esBorrador(row)" (click)="abrirEditar(row)">Editar</button>
+      <button type="button" class="btn btn-ghost btn-sm" *ngIf="puedeRecibir(row)" (click)="abrirRecibir(row)">Recibir</button>
+      <button type="button" class="btn btn-ghost btn-sm" *ngIf="puedeAnular(row)" (click)="abrirAnular(row)">Anular</button>
+      <button type="button" class="btn btn-danger btn-sm" *ngIf="esBorrador(row)" (click)="pedirEliminar(row)">Eliminar</button>
+    </ng-template>
+  </app-data-table>
+</section>
+
+<app-modal [closable]="!guardando" [open]="modal" [title]="editando ? 'Editar compra' : 'Nueva compra'" size="lg" (closed)="modal = false">
+  <form class="form-grid" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field label="Proveedor" inputId="cmp-f-prov" [required]="true" [error]="errorDe('proveedorId')"><app-select inputId="cmp-f-prov" [options]="proveedores" placeholder="Seleccionar" formControlName="proveedorId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Sede" inputId="cmp-f-sede" [required]="true" [error]="errorDe('sedeId')"><app-select inputId="cmp-f-sede" [options]="sedes" placeholder="Seleccionar" formControlName="sedeId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Emisión" inputId="cmp-f-fecha" [required]="true" [error]="errorDe('fechaEmision')"><input id="cmp-f-fecha" class="input" type="date" formControlName="fechaEmision" /></app-form-field>
+    <app-form-field label="Moneda" inputId="cmp-f-moneda"><select id="cmp-f-moneda" class="select" formControlName="moneda"><option value="PEN">PEN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></app-form-field>
+    <app-form-field label="Factura proveedor" inputId="cmp-f-fact" [error]="errorDe('numeroFacturaProveedor')"><input id="cmp-f-fact" class="input" formControlName="numeroFacturaProveedor" /></app-form-field>
+    <app-form-field label="Observaciones" inputId="cmp-f-obs" [error]="errorDe('observaciones')"><input id="cmp-f-obs" class="input" formControlName="observaciones" /></app-form-field>
+    <div class="span-2" formArrayName="detalles">
+      <div class="form-grid" *ngFor="let linea of detalles.controls; let i = index" [formGroupName]="i">
+        <app-form-field label="Producto" [inputId]="'cmp-prod-' + i" [required]="true"><app-select [inputId]="'cmp-prod-' + i" [options]="productos" placeholder="Producto" formControlName="productoId" [clearable]="false"></app-select></app-form-field>
+        <app-form-field label="Almacén" [inputId]="'cmp-alm-' + i" [required]="true"><app-select [inputId]="'cmp-alm-' + i" [options]="almacenes" placeholder="Almacén" formControlName="almacenId" [clearable]="false"></app-select></app-form-field>
+        <app-form-field label="Cantidad" [inputId]="'cmp-cant-' + i" [required]="true"><input class="input" type="number" min="0.0001" step="0.0001" formControlName="cantidad" /></app-form-field>
+        <app-form-field label="Precio con IGV" [inputId]="'cmp-pre-' + i" [required]="true"><input class="input" type="number" min="0" step="0.01" formControlName="precioUnitarioConIgv" /></app-form-field>
+        <div class="filter-actions"><button type="button" class="btn btn-ghost btn-sm" (click)="quitarLinea(i)" [disabled]="detalles.length === 1">Quitar</button></div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="agregarLinea()">Agregar línea</button>
+    </div>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+  </div>
+</app-modal>
+
+<app-modal [open]="detalleAbierto" title="Detalle de compra" size="lg" (closed)="detalleAbierto = false">
+  <div *ngIf="detalle" class="form-grid">
+    <p><strong>Orden:</strong> {{ detalle.numeroOrdenCompra || '—' }}</p>
+    <p><strong>Proveedor:</strong> {{ detalle.proveedorNombre || '—' }}</p>
+    <p><strong>Estado:</strong> {{ detalle.estadoCompra }} · {{ detalle.estadoPago }}</p>
+    <p><strong>Total:</strong> {{ detalle.total | pen }}</p>
+    <div class="span-2 table-scroll">
+      <table class="table table-compact">
+        <thead><tr><th>Producto</th><th>Almacén</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let linea of detalle.detalles"><td>{{ linea.productoNombre }}</td><td>{{ linea.almacenNombre }}</td><td>{{ linea.cantidad }}</td><td>{{ linea.precioUnitarioConIgv | pen }}</td><td>{{ linea.subtotal | pen }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-modal>
+
+<app-modal [open]="recibirAbierto" title="Recibir compra" (closed)="recibirAbierto = false">
+  <form class="form-grid" [formGroup]="recepcion">
+    <app-form-field class="span-2" label="Factura del proveedor" inputId="cmp-rec-fact"><input id="cmp-rec-fact" class="input" formControlName="numeroFacturaProveedor" /></app-form-field>
+    <app-form-field class="span-2" label="Observaciones" inputId="cmp-rec-obs"><textarea id="cmp-rec-obs" class="textarea" formControlName="observaciones"></textarea></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="recibirAbierto = false">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="recibir()" [disabled]="guardando">Registrar recepción</button>
+  </div>
+</app-modal>
+
+<app-modal [open]="anularAbierto" title="Anular compra" size="sm" (closed)="anularAbierto = false">
+  <app-form-field label="Motivo" inputId="cmp-anular" [required]="true" [error]="errorMotivo()"><textarea id="cmp-anular" class="textarea" [formControl]="anulacion.controls.motivo"></textarea></app-form-field>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="anularAbierto = false">Cancelar</button>
+    <button type="button" class="btn btn-danger" (click)="anular()" [disabled]="anulacion.invalid || guardando">Anular</button>
+  </div>
+</app-modal>
+
+<app-confirm-dialog [open]="confirmar" title="Eliminar compra" message="Solo se eliminan borradores. Esta acción no se puede deshacer." confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>

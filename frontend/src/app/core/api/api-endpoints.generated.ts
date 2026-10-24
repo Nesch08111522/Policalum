@@ -18,6 +18,11 @@ export const ENDPOINTS: EndpointDefinition[] = [
   { id: "GET_api_v1_auditoria_logs_usuario_userId", method: "GET", path: "/api/v1/auditoria/logs/usuario/{userId}", title: "Usuario", module: "auditoria", parameters: ["userId", "accion", "desde", "hasta", "page", "size", "sort"], bodyType: undefined, responseType: "PageLogAuditoriaResponseDTO" },
   { id: "GET_api_v1_auditoria_logs_id", method: "GET", path: "/api/v1/auditoria/logs/{id}", title: "Logs", module: "auditoria", parameters: ["id"], bodyType: undefined, responseType: "LogAuditoriaResponseDTO" },
   { id: "POST_api_v1_auth_login", method: "POST", path: "/api/v1/auth/login", title: "Login", module: "auth", parameters: [], bodyType: "LoginRequestDTO", responseType: "LoginResponseDTO" },
+  { id: "GET_api_v1_perfil", method: "GET", path: "/api/v1/perfil", title: "Perfil", module: "perfil", parameters: [], bodyType: undefined, responseType: "PerfilResponseDTO" },
+  { id: "PUT_api_v1_perfil", method: "PUT", path: "/api/v1/perfil", title: "Perfil", module: "perfil", parameters: [], bodyType: "PerfilActualizarRequestDTO", responseType: "PerfilResponseDTO" },
+  { id: "POST_api_v1_perfil_contrasena", method: "POST", path: "/api/v1/perfil/contrasena", title: "Contraseña", module: "perfil", parameters: [], bodyType: "PerfilContrasenaRequestDTO", responseType: "PerfilResponseDTO" },
+  { id: "POST_api_v1_perfil_totp", method: "POST", path: "/api/v1/perfil/totp", title: "TOTP", module: "perfil", parameters: [], bodyType: "PerfilTotpRequestDTO", responseType: "PerfilResponseDTO" },
+  { id: "POST_api_v1_perfil_cerrar_sesiones", method: "POST", path: "/api/v1/perfil/cerrar-sesiones", title: "Cerrar sesiones", module: "perfil", parameters: [], bodyType: undefined, responseType: "PerfilResponseDTO" },
   { id: "GET_api_v1_catalogo_fracciones", method: "GET", path: "/api/v1/catalogo-fracciones", title: "Catalogo Fracciones", module: "catalogo-fracciones", parameters: ["productoId", "activo", "searchTerm", "page", "size", "sort"], bodyType: undefined, responseType: "PageCatalogoFraccionResponseDTO" },
   { id: "POST_api_v1_catalogo_fracciones", method: "POST", path: "/api/v1/catalogo-fracciones", title: "Catalogo Fracciones", module: "catalogo-fracciones", parameters: [], bodyType: "CatalogoFraccionRequestDTO", responseType: "CatalogoFraccionResponseDTO" },
   { id: "GET_api_v1_catalogo_fracciones_estadisticas_dashboard", method: "GET", path: "/api/v1/catalogo-fracciones/estadisticas/dashboard", title: "Dashboard", module: "catalogo-fracciones", parameters: [], bodyType: undefined, responseType: "Record<string, unknown>" },
@@ -276,6 +281,9 @@ export const ENDPOINTS: EndpointDefinition[] = [
   { id: "POST_api_v1_ventas", method: "POST", path: "/api/v1/ventas", title: "Registrar venta", module: "ventas", parameters: [], bodyType: "RegistrarVentaRequestDTO", responseType: "VentaProcesadaResponseDTO" },
   { id: "GET_api_v1_ventas_id", method: "GET", path: "/api/v1/ventas/{id}", title: "Detalle de venta", module: "ventas", parameters: ["id"], bodyType: undefined, responseType: "VentaDetalleResponseDTO" },
   { id: "POST_api_v1_ventas_id_anulacion", method: "POST", path: "/api/v1/ventas/{id}/anulacion", title: "Anular venta", module: "ventas", parameters: ["id"], bodyType: "AnularVentaRequestDTO", responseType: "VentaProcesadaResponseDTO" },
+  { id: "GET_api_v1_facturacion_electronica_panel", method: "GET", path: "/api/v1/facturacion-electronica/panel", title: "Panel SUNAT", module: "facturacion-electronica", parameters: ["sedeId"], bodyType: undefined, responseType: "FacturacionElectronicaPanelDTO" },
+  { id: "POST_api_v1_facturacion_electronica_emitir", method: "POST", path: "/api/v1/facturacion-electronica/emitir", title: "Emitir", module: "facturacion-electronica", parameters: [], bodyType: undefined, responseType: "unknown" },
+  { id: "POST_api_v1_facturacion_electronica_consultar_validez", method: "POST", path: "/api/v1/facturacion-electronica/consultar-validez", title: "Consultar validez", module: "facturacion-electronica", parameters: [], bodyType: "Record<string, string>", responseType: "unknown" },
 ];
 
 export const ENDPOINT_BY_ID: Record<string, EndpointDefinition> = Object.fromEntries(ENDPOINTS.map((item) => [item.id, item]));

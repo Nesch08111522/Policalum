@@ -7,9 +7,12 @@ import com.policalum.erp.domain.model.User;
 import com.policalum.erp.infrastructure.repository.UserRepository;
 import com.policalum.erp.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -21,20 +24,22 @@ public class AuthService {
     private final JwtUtil jwtUtil;
 
     // ✅ MÉTODO LOGIN
-    public LoginResponseDTO login(LoginRequestDTO request) {
+    public LoginResponseDTO login(LoginRequestDTO request, String ip) {
         // 1. Buscar usuario por email
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("❌ Credenciales inválidas. Verifica tu email y contraseña."));
+                .orElseThrow(() -> new BadCredentialsException("Credenciales inválidas. Verifica tu email y contraseña."));
 
-        // 2. ✅ VERIFICAR QUE ESTÉ ACTIVO
         if (!user.getActivo()) {
-            throw new RuntimeException("❌ Tu cuenta está INACTIVA. Por favor, contacta al administrador del sistema.");
+            throw new AccessDeniedException("Tu cuenta está inactiva. Contacta al administrador del sistema.");
         }
 
-        // 3. Verificar contraseña
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw new RuntimeException("❌ Credenciales inválidas. Verifica tu email y contraseña.");
+            throw new BadCredentialsException("Credenciales inválidas. Verifica tu email y contraseña.");
         }
+
+        user.setUltimoLogin(LocalDateTime.now());
+        if (ip != null && !ip.isBlank()) user.setUltimoIp(ip.length() > 45 ? ip.substring(0, 45) : ip);
+        userRepository.save(user);
 
         // 4. Generar token JWT
         String token = jwtUtil.generateToken(user);

@@ -1,0 +1,84 @@
+<section class="module-page">
+  <app-page-header title="Preformas" subtitle="Reservas de venta. El stock se descuenta recién al confirmar." actionLabel="Nueva preforma" (action)="abrirCrear()"></app-page-header>
+  <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
+  <app-filter-bar *ngIf="tab !== 'abiertas'">
+    <app-form-field label="Sede" inputId="pre-sede"><app-select inputId="pre-sede" [options]="sedes" placeholder="Todas" [formControl]="filtros.controls.sedeId"></app-select></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <div class="stats-grid" *ngIf="tab === 'resumen' && dashboard">
+    <app-stat-card label="Abiertas ahora" [value]="dashboard.abiertasAhora ?? 0" icon="file"></app-stat-card>
+    <app-stat-card label="Monto abierto" [value]="(dashboard.montoAbiertoAhora ?? 0) | pen" icon="cash"></app-stat-card>
+    <app-stat-card label="Confirmado" [value]="(dashboard.montoConfirmado ?? 0) | pen" icon="check"></app-stat-card>
+    <app-stat-card label="Conversión" [value]="(dashboard.tasaConversionPorcentaje ?? 0) + '%'" icon="chart"></app-stat-card>
+  </div>
+  <app-data-table *ngIf="tab !== 'resumen'" [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" emptyTitle="No hay preformas" emptyMessage="Abre una preforma para un cliente. Confirmarla genera la venta." emptyAction="Nueva preforma" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="ver(row)">Ver</button>
+      <button type="button" class="btn btn-ghost btn-sm" *ngIf="esAbierta(row)" (click)="abrirEditar(row)">Editar</button>
+      <button type="button" class="btn btn-primary btn-sm" *ngIf="esAbierta(row)" (click)="abrirConfirmar(row)">Confirmar</button>
+      <button type="button" class="btn btn-ghost btn-sm" *ngIf="esAbierta(row)" (click)="abrirCancelar(row)">Cancelar</button>
+      <button type="button" class="btn btn-danger btn-sm" *ngIf="esAbierta(row)" (click)="pedirEliminar(row)">Eliminar</button>
+    </ng-template>
+  </app-data-table>
+</section>
+
+<app-modal [closable]="!guardando" [open]="modal" [title]="editando ? 'Editar preforma' : 'Nueva preforma'" size="lg" (closed)="modal = false">
+  <form class="form-grid" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field label="Sede" inputId="pre-f-sede" [required]="true" [error]="errorDe('sedeId')"><app-select inputId="pre-f-sede" [options]="sedes" placeholder="Sede" formControlName="sedeId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Cliente" inputId="pre-f-cli"><app-select inputId="pre-f-cli" [options]="clientes" placeholder="Opcional" formControlName="clienteId"></app-select></app-form-field>
+    <app-form-field label="Vigencia (minutos)" inputId="pre-f-min" [error]="errorDe('minutosVigencia')"><input id="pre-f-min" class="input" type="number" min="1" step="1" formControlName="minutosVigencia" /></app-form-field>
+    <app-form-field label="Observaciones" inputId="pre-f-obs" [error]="errorDe('observaciones')"><input id="pre-f-obs" class="input" formControlName="observaciones" /></app-form-field>
+    <div class="span-2" formArrayName="lineas">
+      <div class="form-grid" *ngFor="let linea of lineas.controls; let i = index" [formGroupName]="i">
+        <app-form-field label="Producto" [inputId]="'pre-prod-' + i"><app-select [inputId]="'pre-prod-' + i" [options]="productos" placeholder="Producto" formControlName="productoId"></app-select></app-form-field>
+        <app-form-field label="Servicio" [inputId]="'pre-srv-' + i"><app-select [inputId]="'pre-srv-' + i" [options]="servicios" placeholder="Servicio" formControlName="servicioId"></app-select></app-form-field>
+        <app-form-field label="Fracción" [inputId]="'pre-fra-' + i"><app-select [inputId]="'pre-fra-' + i" [options]="fracciones" placeholder="Fracción" formControlName="fraccionId"></app-select></app-form-field>
+        <app-form-field label="Cantidad" [inputId]="'pre-cant-' + i" [required]="true" [error]="errorLinea(i)"><input class="input" type="number" min="0.0001" step="0.0001" formControlName="cantidad" /></app-form-field>
+        <div class="filter-actions"><button type="button" class="btn btn-ghost btn-sm" (click)="quitarLinea(i)" [disabled]="lineas.length === 1">Quitar</button></div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="agregarLinea()">Agregar línea</button>
+    </div>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">Guardar</button>
+  </div>
+</app-modal>
+
+<app-modal [open]="detalleAbierto" title="Detalle de preforma" size="lg" (closed)="detalleAbierto = false">
+  <div *ngIf="detalle">
+    <p>{{ detalle.codigo }} · {{ detalle.clienteNombre || 'Sin cliente' }} · {{ detalle.estado }} · {{ detalle.totalEstimado | pen }}</p>
+    <p *ngIf="detalle.minutosRestantes != null">Minutos restantes: {{ detalle.minutosRestantes }}</p>
+    <p *ngIf="detalle.ventaSerie">Venta: {{ detalle.ventaSerie }}</p>
+    <p *ngIf="detalle.motivoCancelacion">Cancelación: {{ detalle.motivoCancelacion }}</p>
+    <table class="table table-compact"><thead><tr><th>Ítem</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr></thead>
+      <tbody><tr *ngFor="let linea of detalle.lineas"><td>{{ linea.productoNombre || linea.servicioNombre || linea.fraccionNombre }}</td><td>{{ linea.cantidad }}</td><td>{{ linea.precioUnitarioConIgv | pen }}</td><td>{{ linea.subtotal | pen }}</td></tr></tbody>
+    </table>
+  </div>
+</app-modal>
+
+<app-modal [closable]="!guardando" [open]="confirmarAbierto" title="Confirmar preforma" (closed)="confirmarAbierto = false">
+  <p class="text-sm">El servidor usa tu turno de caja abierto en la sede de la preforma.{{ turnoLocal ? ' Turno local: ' + turnoLocal + '.' : '' }}</p>
+  <form class="form-grid" [formGroup]="confirmarForm">
+    <app-form-field label="Almacén" inputId="pre-c-alm" [required]="true"><app-select inputId="pre-c-alm" [options]="almacenes" placeholder="Almacén" formControlName="almacenId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Comprobante" inputId="pre-c-tipo"><select id="pre-c-tipo" class="select" formControlName="tipoComprobante"><option value="BOLETA">Boleta</option><option value="FACTURA">Factura</option><option value="TICKET">Ticket</option></select></app-form-field>
+    <app-form-field label="Canal" inputId="pre-c-canal"><select id="pre-c-canal" class="select" formControlName="canalVenta"><option value="LOCAL">Local</option><option value="ONLINE">Online</option></select></app-form-field>
+    <app-form-field label="Método" inputId="pre-c-met"><select id="pre-c-met" class="select" formControlName="metodoPago"><option value="EFECTIVO">Efectivo</option><option value="YAPE">Yape</option><option value="PLIN">Plin</option><option value="TARJETA">Tarjeta</option><option value="TRANSFERENCIA">Transferencia</option><option value="SIP_AGORA">SIP Agora</option></select></app-form-field>
+    <app-form-field label="Monto" inputId="pre-c-mon" [required]="true"><input id="pre-c-mon" class="input" type="number" min="0.01" step="0.01" formControlName="monto" /></app-form-field>
+    <app-form-field label="Referencia" inputId="pre-c-ref"><input id="pre-c-ref" class="input" formControlName="referencia" /></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="confirmarAbierto = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="confirmarVenta()" [disabled]="guardando">Confirmar venta</button>
+  </div>
+</app-modal>
+
+<app-modal [closable]="!guardando" [open]="cancelarAbierto" title="Cancelar preforma" size="sm" (closed)="cancelarAbierto = false">
+  <app-form-field label="Motivo" inputId="pre-motivo"><textarea id="pre-motivo" class="textarea" [formControl]="cancelacion.controls.motivo"></textarea></app-form-field>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="cancelarAbierto = false" [disabled]="guardando">Volver</button>
+    <button type="button" class="btn btn-danger" (click)="cancelar()" [disabled]="guardando">Cancelar preforma</button>
+  </div>
+</app-modal>
+<app-confirm-dialog [open]="confirmarEliminar" title="Eliminar preforma" message="Se eliminará la preforma abierta. Esta acción no devuelve stock porque la preforma todavía no lo descontó." confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmarEliminar = false"></app-confirm-dialog>

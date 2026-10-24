@@ -25,13 +25,7 @@ export class RoleGuard {
       return true;
     }
 
-    if (userRol === 'ROLE_ADMIN') {
-      this.router.navigate(['/admin']);
-    } else if (userRol === 'ROLE_MULTIFUNCIONAL') {
-      this.router.navigate(['/empleado']);
-    } else {
-      this.router.navigate(['/login']);
-    }
+    void this.router.navigate(['/inicio']);
     return false;
   }
 }

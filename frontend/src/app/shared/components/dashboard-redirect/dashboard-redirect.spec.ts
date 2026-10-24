@@ -1,17 +1,24 @@
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
-import { DashboardRedirect } from '../dashboard-redirect';
+import { DashboardRedirectComponent } from './dashboard-redirect';
 
-describe('DashboardRedirect', () => {
-  let component: DashboardRedirect;
-  let fixture: ComponentFixture<DashboardRedirect>;
+@Component({
+  changeDetection: ChangeDetectionStrategy.Default, standalone: true, template: '' })
+class InicioStub {}
+
+describe('DashboardRedirectComponent', () => {
+  let component: DashboardRedirectComponent;
+  let fixture: ComponentFixture<DashboardRedirectComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DashboardRedirect],
+      imports: [DashboardRedirectComponent],
+      providers: [provideRouter([{ path: 'inicio', component: InicioStub }])],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(DashboardRedirect);
+    fixture = TestBed.createComponent(DashboardRedirectComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

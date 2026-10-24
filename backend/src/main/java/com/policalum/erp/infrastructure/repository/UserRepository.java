@@ -16,6 +16,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     // ✅ Buscar por email
     Optional<User> findByEmail(String email);
 
+    @Query("SELECT u FROM User u JOIN FETCH u.rol JOIN FETCH u.sede WHERE u.email = :email")
+    Optional<User> findPerfilByEmail(@Param("email") String email);
+
     // ✅ Buscar por email SOLO si está activo
     @Query("SELECT u FROM User u WHERE u.email = :email AND u.activo = true")
     Optional<User> findByEmailAndActivoTrue(@Param("email") String email);

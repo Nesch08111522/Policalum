@@ -1,0 +1,108 @@
+<section class="panel">
+  <header class="panel-title">
+    <h1>Panel</h1>
+    <button *ngIf="error" type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button>
+  </header>
+  <p *ngIf="cargando" class="text-muted">Cargando indicadores…</p>
+  <p *ngIf="error" class="alert alert-error">{{ error }}</p>
+
+  <div class="panel-grid">
+    <article class="tile tile-utilidad">
+      <header class="tile-head">
+        <div>
+          <h2>Utilidad neta real</h2>
+          <p>Finanzas</p>
+        </div>
+        <a routerLink="/modules/finanzas" class="chip">Financieros</a>
+      </header>
+      <div class="legend"><span class="swatch ingreso"></span> Ingresos netos <span class="swatch gasto"></span> Gastos operativos</div>
+      <div class="grafica">
+        <div class="eje-y"><span *ngFor="let tick of ticks(ingresos)">{{ tick }}</span></div>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Ingresos netos del periodo">
+          <polygon class="area ingreso" [attr.points]="area(ingresos)" />
+          <polyline class="linea ingreso" [attr.points]="polilinea(ingresos)" />
+        </svg>
+      </div>
+      <div class="grafica gasto">
+        <div class="eje-y"><span *ngFor="let tick of ticks(gastos)">{{ tick }}</span></div>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Gastos operativos del periodo">
+          <polyline class="linea gasto" [attr.points]="polilinea(gastos)" />
+        </svg>
+      </div>
+      <div class="eje">
+        <span *ngFor="let etiqueta of etiquetas">{{ etiqueta }}</span>
+      </div>
+      <p class="eje-nota" *ngIf="!gastos.length">La serie de gastos operativos aparece con el acceso de finanzas.</p>
+      <p class="eje-nota" *ngIf="esAdmin && kpis">Utilidad del periodo {{ kpis.utilidadNeta | pen }}.</p>
+    </article>
+
+    <article class="tile">
+      <header class="tile-head">
+        <h2>Inventario fraccionado</h2>
+        <span class="text-xs">Stock de progresos</span>
+      </header>
+      <p class="producto">Productos</p>
+      <p class="producto-nombre">{{ productoFraccion }}</p>
+      <div class="fraccion" *ngFor="let fila of fracciones">
+        <span>{{ fila.etiqueta }}</span>
+        <div class="barra"><i [style.width.%]="fila.ancho"></i></div>
+      </div>
+      <p *ngIf="!fracciones.length" class="text-muted">No hay fracciones activas en el catálogo.</p>
+    </article>
+
+    <article class="tile">
+      <header class="tile-head"><h2>Ventas</h2></header>
+      <div class="mini-grid">
+        <a class="mini" routerLink="/ventas/pos">
+          <span>Punto de venta</span>
+          <strong>{{ ventasHoy?.total | pen }}</strong>
+          <small>Ventas diarias</small>
+        </a>
+        <a class="mini" routerLink="/modules/cotizaciones">
+          <span>Cotizaciones</span>
+          <strong>{{ cotizaciones }}</strong>
+          <small>Emisión registrada</small>
+        </a>
+        <a class="mini" routerLink="/modules/turnos-caja">
+          <span>Caja</span>
+          <strong [class.abierta]="cajaEstado === 'Abierta'" [class.cerrada]="cajaEstado !== 'Abierta'">{{ cajaEstado }}</strong>
+          <small>Estado</small>
+        </a>
+        <a class="mini" routerLink="/modules/clientes">
+          <span>Clientes</span>
+          <strong>{{ clientes }}</strong>
+          <small>Actividad</small>
+        </a>
+      </div>
+    </article>
+
+    <article class="tile tile-rendimiento">
+      <header class="tile-head">
+        <h2>Rendimiento por sedes</h2>
+        <span class="text-xs">Indicadores</span>
+      </header>
+      <div class="rendimiento">
+        <div><span>Ingresos netos</span><strong class="ok">{{ resumen?.neto | pen }}</strong></div>
+        <div><span>Devoluciones</span><strong class="bad">{{ resumen?.devoluciones | pen }}</strong></div>
+        <div><span>Neto sobre el total</span><strong>{{ variacion }}</strong></div>
+      </div>
+    </article>
+
+    <article class="tile tile-kardex">
+      <header class="tile-head"><h2>Kardex</h2><span class="chip">Entrada</span></header>
+      <a class="fila" routerLink="/modules/kardex"><span>Kardex</span><strong>{{ stock?.entradasHoy ?? 0 }}</strong><small>Entradas de hoy</small></a>
+      <a class="fila" routerLink="/modules/despachos"><span>Despacho</span><strong>{{ stock?.salidasHoy ?? 0 }}</strong><small>Salidas de hoy</small></a>
+    </article>
+
+    <article class="tile tile-atajos">
+      <div class="atajos">
+        <a routerLink="/modules/compras"><span>Compras</span><small>Abastecimiento controlado</small></a>
+        <a routerLink="/modules/proveedores"><span>Proveedores</span><small>Cuentas del abastecimiento</small></a>
+        <a routerLink="/modules/despachos"><span>Despachos</span><small>Un abastecimiento</small></a>
+        <a routerLink="/modules/cuentas-por-pagar"><span>Cuentas por pagar</span><small>{{ cxp?.vencidas ?? 0 }} vencidas · {{ cxp?.montoTotalVencido | pen }}</small></a>
+      </div>
+    </article>
+
+    <app-facturacion-sunat class="tile-sunat" [sedeId]="sedeId"></app-facturacion-sunat>
+  </div>
+</section>

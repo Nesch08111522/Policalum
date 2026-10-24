@@ -1,1 +1,160 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page catalogo">
+  <app-page-header title="Gestión de Servicios" subtitle="Instalaciones y trabajos facturables: nombre, descripción y precio."></app-page-header>
+
+  <div class="catalogo-layout">
+    <div class="catalogo-main">
+      <div class="card filtros">
+        <div class="filtros-grid">
+          <app-form-field label="Búsqueda" inputId="srv-buscar">
+            <input id="srv-buscar" class="input" type="search" [value]="filtros.controls.searchTerm.value" (input)="onBuscar($event)" placeholder="Buscar por nombre o descripción… (F2)" />
+          </app-form-field>
+          <div class="stock-filtro">
+            <span>Estado</span>
+            <div class="chips" role="group" aria-label="Filtrar por estado">
+              <button type="button" [class.active]="filtros.controls.activo.value === 'true'" (click)="elegirEstado('true')">Activos</button>
+              <button type="button" [class.active]="filtros.controls.activo.value === 'false'" (click)="elegirEstado('false')">Inactivos</button>
+            </div>
+          </div>
+          <div class="filtros-acciones">
+            <button type="button" class="btn btn-primary" (click)="abrirCrear()"><app-icon name="plus"></app-icon> Nuevo servicio</button>
+            <button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar filtros</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card tabla-card">
+        <div class="card-header">
+          <h2>Catálogo de servicios</h2>
+        </div>
+        <div class="estado" *ngIf="state.loading">Cargando servicios…</div>
+        <div class="estado error" *ngIf="!state.loading && state.error">
+          {{ state.error }}
+          <p *ngIf="state.status" class="ayuda">Código {{ state.status }}</p>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button>
+        </div>
+        <div class="estado" *ngIf="!state.loading && !state.error && !state.rows.length">{{ vacio() }}</div>
+        <div class="table-scroll" *ngIf="!state.loading && !state.error && state.rows.length">
+          <table class="table catalogo-tabla">
+            <thead>
+              <tr>
+                <th>Servicio</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Quién instaló o ayudó</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of state.rows" (click)="ver(item)" [class.activa]="detalle?.id === item.id">
+                <td>
+                  <div class="sku">
+                    <span class="tile" aria-hidden="true">{{ iniciales(item?.nombre) }}</span>
+                    <strong>{{ item?.nombre || 'Sin nombre' }}</strong>
+                  </div>
+                </td>
+                <td>{{ item.descripcion || 'Sin descripción' }}</td>
+                <td><strong>{{ item.precio | pen }}</strong></td>
+                <td>{{ equipoTexto(item) }}</td>
+                <td>
+                  <span class="badge" [class.badge-success]="item.activo !== false" [class.badge-neutral]="item.activo === false">{{ item.activo === false ? 'Inactivo' : 'Activo' }}</span>
+                </td>
+                <td class="acciones" (click)="$event.stopPropagation()">
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(item)">Editar</button>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="pedirEliminar(item)">Eliminar</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <app-pagination [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)"></app-pagination>
+      </div>
+    </div>
+
+    <aside class="catalogo-side">
+      <article class="card">
+        <div class="card-header"><h2>Disponibles hoy</h2></div>
+        <div class="card-body" *ngIf="asistenciaCargando">Cargando asistencias…</div>
+        <div class="card-body estado error" *ngIf="!asistenciaCargando && asistenciaError">
+          {{ asistenciaError }}
+          <button type="button" class="btn btn-ghost btn-sm" (click)="cargarAsistencia()">Reintentar</button>
+        </div>
+        <div class="card-body side-list" *ngIf="!asistenciaCargando && !asistenciaError && disponibles.length">
+          <div *ngFor="let persona of disponibles">
+            <strong>{{ persona.empleadoNombreCompleto || 'Empleado' }}</strong>
+            <span>{{ persona.tipoMarcacion }} · {{ persona.fechaHora | date:'HH:mm' }}</span>
+          </div>
+        </div>
+        <p class="card-body vacio" *ngIf="!asistenciaCargando && !asistenciaError && !asistencias.length">No hay asistencias registradas hoy.</p>
+        <p class="card-body vacio" *ngIf="!asistenciaCargando && !asistenciaError && asistencias.length && !disponibles.length">Nadie figura disponible con las asistencias de hoy.</p>
+      </article>
+
+      <article class="card">
+        <div class="card-header"><h2>Marcaciones de hoy</h2></div>
+        <div class="card-body side-list" *ngIf="asistencias.length; else sinMarcaciones">
+          <div *ngFor="let marca of asistencias">
+            <strong>{{ marca.empleadoNombreCompleto || 'Empleado' }}</strong>
+            <span>{{ marca.tipoMarcacion }} · {{ marca.fechaHora | date:'HH:mm' }}</span>
+          </div>
+          <a class="btn btn-ghost btn-sm" routerLink="/modules/rrhh">Ver personas</a>
+        </div>
+        <ng-template #sinMarcaciones><p class="card-body vacio">No hay asistencias registradas hoy.</p></ng-template>
+      </article>
+
+      <article class="card">
+        <div class="card-header"><h2>Equipo del servicio</h2></div>
+        <div class="card-body side-list" *ngIf="detalle?.colaboradores?.length; else sinEquipo">
+          <div *ngFor="let persona of detalle?.colaboradores">
+            <strong>{{ nombrePersona(persona) }}</strong>
+            <span>{{ persona.participacion === 'INSTALO' ? 'Instaló' : 'Ayudó' }}</span>
+          </div>
+        </div>
+        <ng-template #sinEquipo><p class="card-body vacio">{{ detalle ? 'Sin personas asignadas a este servicio.' : 'Selecciona un servicio para ver quién lo instaló.' }}</p></ng-template>
+      </article>
+
+      <article class="card resumen">
+        <div>
+          <span>Servicios</span>
+          <strong>{{ state.totalElements }}</strong>
+        </div>
+        <div>
+          <span>En esta página</span>
+          <strong>{{ state.rows.length }}</strong>
+        </div>
+      </article>
+    </aside>
+  </div>
+</section>
+
+<app-modal [closable]="!guardando" [open]="modal" [title]="editando ? 'Editar servicio' : 'Nuevo servicio'" size="lg" (closed)="modal = false">
+  <form class="form-grid" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field class="span-2" label="Nombre" inputId="srv-nombre" [required]="true" [error]="errorDe('nombre')"><input id="srv-nombre" class="input" formControlName="nombre" maxlength="150" /></app-form-field>
+    <app-form-field class="span-2" label="Descripción" inputId="srv-desc" [error]="errorDe('descripcion')"><textarea id="srv-desc" class="textarea" formControlName="descripcion"></textarea></app-form-field>
+    <app-form-field label="Precio" inputId="srv-precio" [required]="true" [error]="errorDe('precio')"><input id="srv-precio" class="input" type="number" min="0" step="0.01" formControlName="precio" /></app-form-field>
+    <app-form-field label="Activo" inputId="srv-act"><input id="srv-act" class="switch" type="checkbox" formControlName="activo" /></app-form-field>
+    <div class="span-2 equipo" formArrayName="colaboradores">
+      <div class="equipo-cabecera">
+        <span>Quién instaló o ayudó</span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="agregarPersona()">Agregar persona</button>
+      </div>
+      <p class="ayuda" *ngIf="!usuarios.length">No hay usuarios registrados para asignar la instalación.</p>
+      <div class="equipo-fila" *ngFor="let persona of equipo.controls; let i = index" [formGroupName]="i">
+        <select class="select" formControlName="userId">
+          <option value="">Selecciona un usuario</option>
+          <option *ngFor="let usuario of usuarios" [value]="usuario.id">{{ nombreUsuario(usuario) }}</option>
+        </select>
+        <select class="select" formControlName="participacion">
+          <option value="INSTALO">Instaló</option>
+          <option value="AYUDO">Ayudó</option>
+        </select>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="quitarPersona(i)">Quitar</button>
+      </div>
+    </div>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+  </div>
+</app-modal>
+<app-confirm-dialog [open]="confirmar" title="Eliminar servicio" [message]="'Se desactivará ' + (seleccionado?.nombre || 'este servicio') + '.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>

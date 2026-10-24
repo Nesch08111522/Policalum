@@ -1,31 +1,38 @@
 // src/app/components/login/login.component.ts
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { ApiProblem } from '../../core/api/openapi.types';
 import { LoginResponse } from '../../models/user.model';
 import { AuthService } from '../../services/auth.service';
-import { TokenService } from '../../services/token.service';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css'],
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   email: string = '';
   password: string = '';
   isLoading: boolean = false;
   error: string | null = null;
+  notice: string | null = null;
   showPassword: boolean = false;
 
   constructor(
     private authService: AuthService,
-    private tokenService: TokenService,
     private router: Router,
   ) {}
+
+  ngOnInit(): void {
+    if (typeof sessionStorage === 'undefined') return;
+    this.notice = sessionStorage.getItem('auth_notice');
+    sessionStorage.removeItem('auth_notice');
+  }
 
   onSubmit(): void {
     if (!this.email || !this.password) {
@@ -37,22 +44,13 @@ export class LoginComponent {
     this.error = null;
 
     this.authService.login({ email: this.email, password: this.password }).subscribe({
-      next: (response: LoginResponse) => {
-        console.log('✅ Login exitoso:', response);
+      next: (_response: LoginResponse) => {
         this.isLoading = false;
-
-        if (response.rol === 'ROLE_ADMIN') {
-          this.router.navigate(['/admin']);
-        } else if (response.rol === 'ROLE_MULTIFUNCIONAL') {
-          this.router.navigate(['/empleado']);
-        } else {
-          this.router.navigate(['/']);
-        }
+        void this.router.navigate(['/inicio']);
       },
-      error: (err: any) => {
-        console.error('❌ Error en login:', err);
+      error: (err: ApiProblem) => {
         this.isLoading = false;
-        this.error = err.error?.message || 'Error al iniciar sesión. Verifica tus credenciales.';
+        this.error = err?.message || 'Error al iniciar sesión. Verifica tus credenciales.';
       },
     });
   }

@@ -1,21 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from '../../../services/auth.service';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-dashboard-redirect',
   standalone: true,
-  template: '', // sin vista, redirige automáticamente
+  template: '',
 })
 export class DashboardRedirectComponent implements OnInit {
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private readonly router: Router) {}
 
   ngOnInit(): void {
-    const user = this.authService.getCurrentUser();
-    if (user?.rol === 'ROLE_ADMIN') {
-      this.router.navigate(['/admin']);
-    } else {
-      this.router.navigate(['/empleado']);
-    }
+    void this.router.navigate(['/inicio']);
   }
 }

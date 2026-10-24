@@ -1,272 +1,206 @@
-<section class="productos-shell">
-  <!-- ============ Header ============ -->
-  <header class="page-header">
-    <div>
-      <p class="eyebrow">Catálogo</p>
-      <h1>📦 Productos</h1>
-      <p class="subtitle">Gestiona productos, precios, SKU y fracciones del catálogo.</p>
-    </div>
-    <button class="btn btn-primary" type="button" (click)="abrirFormularioNuevo()">
-      <span class="btn-icon">＋</span> Nuevo producto
-    </button>
-  </header>
+<section class="module-page catalogo">
+  <app-page-header title="Gestión de Productos" subtitle="Administra el catálogo de productos, precios y stock fraccionado del almacén."></app-page-header>
 
-  <!-- ============ Mensajes ============ -->
-  <div class="alert alert-success" *ngIf="exito">
-    ✅ {{ exito }}
-    <button class="alert-close" type="button" (click)="exito = null">×</button>
-  </div>
-  <div class="alert alert-error" *ngIf="error">
-    ⚠️ <strong>Error{{ error.status ? ' ' + error.status : '' }}:</strong>
-    {{ error.message || 'No se pudo cargar la información.' }}
-    <button class="alert-close" type="button" (click)="error = null">×</button>
-  </div>
-
-  <!-- ============ Filtros ============ -->
-  <div class="filtros-card">
-    <div class="filtro-busqueda">
-      <span class="search-icon">🔍</span>
-      <input
-        type="text"
-        placeholder="Buscar por nombre o SKU..."
-        [ngModel]="filtros.searchTerm"
-        (ngModelChange)="onBuscarInput($event)"
-      />
-    </div>
-
-    <select class="filtro-select" [(ngModel)]="filtros.categoriaId" (change)="aplicarFiltros()">
-      <option value="">Todas las categorías</option>
-      <option *ngFor="let c of categorias" [value]="c.id">{{ c.nombre }}</option>
-    </select>
-
-    <select class="filtro-select" [(ngModel)]="filtros.tipo" (change)="aplicarFiltros()">
-      <option value="">Todos los tipos</option>
-      <option value="FISICO">Físico</option>
-      <option value="SERVICIO">Servicio</option>
-    </select>
-
-    <select class="filtro-select" [(ngModel)]="filtros.activo" (change)="aplicarFiltros()">
-      <option value="">Activo / Inactivo</option>
-      <option value="true">Solo activos</option>
-      <option value="false">Solo inactivos</option>
-    </select>
-
-    <select class="filtro-select" [(ngModel)]="filtros.esFraccionable" (change)="aplicarFiltros()">
-      <option value="">Fraccionable</option>
-      <option value="true">Solo fraccionables</option>
-      <option value="false">No fraccionables</option>
-    </select>
-
-    <button class="btn btn-ghost" type="button" (click)="limpiarFiltros()">Limpiar</button>
-  </div>
-
-  <!-- ============ Tabla ============ -->
-  <div class="tabla-card">
-    <div class="tabla-header">
-      <span>{{ rangoMostrado() }} productos</span>
-      <select class="size-select" [(ngModel)]="size" (change)="cambiarSize($any($event.target).value)">
-        <option [ngValue]="10">10 por página</option>
-        <option [ngValue]="20">20 por página</option>
-        <option [ngValue]="50">50 por página</option>
-        <option [ngValue]="100">100 por página</option>
-      </select>
-    </div>
-
-    <div class="tabla-loading" *ngIf="loading">
-      <div class="spinner"></div>
-      <p>Cargando productos…</p>
-    </div>
-
-    <div class="tabla-empty" *ngIf="!loading && productos.length === 0">
-      <p class="empty-icon">📭</p>
-      <p>No hay productos que coincidan con los filtros.</p>
-      <button class="btn btn-primary" type="button" (click)="abrirFormularioNuevo()">
-        Crear el primero
-      </button>
-    </div>
-
-    <div class="tabla-wrap" *ngIf="!loading && productos.length > 0">
-      <table>
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Nombre</th>
-            <th>Categoría</th>
-            <th>Proveedor</th>
-            <th class="num">P. Compra</th>
-            <th class="num">P. Venta</th>
-            <th>Estado</th>
-            <th class="acciones">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let p of productos; trackBy: trackById">
-            <td><code class="sku">{{ p.codigoSku || '—' }}</code></td>
-            <td>
-              <div class="nombre-cell">
-                <strong>{{ p.nombre }}</strong>
-                <small *ngIf="p.descripcion">{{ p.descripcion }}</small>
+  <div class="catalogo-layout">
+    <div class="catalogo-main">
+      <div class="card filtros">
+        <div class="filtros-grid">
+          <app-form-field label="Búsqueda" inputId="prod-buscar">
+            <input id="prod-buscar" class="input" type="search" [value]="filtros.controls.searchTerm.value" (input)="onBuscar($event)" placeholder="Buscar por SKU, nombre o categoría… (F2)" />
+          </app-form-field>
+          <app-form-field label="Categoría" inputId="prod-cat">
+            <app-select inputId="prod-cat" [options]="categorias" placeholder="Todas" [formControl]="filtros.controls.categoriaId"></app-select>
+          </app-form-field>
+          <app-form-field label="Sede" inputId="prod-sede">
+            <app-select inputId="prod-sede" [options]="sedes" placeholder="Todas las sedes" [formControl]="filtros.controls.sedeId"></app-select>
+          </app-form-field>
+          <div class="stock-filtro">
+            <span>Stock</span>
+            <div class="chips" role="group" aria-label="Filtrar por stock">
+              <button type="button" [class.active]="stockFiltro === 'CON'" (click)="elegirStock('CON')">Con stock</button>
+              <button type="button" [class.active]="stockFiltro === 'BAJO'" (click)="elegirStock('BAJO')">Bajo stock</button>
+              <button type="button" [class.active]="stockFiltro === 'SIN'" (click)="elegirStock('SIN')">Sin stock</button>
+            </div>
+          </div>
+          <div class="filtros-acciones">
+            <button type="button" class="btn btn-primary" (click)="abrirCrear()"><app-icon name="plus"></app-icon> Nuevo producto</button>
+            <div class="menu-exportar">
+              <button type="button" class="btn btn-ghost" (click)="menuExportar = !menuExportar" aria-haspopup="menu" [attr.aria-expanded]="menuExportar"><app-icon name="file"></app-icon> Exportar</button>
+              <div class="menu" *ngIf="menuExportar" role="menu">
+                <button type="button" (click)="exportar('xlsx')">Excel</button>
+                <button type="button" (click)="exportar('csv')">CSV</button>
               </div>
-            </td>
-            <td>
-              <span class="badge badge-categoria" *ngIf="p.categoria">
-                {{ p.categoria.nombre }}
-              </span>
-              <span class="muted" *ngIf="!p.categoria">—</span>
-            </td>
-            <td>{{ p.proveedor?.razonSocial || '—' }}</td>
-            <td class="num">{{ formatearPrecio(p.precioCompra) }}</td>
-            <td class="num">{{ formatearPrecio(p.precioVentaBase) }}</td>
-            <td>
-              <span class="badge" [class.badge-activo]="p.activo" [class.badge-inactivo]="!p.activo">
-                {{ p.activo ? 'Activo' : 'Inactivo' }}
-              </span>
-              <span class="badge badge-fraccion" *ngIf="p.esFraccionable">Fracción</span>
-            </td>
-            <td class="acciones">
-              <button class="icon-btn" type="button" title="Editar" (click)="abrirFormularioEditar(p)">
-                ✏️
-              </button>
-              <button class="icon-btn icon-btn-danger" type="button" title="Eliminar" (click)="confirmarEliminar(p)">
-                🗑️
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- ============ Paginación ============ -->
-    <div class="paginacion" *ngIf="!loading && totalPaginas > 1">
-      <button class="btn btn-ghost" type="button" [disabled]="page === 0" (click)="cambiarPage(page - 1)">
-        ← Anterior
-      </button>
-      <button
-        class="page-btn"
-        type="button"
-        *ngFor="let n of paginasVisibles()"
-        [class.active]="n === page"
-        (click)="cambiarPage(n)"
-      >
-        {{ n + 1 }}
-      </button>
-      <button
-        class="btn btn-ghost"
-        type="button"
-        [disabled]="page >= totalPaginas - 1"
-        (click)="cambiarPage(page + 1)"
-      >
-        Siguiente →
-      </button>
-    </div>
-  </div>
-
-  <!-- ============ Modal Crear / Editar ============ -->
-  <div class="modal-backdrop" *ngIf="mostrarFormulario" (click)="cerrarFormulario()">
-    <div class="modal" (click)="$event.stopPropagation()">
-      <header class="modal-header">
-        <h2>{{ modoEdicion ? 'Editar producto' : 'Nuevo producto' }}</h2>
-        <button class="modal-close" type="button" (click)="cerrarFormulario()">×</button>
-      </header>
-
-      <div class="modal-body">
-        <div class="form-alert" *ngIf="errorFormulario">⚠️ {{ errorFormulario }}</div>
-
-        <div class="form-grid">
-          <label class="form-field form-field-full">
-            <span>Nombre *</span>
-            <input type="text" [(ngModel)]="form.nombre" placeholder="Ej: Plancha de policarbonato 4mm" />
-          </label>
-
-          <label class="form-field">
-            <span>SKU</span>
-            <input type="text" [(ngModel)]="form.codigoSku" placeholder="Ej: POL-4MM" />
-          </label>
-
-          <label class="form-field">
-            <span>Unidad</span>
-            <input type="text" [(ngModel)]="form.unidad" placeholder="UNIDAD, M2, KG…" />
-          </label>
-
-          <label class="form-field form-field-full">
-            <span>Descripción</span>
-            <textarea rows="2" [(ngModel)]="form.descripcion" placeholder="Detalle opcional del producto"></textarea>
-          </label>
-
-          <label class="form-field">
-            <span>Categoría</span>
-            <select [(ngModel)]="form.categoriaId">
-              <option value="">Sin categoría</option>
-              <option *ngFor="let c of categorias" [value]="c.id">{{ c.nombre }}</option>
-            </select>
-          </label>
-
-          <label class="form-field">
-            <span>Proveedor</span>
-            <select [(ngModel)]="form.proveedorId">
-              <option value="">Sin proveedor</option>
-              <option *ngFor="let pv of proveedores" [value]="pv.id">{{ pv.nombreRazon }}</option>
-            </select>
-          </label>
-
-          <label class="form-field">
-            <span>Tipo *</span>
-            <select [(ngModel)]="form.tipo">
-              <option value="FISICO">Físico</option>
-              <option value="SERVICIO">Servicio</option>
-            </select>
-          </label>
-
-          <label class="form-field">
-            <span>Precio compra *</span>
-            <input type="number" step="0.01" min="0" [(ngModel)]="form.precioCompra" />
-          </label>
-
-          <label class="form-field">
-            <span>Precio venta *</span>
-            <input type="number" step="0.01" min="0" [(ngModel)]="form.precioVentaBase" />
-          </label>
-
-          <div class="form-checks form-field-full">
-            <label class="check"><input type="checkbox" [(ngModel)]="form.activo" /> Activo</label>
-            <label class="check"><input type="checkbox" [(ngModel)]="form.esFraccionable" /> Fraccionable</label>
-            <label class="check"><input type="checkbox" [(ngModel)]="form.incluyeIgv" /> Incluye IGV</label>
+            </div>
+            <button type="button" class="btn btn-ghost" (click)="abrirImportar()"><app-icon name="folder"></app-icon> Importar</button>
           </div>
         </div>
       </div>
 
-      <footer class="modal-footer">
-        <button class="btn btn-ghost" type="button" (click)="cerrarFormulario()" [disabled]="guardando">
-          Cancelar
-        </button>
-        <button class="btn btn-primary" type="button" (click)="guardarProducto()" [disabled]="guardando">
-          {{ guardando ? 'Guardando…' : (modoEdicion ? 'Actualizar' : 'Crear producto') }}
-        </button>
-      </footer>
-    </div>
-  </div>
-
-  <!-- ============ Modal Eliminar ============ -->
-  <div class="modal-backdrop" *ngIf="mostrarConfirmacion" (click)="cerrarConfirmacion()">
-    <div class="modal modal-sm" (click)="$event.stopPropagation()">
-      <header class="modal-header">
-        <h2>Eliminar producto</h2>
-        <button class="modal-close" type="button" (click)="cerrarConfirmacion()">×</button>
-      </header>
-      <div class="modal-body">
-        <p>
-          ¿Seguro que quieres eliminar <strong>{{ productoAEliminar?.nombre }}</strong>?
-        </p>
-        <p class="muted">Esta acción no se puede deshacer.</p>
+      <div class="card tabla-card">
+        <div class="card-header">
+          <h2>Catálogo de productos</h2>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="limpiar()">Limpiar filtros</button>
+        </div>
+        <p class="nota" *ngIf="stockTruncado">El filtro de stock revisa los primeros 100 productos del catálogo.</p>
+        <div class="estado" *ngIf="state.loading">Cargando catálogo…</div>
+        <div class="estado error" *ngIf="state.error">{{ state.error }} <button type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button></div>
+        <div class="estado" *ngIf="!state.loading && !state.error && !filas.length">{{ filtros.controls.searchTerm.value ? 'No hay resultados' : 'No hay productos con estos filtros.' }}</div>
+        <div class="table-scroll" *ngIf="filas.length">
+          <table class="table catalogo-tabla">
+            <thead>
+              <tr>
+                <th>Imagen y SKU</th>
+                <th>Producto</th>
+                <th>Precios por fracción</th>
+                <th>Stock fraccionado</th>
+                <th>Ubicación / Almacén</th>
+                <th>Alertas / Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let fila of filas">
+                <td>
+                  <div class="sku">
+                    <img *ngIf="vistaDe(fila.producto) as foto" class="foto" [src]="foto" alt="" (error)="ocultarVista(fila.producto)" />
+                    <span class="tile" *ngIf="!vistaDe(fila.producto)" aria-hidden="true">{{ iniciales(fila.producto?.nombre) }}</span>
+                    <span>{{ fila.producto?.codigoSku || 'Sin SKU' }}</span>
+                  </div>
+                </td>
+                <td>
+                  <strong>{{ fila.producto?.nombre || 'Sin nombre' }}</strong>
+                  <span class="badge badge-info" *ngIf="fila.producto?.categoria?.nombre">{{ fila.producto?.categoria?.nombre }}</span>
+                </td>
+                <td>
+                  <div class="corte" *ngFor="let corte of fila.cortes">
+                    <span>{{ corte.nombre }}</span>
+                    <strong>{{ corte.precio | pen }}</strong>
+                  </div>
+                </td>
+                <td>
+                  <div class="saldo-base">Saldo {{ fila.cantidad | number:'1.0-2' }} {{ fila.unidad }}</div>
+                  <div class="corte" *ngFor="let corte of fila.cortes">
+                    <span>{{ corte.nombre }}</span>
+                    <div class="barra"><span [style.width.%]="corte.ancho" [class.warn]="fila.estado === 'minimo'" [class.empty]="fila.estado === 'agotado'"></span></div>
+                    <strong>{{ corte.equivalentes | number:'1.0-2' }}</strong>
+                  </div>
+                  <p class="ayuda" *ngIf="fila.producto?.esFraccionable">Equivalente del saldo base. El kardex no guarda un stock por corte.</p>
+                </td>
+                <td>
+                  <strong>{{ fila.sede }}</strong>
+                  <span>{{ fila.almacen }}</span>
+                  <span *ngIf="fila.otrosAlmacenes">y {{ fila.otrosAlmacenes }} más</span>
+                </td>
+                <td>
+                  <span class="badge" [class.badge-success]="fila.estado === 'optimo'" [class.badge-warning]="fila.estado === 'minimo'" [class.badge-danger]="fila.estado === 'agotado'" [class.badge-neutral]="fila.estado === 'inactivo'">{{ fila.estadoLabel }}</span>
+                  <span class="badge badge-success" *ngIf="fila.producto?.activo !== false">Activo</span>
+                  <span class="minimo" *ngIf="fila.minimo > 0">Mínimo {{ fila.minimo | number:'1.0-2' }}</span>
+                </td>
+                <td class="acciones">
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="verKardex(fila.producto)">Kardex</button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(fila.producto)">Editar</button>
+                  <button type="button" class="btn btn-danger btn-sm" *ngIf="fila.producto?.activo !== false" (click)="pedirDesactivar(fila.producto)">Desactivar</button>
+                  <button type="button" class="btn btn-danger btn-sm" *ngIf="fila.producto?.activo === false" (click)="pedirEliminar(fila.producto)">Eliminar</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <app-pagination *ngIf="!stockFiltro" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)"></app-pagination>
       </div>
-      <footer class="modal-footer">
-        <button class="btn btn-ghost" type="button" (click)="cerrarConfirmacion()" [disabled]="eliminando">
-          Cancelar
-        </button>
-        <button class="btn btn-danger" type="button" (click)="eliminarProducto()" [disabled]="eliminando">
-          {{ eliminando ? 'Eliminando…' : 'Sí, eliminar' }}
-        </button>
-      </footer>
     </div>
+
+    <aside class="catalogo-side">
+      <article class="card">
+        <div class="card-header"><h2>Productos con bajo stock</h2></div>
+        <div class="card-body side-list" *ngIf="alertas.length; else sinAlertas">
+          <a *ngFor="let alerta of alertas" [routerLink]="['/modules/kardex']" [queryParams]="{ productoId: alerta.productoId }">
+            <strong>{{ alerta.productoNombre }}</strong>
+            <span>{{ alerta.cantidad | number:'1.0-2' }} {{ alerta.unidad || 'UNID' }} · {{ alerta.almacenNombre || 'Almacén' }}</span>
+          </a>
+        </div>
+        <ng-template #sinAlertas><p class="card-body vacio">No hay productos bajo el mínimo.</p></ng-template>
+      </article>
+      <article class="card">
+        <div class="card-header"><h2>Mermas registradas</h2></div>
+        <div class="card-body" *ngIf="mermas?.movimientos; else sinMermas">
+          <p class="metrica">{{ mermas?.valorTotal | pen }}</p>
+          <p class="ayuda">{{ mermas?.movimientos }} movimiento(s) de merma en el kardex.</p>
+          <a class="btn btn-ghost btn-sm" routerLink="/modules/kardex" [queryParams]="{ tab: 'mermas' }">Ver historial</a>
+        </div>
+        <ng-template #sinMermas><p class="card-body vacio">No hay mermas registradas.</p></ng-template>
+      </article>
+      <article class="card resumen">
+        <div>
+          <span>Total SKU</span>
+          <strong>{{ state.totalElements }}</strong>
+        </div>
+        <div>
+          <span>Con stock</span>
+          <strong>{{ dashboard?.productosConStock ?? '—' }}</strong>
+        </div>
+        <div>
+          <span>Valorizado</span>
+          <strong>{{ dashboard?.valorInventario | pen }}</strong>
+        </div>
+      </article>
+    </aside>
   </div>
 </section>
+
+<app-modal [closable]="!guardando" [open]="modal" [title]="editando ? 'Editar producto' : 'Nuevo producto'" size="lg" (closed)="modal = false">
+  <form class="form-grid" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field label="Nombre" inputId="prod-nombre" [required]="true" [error]="errorDe('nombre')"><input id="prod-nombre" class="input" formControlName="nombre" /></app-form-field>
+    <app-form-field label="SKU" inputId="prod-sku"><input id="prod-sku" class="input" formControlName="codigoSku" /></app-form-field>
+    <app-form-field label="Categoría" inputId="prod-categoria"><app-select inputId="prod-categoria" [options]="categorias" placeholder="Sin categoría" formControlName="categoriaId"></app-select></app-form-field>
+    <app-form-field label="Proveedor" inputId="prod-prov"><app-select inputId="prod-prov" [options]="proveedores" placeholder="Sin proveedor" formControlName="proveedorId"></app-select></app-form-field>
+    <app-form-field label="Tipo" inputId="prod-tipo-f" [required]="true"><select id="prod-tipo-f" class="select" formControlName="tipo"><option value="FISICO">Físico</option><option value="SERVICIO">Servicio</option></select></app-form-field>
+    <app-form-field label="Unidad" inputId="prod-unidad"><input id="prod-unidad" class="input" formControlName="unidad" /></app-form-field>
+    <app-form-field label="Precio de compra" inputId="prod-compra" [required]="true" [error]="errorDe('precioCompra')"><input id="prod-compra" class="input" type="number" min="0" step="0.01" formControlName="precioCompra" /></app-form-field>
+    <app-form-field label="Precio de venta" inputId="prod-venta" [required]="true" [error]="errorDe('precioVentaBase')"><input id="prod-venta" class="input" type="number" min="0" step="0.01" formControlName="precioVentaBase" /></app-form-field>
+    <app-form-field class="span-2" label="Descripción" inputId="prod-desc"><textarea id="prod-desc" class="textarea" formControlName="descripcion"></textarea></app-form-field>
+    <div class="span-2 imagen-bloque">
+      <span class="imagen-titulo">Imagen</span>
+      <div class="chips" role="group" aria-label="Modo de imagen">
+        <button type="button" [class.active]="modoImagen === 'archivo'" (click)="usarModoImagen('archivo')">Subir archivo</button>
+        <button type="button" [class.active]="modoImagen === 'url'" (click)="usarModoImagen('url')">Pegar URL</button>
+      </div>
+      <input *ngIf="modoImagen === 'archivo'" id="prod-archivo" class="input" type="file" accept="image/jpeg,image/png,image/webp" (change)="elegirImagen($event)" />
+      <input *ngIf="modoImagen === 'url'" id="prod-imagen-url" class="input" type="url" formControlName="imagen" placeholder="https://…" (input)="actualizarVistaUrl()" />
+      <img *ngIf="vistaPrevia" class="vista-previa" [src]="vistaPrevia" alt="Vista previa de la imagen del producto" />
+      <p class="ayuda">JPG, PNG o WEBP de hasta 2 MB, o una URL http(s). Se guarda la ruta o la URL, no el archivo dentro de la base.</p>
+    </div>
+    <app-form-field label="Activo" inputId="prod-act"><input id="prod-act" class="switch" type="checkbox" formControlName="activo" /></app-form-field>
+    <app-form-field label="Fraccionable" inputId="prod-esfrac"><input id="prod-esfrac" class="switch" type="checkbox" formControlName="esFraccionable" /></app-form-field>
+    <app-form-field label="Incluye IGV" inputId="prod-igv"><input id="prod-igv" class="switch" type="checkbox" formControlName="incluyeIgv" /></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+  </div>
+</app-modal>
+<app-modal [closable]="!importando" [open]="modalImportar" title="Importar productos" size="lg" (closed)="modalImportar = false">
+  <div class="importar">
+    <p>El archivo se lee en el navegador y se envía como JSON. Si una fila falla, no se guarda ninguna.</p>
+    <a class="enlace" href="" (click)="$event.preventDefault(); descargarPlantilla()">Descargar plantilla con las columnas del catálogo</a>
+    <div class="drop" [class.sobre]="sobreArchivo" (dragover)="$event.preventDefault(); sobreArchivo = true" (dragleave)="sobreArchivo = false" (drop)="soltarArchivo($event)">
+      <strong>Arrastra un .xlsx o .csv</strong>
+      <span>o elige un archivo</span>
+      <input class="input" type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="elegirArchivo($event)" />
+      <span *ngIf="archivoNombre">{{ archivoNombre }}</span>
+    </div>
+    <p class="estado" *ngIf="importando">Importando…</p>
+    <div class="alert alert-success" *ngIf="importExito">{{ importExito }}</div>
+    <div class="alert alert-error" *ngIf="importErrores.length">
+      <div>
+        <strong>La importación no dejó productos nuevos.</strong>
+        <p *ngFor="let error of importErrores">{{ error.fila ? 'Fila ' + error.fila + ': ' : '' }}{{ error.motivo }}</p>
+      </div>
+    </div>
+  </div>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modalImportar = false" [disabled]="importando">Cerrar</button>
+  </div>
+</app-modal>
+<app-confirm-dialog [open]="confirmar" [title]="accion === 'desactivar' ? 'Desactivar producto' : 'Eliminar producto'" [message]="accion === 'desactivar' ? 'El producto dejará de estar activo en el catálogo.' : 'Se eliminará ' + (seleccionado?.nombre || 'este producto') + '.'" [confirmLabel]="accion === 'desactivar' ? 'Desactivar' : 'Eliminar'" [loading]="eliminando" (confirm)="confirmarAccion()" (cancel)="confirmar = false"></app-confirm-dialog>

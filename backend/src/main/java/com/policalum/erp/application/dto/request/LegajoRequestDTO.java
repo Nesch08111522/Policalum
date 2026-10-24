@@ -4,6 +4,8 @@ import com.policalum.erp.domain.enums.SistemaPension;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
@@ -37,6 +39,10 @@ public record LegajoRequestDTO(
         @DecimalMin(value = "0.01", message = "El sueldo base debe ser mayor a cero")
         @Digits(integer = 10, fraction = 2, message = "Sueldo inválido")
         BigDecimal sueldoBase,
+
+        @Min(value = 1, message = "El día de cobro va del 1 al 31")
+        @Max(value = 31, message = "El día de cobro va del 1 al 31")
+        Integer diaCobro,
 
         @DecimalMin(value = "0.00", message = "La comisión no puede ser negativa")
         @DecimalMax(value = "100.00", message = "La comisión no puede superar 100%")

@@ -1,45 +1,45 @@
 <header class="app-header">
-  <!-- Sección izquierda: Reloj y fecha -->
-  <div class="header-left">
-    <div class="datetime-widget">
-      <span class="time">{{ currentTime }}</span>
-      <span class="date">{{ currentDate }}</span>
+  <div class="cluster">
+    <button type="button" class="btn btn-ghost icon-btn" (click)="toggleMenu()" aria-label="Abrir menú">
+      <app-icon name="menu"></app-icon>
+    </button>
+  </div>
+  <div class="search-shell">
+    <label class="sr-only" for="global-search">Ir a un módulo</label>
+    <input id="global-search" class="input" type="search" placeholder="Ir a un módulo..." [value]="query" (input)="onQuery($event)" (keydown.enter)="goFirst()" />
+    <div class="dropdown-panel" *ngIf="results.length" style="left:0; right:auto; width:100%">
+      <a class="dropdown-item" *ngFor="let item of results" [routerLink]="item.path" (click)="clear()">{{ item.label }}</a>
     </div>
   </div>
-
-  <!-- Sección central: Marca y título -->
-  <div class="header-center">
-    <div class="brand">
-      <img src="assets/POLICALUM.png" alt="POLICALUM" class="logo" />
-      <div class="brand-text">
-        <h1 class="app-title">POLICALUM</h1>
-        <p class="app-subtitle">Gestión integral ERP</p>
+  <div class="cluster">
+    <div class="dropdown" [class.menu-open]="sedesAbiertas">
+      <button type="button" class="btn btn-ghost btn-sm" (click)="sedesAbiertas = !sedesAbiertas" aria-haspopup="listbox" [attr.aria-expanded]="sedesAbiertas">
+        <span>{{ sedeFiltro.nombre() }}</span>
+        <app-icon name="chevronDown"></app-icon>
+      </button>
+      <div class="dropdown-panel" *ngIf="sedesAbiertas" role="listbox">
+        <button type="button" class="dropdown-item" (click)="elegirSede('', 'Sedes')">Todas las sedes</button>
+        <button type="button" class="dropdown-item" *ngFor="let sede of sedes" (click)="elegirSede(sede.id ?? '', sede.nombre ?? 'Sede')">{{ sede.nombre }}</button>
       </div>
     </div>
-  </div>
-
-  <!-- Sección derecha: Usuario y menú -->
-  <div class="header-right">
-    <div class="user-menu" [class.open]="isProfileMenuOpen">
-      <button class="user-menu-trigger" (click)="toggleProfileMenu()" aria-label="Menú de usuario">
-        <div class="avatar">{{ userEmail.charAt(0).toUpperCase() }}{{ userEmail.charAt(1).toUpperCase() }}</div>
-        <div class="user-info">
-          <span class="user-email">{{ userEmail }}</span>
-          <span class="user-role">{{ userRole }}</span>
-        </div>
-        <i class="arrow" [class.up]="isProfileMenuOpen"></i>
+    <button type="button" class="btn btn-ghost theme-toggle" (click)="theme.toggle()" [attr.aria-label]="theme.theme() === 'dark' ? 'Activar modo día' : 'Activar modo noche'">
+      <app-icon [name]="theme.theme() === 'dark' ? 'moon' : 'sun'"></app-icon>
+      <span class="text-sm">{{ theme.theme() === 'dark' ? 'Modo noche' : 'Modo día' }}</span>
+    </button>
+    <button type="button" class="btn btn-ghost icon-btn tooltip" data-tip="Sin notificaciones nuevas" aria-label="Notificaciones">
+      <app-icon name="bell"></app-icon>
+    </button>
+    <div class="dropdown" [class.menu-open]="menuOpen">
+      <button type="button" class="btn btn-ghost" (click)="menuOpen = !menuOpen" aria-haspopup="menu" [attr.aria-expanded]="menuOpen">
+        <span class="avatar">{{ initials }}</span>
+        <span class="text-sm user-label">{{ userName }} / {{ userRole }}</span>
       </button>
-      <div class="dropdown-panel" *ngIf="isProfileMenuOpen" (mouseleave)="closeProfileMenu()">
-        <a class="menu-item" (click)="goToProfile()">
-          <i class="icon-user"></i> Mi Perfil
-        </a>
-        <a class="menu-item" (click)="goToProfile()">
-          <i class="icon-switch"></i> Cambiar Cuenta
-        </a>
-        <div class="separator"></div>
-        <a class="menu-item danger" (click)="logout()">
-          <i class="icon-logout"></i> Cerrar Sesión
-        </a>
+      <div class="dropdown-panel" *ngIf="menuOpen" role="menu">
+        <div class="dropdown-item">{{ userEmail }}</div>
+        <div class="dropdown-item text-muted">{{ userRole }}</div>
+        <button type="button" class="menu-item" (click)="ir('/cuenta/perfil')"><app-icon name="users"></app-icon> Editar perfil</button>
+        <button type="button" class="menu-item" *ngIf="esAdmin" (click)="ir('/modules/configuracion')"><app-icon name="settings"></app-icon> Configuración</button>
+        <button type="button" class="menu-item danger" (click)="logout()"><app-icon name="logout"></app-icon> Cerrar sesión</button>
       </div>
     </div>
   </div>

@@ -1,1 +1,87 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header [title]="tab === 'cuentas' ? 'Cuentas financieras' : tab === 'retiros' ? 'Retiros de socios' : 'Finanzas'" [subtitle]="'KPIs, patrimonio, cuentas y retiros.'" [actionLabel]="tab === 'cuentas' ? 'Nueva cuenta' : tab === 'retiros' ? 'Registrar retiro' : ''" (action)="tab === 'cuentas' ? abrirCuenta() : abrirRetiro()"></app-page-header>
+  <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
+
+  <ng-container *ngIf="tab === 'resumen'">
+    <app-filter-bar>
+      <app-form-field label="Sede" inputId="fin-sede"><app-select inputId="fin-sede" [options]="sedes" placeholder="Consolidado" [formControl]="periodo.controls.sedeId"></app-select></app-form-field>
+      <app-form-field label="Desde" inputId="fin-desde"><input id="fin-desde" class="input" type="date" [formControl]="periodo.controls.desde" /></app-form-field>
+      <app-form-field label="Hasta" inputId="fin-hasta"><input id="fin-hasta" class="input" type="date" [formControl]="periodo.controls.hasta" /></app-form-field>
+      <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="cargarResumen()">Actualizar</button></div>
+    </app-filter-bar>
+    <div *ngIf="resumenError" class="alert alert-error"><div><strong>No se pudieron cargar los indicadores</strong><p>{{ resumenError }}</p></div><button type="button" class="btn btn-ghost btn-sm" (click)="cargarResumen()">Reintentar</button></div>
+    <p *ngIf="cargandoResumen" class="text-muted">Cargando indicadores…</p>
+    <div class="stats-grid">
+      <app-stat-card label="Ventas netas" [value]="(kpis?.ventasNetasReales ?? 0) | pen" icon="cart"></app-stat-card>
+      <app-stat-card label="Utilidad neta" [value]="(kpis?.utilidadNeta ?? 0) | pen" icon="chart"></app-stat-card>
+      <app-stat-card label="CxP vencidas" [value]="(kpis?.cuentasPorPagarVencidas ?? 0) | pen" icon="alert"></app-stat-card>
+      <app-stat-card label="Patrimonio" [value]="(patrimonio?.patrimonioNeto ?? 0) | pen" icon="building"></app-stat-card>
+      <app-stat-card label="Inventario" [value]="(patrimonio?.inventarioValorizado ?? 0) | pen" icon="box"></app-stat-card>
+      <app-stat-card label="Disponible" [value]="(patrimonio?.disponible ?? 0) | pen" icon="cash"></app-stat-card>
+    </div>
+    <article class="card card-body">
+      <h2>Utilidad mensual</h2>
+      <app-bar-chart [points]="puntos" label="Utilidad neta por mes"></app-bar-chart>
+      <p class="text-sm">Utilidad operativa {{ (utilidad?.utilidadOperativa ?? 0) | pen }} · Margen {{ utilidad?.margenNetoPorcentaje ?? 0 }}%</p>
+    </article>
+  </ng-container>
+
+  <app-data-table *ngIf="tab === 'cuentas'" [columns]="columnasCuentas" [rows]="cuentasState.rows" [loading]="cuentasState.loading" [error]="cuentasState.error" [status]="cuentasState.status" [totalElements]="cuentasState.totalElements" [totalPages]="cuentasState.totalPages" emptyTitle="No hay cuentas" emptyMessage="Registra efectivo, bancos o billeteras." emptyAction="Nueva cuenta" (retry)="cargarCuentas()" (empty)="abrirCuenta()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="editarCuenta(row)">Editar</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirSaldo(row)">Saldo</button>
+      <button type="button" class="btn btn-danger btn-sm" (click)="pedirEliminar(row)">Eliminar</button>
+    </ng-template>
+  </app-data-table>
+
+  <ng-container *ngIf="tab === 'retiros'">
+    <app-filter-bar>
+      <app-form-field label="Sede" inputId="ret-sede"><app-select inputId="ret-sede" [options]="sedes" placeholder="Todas" [formControl]="filtrosRetiro.controls.sedeId"></app-select></app-form-field>
+      <app-form-field label="Estado" inputId="ret-est"><select id="ret-est" class="select" [formControl]="filtrosRetiro.controls.estado"><option value="">Todos</option><option value="REGISTRADO">Registrado</option><option value="ANULADO">Anulado</option></select></app-form-field>
+      <app-form-field label="Origen" inputId="ret-ori"><select id="ret-ori" class="select" [formControl]="filtrosRetiro.controls.origen"><option value="">Todos</option><option value="CAJA_FISICA">Caja física</option><option value="CUENTA_BANCARIA">Cuenta bancaria</option></select></app-form-field>
+      <app-form-field label="Desde" inputId="ret-desde"><input id="ret-desde" class="input" type="date" [formControl]="filtrosRetiro.controls.desde" /></app-form-field>
+      <app-form-field label="Hasta" inputId="ret-hasta"><input id="ret-hasta" class="input" type="date" [formControl]="filtrosRetiro.controls.hasta" /></app-form-field>
+      <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrarRetiros()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiarRetiros()">Limpiar</button></div>
+    </app-filter-bar>
+    <app-data-table [columns]="columnasRetiros" [rows]="retiros.rows" [loading]="retiros.loading" [error]="retiros.error" [status]="retiros.status" [page]="retiros.page" [size]="retiros.size" [totalElements]="retiros.totalElements" [totalPages]="retiros.totalPages" emptyTitle="No hay retiros" emptyMessage="Los retiros de socios aparecen aquí." emptyAction="Registrar retiro" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargarRetiros()" (empty)="abrirRetiro()">
+      <ng-template #rowActions let-row><button type="button" class="btn btn-danger btn-sm" *ngIf="puedeAnular(row)" (click)="abrirAnular(row)">Anular</button></ng-template>
+    </app-data-table>
+  </ng-container>
+</section>
+
+<app-modal [open]="modalCuenta" [title]="editando ? 'Editar cuenta' : 'Nueva cuenta'" (closed)="modalCuenta = false">
+  <form class="form-grid" [formGroup]="cuenta">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field class="span-2" label="Nombre" inputId="cta-nom" [required]="true" [error]="errorCuenta('nombre')"><input id="cta-nom" class="input" formControlName="nombre" /></app-form-field>
+    <app-form-field label="Tipo" inputId="cta-tipo" [required]="true"><select id="cta-tipo" class="select" formControlName="tipo"><option value="EFECTIVO">Efectivo</option><option value="BANCO">Banco</option><option value="BILLETERA_DIGITAL">Billetera</option></select></app-form-field>
+    <app-form-field label="Sede" inputId="cta-sede"><app-select inputId="cta-sede" [options]="sedes" placeholder="Opcional" formControlName="sedeId"></app-select></app-form-field>
+    <app-form-field label="Entidad" inputId="cta-ent"><input id="cta-ent" class="input" formControlName="entidad" /></app-form-field>
+    <app-form-field label="Últimos 4" inputId="cta-dig" [error]="errorCuenta('ultimosDigitos')"><input id="cta-dig" class="input" formControlName="ultimosDigitos" inputmode="numeric" /></app-form-field>
+  </form>
+  <div modalFooter><button type="button" class="btn btn-ghost" (click)="modalCuenta = false">Cancelar</button><button type="button" class="btn btn-primary" (click)="guardarCuenta()" [disabled]="cuenta.invalid || guardando">Guardar</button></div>
+</app-modal>
+
+<app-modal [open]="modalSaldo" title="Registrar saldo" (closed)="modalSaldo = false">
+  <form class="form-grid" [formGroup]="saldo">
+    <app-form-field label="Saldo" inputId="sal-mon" [required]="true"><input id="sal-mon" class="input" type="number" min="0" step="0.01" formControlName="saldo" /></app-form-field>
+    <app-form-field label="Fecha de corte" inputId="sal-fecha"><input id="sal-fecha" class="input" type="date" formControlName="fechaCorte" /></app-form-field>
+    <app-form-field class="span-2" label="Observación" inputId="sal-obs"><input id="sal-obs" class="input" formControlName="observacion" /></app-form-field>
+  </form>
+  <div modalFooter><button type="button" class="btn btn-ghost" (click)="modalSaldo = false">Cancelar</button><button type="button" class="btn btn-primary" (click)="guardarSaldo()" [disabled]="saldo.invalid || guardando">Registrar</button></div>
+</app-modal>
+
+<app-modal [open]="modalRetiro" title="Retiro de socio" (closed)="modalRetiro = false">
+  <form class="form-grid" [formGroup]="retiro">
+    <app-form-field label="Monto" inputId="ret-mon" [required]="true"><input id="ret-mon" class="input" type="number" min="0.01" step="0.01" formControlName="montoRetirado" /></app-form-field>
+    <app-form-field label="Origen" inputId="ret-origen" [required]="true"><select id="ret-origen" class="select" formControlName="origenFondos"><option value="CAJA_FISICA">Caja física</option><option value="CUENTA_BANCARIA">Cuenta bancaria</option></select></app-form-field>
+    <app-form-field label="Sede" inputId="ret-f-sede"><app-select inputId="ret-f-sede" [options]="sedes" placeholder="Opcional" formControlName="sedeId"></app-select></app-form-field>
+    <app-form-field label="Descripción" inputId="ret-desc"><input id="ret-desc" class="input" formControlName="descripcion" /></app-form-field>
+  </form>
+  <div modalFooter><button type="button" class="btn btn-ghost" (click)="modalRetiro = false">Cancelar</button><button type="button" class="btn btn-primary" (click)="guardarRetiro()" [disabled]="retiro.invalid || guardando">Registrar</button></div>
+</app-modal>
+
+<app-modal [open]="modalAnular" title="Anular retiro" size="sm" (closed)="modalAnular = false">
+  <app-form-field label="Motivo" inputId="ret-motivo" [required]="true"><textarea id="ret-motivo" class="textarea" [formControl]="anularForm.controls.motivo"></textarea></app-form-field>
+  <div modalFooter><button type="button" class="btn btn-ghost" (click)="modalAnular = false">Cancelar</button><button type="button" class="btn btn-danger" (click)="anularRetiro()" [disabled]="anularForm.invalid || guardando">Anular</button></div>
+</app-modal>
+<app-confirm-dialog [open]="confirmar" title="Eliminar cuenta" message="La cuenta dejará de estar disponible para nuevos movimientos." confirmLabel="Eliminar" [loading]="guardando" (confirm)="eliminarCuenta()" (cancel)="confirmar = false"></app-confirm-dialog>

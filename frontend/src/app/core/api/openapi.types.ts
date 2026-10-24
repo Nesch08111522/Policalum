@@ -2,7 +2,7 @@
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 export interface ApiPage<T> { content: T[]; totalElements: number; totalPages: number; number: number; size: number; first?: boolean; last?: boolean; }
-export interface ApiProblem { status?: number; code?: string; message?: string; fieldErrors?: Record<string, string>; traceId?: string; }
+export interface ApiProblem { status?: number; code?: string; message?: string; fieldErrors?: Record<string, string>; traceId?: string; errores?: Array<{ fila?: number; motivo?: string }>; }
 export interface ActividadTablaDTO {
   cantidad?: number;
   tabla?: string;
@@ -262,6 +262,10 @@ export interface CatalogoFraccionResponseDTO {
   id?: string;
   nombreFraccion?: string;
   precioVenta?: number;
+  /** Añadido en el DTO de respuesta. Requiere regenerar el cliente OpenAPI. */
+  productoId?: string;
+  /** Añadido en el DTO de respuesta. Requiere regenerar el cliente OpenAPI. */
+  productoNombre?: string;
 }
 
 export interface Categoria {
@@ -941,6 +945,7 @@ export interface LegajoListadoDTO {
 
 export interface LegajoRequestDTO {
   activo?: boolean;
+  diaCobro?: number;
   empleadoId: string;
   fechaIngreso: string;
   porcentajeComision?: number;
@@ -953,6 +958,7 @@ export interface LegajoRequestDTO {
 export interface LegajoResponseDTO {
   activo?: boolean;
   createdAt?: string;
+  diaCobro?: number;
   documentos?: Array<LegajoDocumentoResponseDTO>;
   empleadoEmail?: string;
   empleadoId?: string;
@@ -1248,6 +1254,58 @@ export interface PageAjusteStockResponseDTO {
   sort?: SortObject;
   totalElements?: number;
   totalPages?: number;
+}
+
+export interface PerfilActualizarRequestDTO {
+  apellido: string;
+  biografia?: string;
+  celular: string;
+  diaCobro?: number;
+  documento?: string;
+  email: string;
+  foto?: string;
+  nombre: string;
+  sedeId?: string;
+  sueldoBase?: number;
+}
+
+export interface PerfilContrasenaRequestDTO {
+  actual: string;
+  confirmacion: string;
+  nueva: string;
+}
+
+export interface PerfilResponseDTO {
+  activo?: boolean;
+  apellido?: string;
+  biografia?: string;
+  celular?: string;
+  diaCobro?: number;
+  documento?: string;
+  email?: string;
+  fechaIngreso?: string;
+  foto?: string;
+  id?: string;
+  legajoId?: string;
+  nombre?: string;
+  nombreUsuario?: string;
+  puedeEditarLaboral?: boolean;
+  rol?: string;
+  sedeId?: string;
+  sedeNombre?: string;
+  sistemaPension?: string;
+  sueldoBase?: number;
+  tipoContrato?: string;
+  token?: string;
+  totpEnabled?: boolean;
+  totpSecreto?: string;
+  totpUrl?: string;
+  ultimoIp?: string;
+  ultimoLogin?: string;
+}
+
+export interface PerfilTotpRequestDTO {
+  activo: boolean;
 }
 
 export interface PageAlmacenResponseDTO {
@@ -1922,6 +1980,7 @@ export interface ProductoRequestDTO {
   tipo: "FISICO" | "SERVICIO";
   tipoAfectacion?: string;
   unidad?: string;
+  imagen?: string;
 }
 
 export interface ProductoResponseDTO {
@@ -1941,6 +2000,7 @@ export interface ProductoResponseDTO {
   tipo?: "FISICO" | "SERVICIO";
   tipoAfectacion?: string;
   unidad?: string;
+  imagen?: string;
 }
 
 export interface ProductosEstrellaDTO {
@@ -2418,8 +2478,22 @@ export interface SeriesRequestDTO {
   series: Array<SerieComprobanteRequestDTO>;
 }
 
+export interface ServicioColaboradorRequestDTO {
+  participacion?: 'INSTALO' | 'AYUDO' | string;
+  userId: string;
+}
+
+export interface ServicioColaboradorResponseDTO {
+  apellido?: string;
+  email?: string;
+  nombre?: string;
+  participacion?: string;
+  userId?: string;
+}
+
 export interface ServicioRequestDTO {
   activo: boolean;
+  colaboradores?: Array<ServicioColaboradorRequestDTO>;
   descripcion?: string;
   nombre: string;
   precio: number;
@@ -2427,6 +2501,7 @@ export interface ServicioRequestDTO {
 
 export interface ServicioResponseDTO {
   activo?: boolean;
+  colaboradores?: Array<ServicioColaboradorResponseDTO>;
   createdAt?: string;
   descripcion?: string;
   id?: string;
@@ -2618,6 +2693,8 @@ export interface UserRequestDTO {
 }
 
 export interface UserResponseDTO {
+  /** Añadido en el DTO de respuesta. Requiere regenerar el cliente OpenAPI. */
+  id?: string;
   activo?: boolean;
   apellido?: string;
   celular?: string;

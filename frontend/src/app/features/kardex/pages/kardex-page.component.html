@@ -1,1 +1,32 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Kardex" subtitle="Historial de entradas, salidas, saldos y valorización." actionLabel="Registrar movimiento" (action)="abrir()"></app-page-header>
+  <app-stat-card *ngIf="tab === 'valorizacion' && valorizacion" label="Valor total" [value]="(valorizacion.valorTotal | pen)" icon="chart"></app-stat-card>
+  <app-stat-card *ngIf="tab === 'mermas' && mermas" label="Valor de mermas" [value]="(mermas.valorTotal | pen)" icon="alert"></app-stat-card>
+  <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
+  <app-filter-bar>
+    <app-form-field label="Producto" inputId="kx-prod"><app-select inputId="kx-prod" [options]="productos" placeholder="Todos" [formControl]="filtros.controls.productoId"></app-select></app-form-field>
+    <app-form-field label="Almacén" inputId="kx-alm"><app-select inputId="kx-alm" [options]="almacenes" placeholder="Todos" [formControl]="filtros.controls.almacenId"></app-select></app-form-field>
+    <app-form-field label="Sede" inputId="kx-sede"><app-select inputId="kx-sede" [options]="sedes" placeholder="Todas" [formControl]="filtros.controls.sedeId"></app-select></app-form-field>
+    <app-form-field label="Referencia" inputId="kx-ref"><select id="kx-ref" class="select" [formControl]="filtros.controls.tipoReferencia"><option value="">Todas</option><option>VENTA</option><option>COMPRA</option><option>AJUSTE</option><option>MERMA</option><option>TRANSFERENCIA</option><option>DEVOLUCION</option></select></app-form-field>
+    <app-form-field label="Desde" inputId="kx-desde"><input id="kx-desde" class="input" type="date" [formControl]="filtros.controls.desde" /></app-form-field>
+    <app-form-field label="Hasta" inputId="kx-hasta"><input id="kx-hasta" class="input" type="date" [formControl]="filtros.controls.hasta" /></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <p *ngIf="tab === 'valorizacion' || tab === 'mermas'" class="text-sm text-muted">Valorización y mermas muestran costos y el backend las reserva al rol administrador.</p>
+  <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [status]="state.status" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" emptyTitle="Sin movimientos" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()"></app-data-table>
+</section>
+<app-modal [closable]="!guardando" [open]="modal" title="Movimiento de kardex" (closed)="modal = false">
+  <form class="form-grid" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field label="Producto" inputId="kx-f-prod" [required]="true"><app-select inputId="kx-f-prod" [options]="productos" formControlName="productoId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Almacén" inputId="kx-f-alm" [required]="true"><app-select inputId="kx-f-alm" [options]="almacenes" formControlName="almacenId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Movimiento" inputId="kx-f-mov" [required]="true"><select id="kx-f-mov" class="select" formControlName="tipoMovimiento"><option value="ENTRADA">Entrada</option><option value="SALIDA">Salida</option></select></app-form-field>
+    <app-form-field label="Referencia" inputId="kx-f-ref" [required]="true"><select id="kx-f-ref" class="select" formControlName="tipoReferencia"><option>AJUSTE</option><option>MERMA</option><option>COMPRA</option><option>VENTA</option><option>TRANSFERENCIA</option><option>DEVOLUCION</option></select></app-form-field>
+    <app-form-field label="Cantidad" inputId="kx-f-cant" [required]="true"><input id="kx-f-cant" class="input" type="number" min="0.0001" step="0.0001" formControlName="cantidadMovida" /></app-form-field>
+    <app-form-field class="span-2" label="Observación" inputId="kx-f-obs"><textarea id="kx-f-obs" class="textarea" formControlName="observacion"></textarea></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">Registrar</button>
+  </div>
+</app-modal>

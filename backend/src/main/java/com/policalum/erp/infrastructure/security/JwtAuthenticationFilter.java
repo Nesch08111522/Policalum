@@ -41,10 +41,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 User user = userRepository.findByEmail(email).orElse(null);
 
-                if (user == null || !user.getActivo()) {
-                    // Si el usuario está inactivo, rechazar la petición
+                int sesionToken = jwtUtil.getSesionVersion(token);
+                int sesionUsuario = user == null || user.getSesionVersion() == null ? 0 : user.getSesionVersion();
+                if (user == null || !user.getActivo() || sesionToken != sesionUsuario) {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("Usuario inactivo o no encontrado");
+                    response.getWriter().write("Usuario inactivo o sesión cerrada");
                     return;
                 }
 

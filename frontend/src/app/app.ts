@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet],   // solo necesita el router outlet

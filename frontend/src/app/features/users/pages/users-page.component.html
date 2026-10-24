@@ -1,1 +1,32 @@
-<app-workspace-page [moduleId]="moduleId"></app-workspace-page>
+<section class="module-page">
+  <app-page-header title="Usuarios" subtitle="Cuentas de acceso. El listado no está paginado en el servidor." actionLabel="Nuevo usuario" (action)="abrirCrear()"></app-page-header>
+  <app-filter-bar>
+    <app-form-field label="Buscar" inputId="user-buscar"><input id="user-buscar" class="input" type="search" [formControl]="filtros.controls.texto" placeholder="Nombre, usuario o correo" /></app-form-field>
+    <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
+  </app-filter-bar>
+  <app-data-table [columns]="columns" [rows]="state.rows" [loading]="state.loading" [error]="state.error" [page]="state.page" [size]="state.size" [totalElements]="state.totalElements" [totalPages]="state.totalPages" emptyTitle="No hay usuarios" emptyAction="Nuevo usuario" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" (retry)="cargar()" (empty)="abrirCrear()">
+    <ng-template #rowActions let-row>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(row)">Editar</button>
+      <button type="button" class="btn btn-danger btn-sm" (click)="pedirEliminar(row)">Eliminar</button>
+    </ng-template>
+  </app-data-table>
+</section>
+<app-modal [closable]="!guardando" [open]="modal" [title]="editando ? 'Editar usuario' : 'Nuevo usuario'" size="lg" (closed)="modal = false">
+  <form class="form-grid" [formGroup]="form">
+    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+    <app-form-field label="Usuario" inputId="user-login" [required]="true" [error]="errorDe('nombreUsuario')"><input id="user-login" class="input" formControlName="nombreUsuario" /></app-form-field>
+    <app-form-field label="Correo" inputId="user-email" [required]="true" [error]="errorDe('email')"><input id="user-email" class="input" type="email" formControlName="email" /></app-form-field>
+    <app-form-field label="Nombre" inputId="user-nombre" [required]="true" [error]="errorDe('nombre')"><input id="user-nombre" class="input" formControlName="nombre" /></app-form-field>
+    <app-form-field label="Apellido" inputId="user-apellido" [required]="true" [error]="errorDe('apellido')"><input id="user-apellido" class="input" formControlName="apellido" /></app-form-field>
+    <app-form-field label="Celular" inputId="user-cel" [required]="true" [error]="errorDe('celular')"><input id="user-cel" class="input" formControlName="celular" /></app-form-field>
+    <app-form-field label="Contraseña" inputId="user-pass" [required]="true" [error]="errorDe('passwordHash')" hint="También es obligatoria al editar: el backend la exige en cada guardado."><input id="user-pass" class="input" type="password" formControlName="passwordHash" autocomplete="new-password" /></app-form-field>
+    <app-form-field label="Rol" inputId="user-rol" [required]="true" [error]="errorDe('rolId')"><app-select inputId="user-rol" [options]="roles" placeholder="Selecciona un rol" formControlName="rolId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Sede" inputId="user-sede" [required]="true" [error]="errorDe('sedeId')"><app-select inputId="user-sede" [options]="sedes" placeholder="Selecciona una sede" formControlName="sedeId" [clearable]="false"></app-select></app-form-field>
+    <app-form-field label="Activo" inputId="user-act"><input id="user-act" class="switch" type="checkbox" formControlName="activo" /></app-form-field>
+  </form>
+  <div modalFooter>
+    <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+  </div>
+</app-modal>
+<app-confirm-dialog [open]="confirmar" title="Eliminar usuario" [message]="'Se eliminará a ' + (seleccionado?.nombreUsuario || 'este usuario') + '.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import com.policalum.erp.application.dto.request.CatalogoFraccionRequestDTO;
 import com.policalum.erp.application.dto.request.ProductoRequestDTO;
 import com.policalum.erp.application.mapper.ProductoMapper;
+import com.policalum.erp.application.service.FileStorageService;
 import com.policalum.erp.domain.enums.TipoProducto;
 import com.policalum.erp.domain.model.CatalogoFraccion;
 import com.policalum.erp.domain.model.Producto;
@@ -27,6 +28,7 @@ class ProductoServiceImplTest {
 
     @Mock ProductoRepository productoRepository;
     @Mock ProductoMapper productoMapper;
+    @Mock FileStorageService fileStorageService;
     @InjectMocks ProductoServiceImpl service;
 
     UUID id = UUID.randomUUID();
@@ -39,7 +41,7 @@ class ProductoServiceImplTest {
 
     private ProductoRequestDTO request(String sku, boolean fraccionable, List<CatalogoFraccionRequestDTO> fracciones) {
         return new ProductoRequestDTO(null, null, sku, "Policarbonato 6mm", null, TipoProducto.FISICO, new BigDecimal("80.00"),
-                new BigDecimal("150.00"), "unid", fraccionable, true, true, "10", fracciones);
+                new BigDecimal("150.00"), "unid", fraccionable, true, true, "10", fracciones, null);
     }
 
     /** El mapper es un mock: devolvemos una entidad "como la mapearía" MapStruct, sin normalizar. */
