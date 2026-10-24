@@ -21,8 +21,9 @@ public interface ProveedorRepository extends JpaRepository<Proveedor, UUID> {
     boolean existsByTipoDocumentoAndNumeroDocumento(String tipoDocumento, String numeroDocumento);
 
     @Query("SELECT p FROM Proveedor p WHERE " +
-            "LOWER(p.nombreRazon) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-            "LOWER(p.numeroDocumento) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
+            "(CAST(:searchTerm AS string) IS NULL OR " +
+            "LOWER(COALESCE(p.nombreRazon, '')) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')) OR " +
+            "LOWER(COALESCE(p.numeroDocumento, '')) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')))")
     Page<Proveedor> searchByNombreOrDocumento(@Param("searchTerm") String searchTerm, Pageable pageable);
 
     Page<Proveedor> findByActivo(Boolean activo, Pageable pageable);

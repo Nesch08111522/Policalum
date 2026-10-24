@@ -64,6 +64,11 @@ export class HeaderComponent implements OnInit {
     else this.layout.toggleCollapsed();
   }
 
+  ir(ruta: string): void {
+    this.menuOpen = false;
+    void this.router.navigateByUrl(ruta);
+  }
+
   logout(): void {
     this.auth.logout();
     this.menuOpen = false;

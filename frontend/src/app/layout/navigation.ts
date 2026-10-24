@@ -71,6 +71,7 @@ export const NAV_SECTIONS: NavSection[] = [
     id: 'config',
     label: 'Configuración',
     items: [
+      { id: 'perfil', label: 'Mi perfil', path: '/cuenta/perfil', icon: 'users' },
       { id: 'sedes', label: 'Sedes', path: '/modules/sedes', icon: 'map', roles: admin },
       { id: 'users', label: 'Usuarios', path: '/modules/users', icon: 'shield', roles: admin },
       { id: 'roles', label: 'Roles', path: '/modules/roles', icon: 'shield', roles: admin },

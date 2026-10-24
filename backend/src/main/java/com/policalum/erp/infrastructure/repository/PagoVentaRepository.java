@@ -27,8 +27,8 @@ public interface PagoVentaRepository extends JpaRepository<PagoVenta, UUID> {
      * los pagos se registran en el mismo momento que la venta.
      */
     @Query("SELECT p.venta.sede.id AS sedeId, p.metodoPago AS metodo, COALESCE(SUM(p.monto), 0) AS total " +
-            "FROM PagoVenta p WHERE p.venta.estado = :estado AND p.venta.createdAt >= :desde AND p.venta.createdAt < :hasta AND " +
-            "(:sedeId IS NULL OR p.venta.sede.id = :sedeId) GROUP BY p.venta.sede.id, p.metodoPago")
+            "FROM PagoVenta p WHERE p.venta.estado = :estado AND p.venta.createdAt >= CAST(:desde AS timestamp) AND p.venta.createdAt < CAST(:hasta AS timestamp) AND " +
+            "(CAST(:sedeId AS string) IS NULL OR p.venta.sede.id = :sedeId) GROUP BY p.venta.sede.id, p.metodoPago")
     List<MontoPorSedeMetodoProjection> cobrosPorSedeYMetodo(@Param("estado") com.policalum.erp.domain.enums.EstadoVenta estado,
                                                            @Param("desde") java.time.LocalDateTime desde,
                                                            @Param("hasta") java.time.LocalDateTime hasta,
@@ -39,9 +39,9 @@ public interface PagoVentaRepository extends JpaRepository<PagoVenta, UUID> {
     /** Cobros por método de las ventas que cumplen los filtros del reporte de ventas. */
     @Query("SELECT p.metodoPago AS metodo, COUNT(p) AS cantidad, COALESCE(SUM(p.monto), 0) AS total " +
             "FROM PagoVenta p JOIN p.venta v WHERE " +
-            "v.estado = :estado AND v.createdAt >= :desde AND v.createdAt < :hasta AND (:sedeId IS NULL OR " +
-            "v.sede.id = :sedeId) AND (:vendedorId IS NULL OR v.user.id = :vendedorId) AND (:clienteId IS NULL OR " +
-            "v.cliente.id = :clienteId) AND (:canal IS NULL OR v.canalVenta = :canal) AND (:tipo IS NULL OR " +
+            "v.estado = :estado AND v.createdAt >= CAST(:desde AS timestamp) AND v.createdAt < CAST(:hasta AS timestamp) AND (CAST(:sedeId AS string) IS NULL OR " +
+            "v.sede.id = :sedeId) AND (CAST(:vendedorId AS string) IS NULL OR v.user.id = :vendedorId) AND (CAST(:clienteId AS string) IS NULL OR " +
+            "v.cliente.id = :clienteId) AND (CAST(:canal AS string) IS NULL OR v.canalVenta = :canal) AND (CAST(:tipo AS string) IS NULL OR " +
             "v.tipoComprobante = :tipo)" +
             " GROUP BY p.metodoPago")
     List<MontoPorMetodoProjection> pagosPorMetodo(@Param("estado") com.policalum.erp.domain.enums.EstadoVenta estado,

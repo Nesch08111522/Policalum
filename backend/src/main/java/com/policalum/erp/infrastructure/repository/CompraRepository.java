@@ -23,11 +23,11 @@ public interface CompraRepository extends JpaRepository<Compra, UUID> {
 
     @EntityGraph(attributePaths = {"proveedor", "sede", "user"})
     @Query("SELECT c FROM Compra c WHERE " +
-            "(:proveedorId IS NULL OR c.proveedor.id = :proveedorId) AND " +
-            "(:sedeId IS NULL OR c.sede.id = :sedeId) AND " +
-            "(:estado IS NULL OR c.estadoCompra = :estado) AND " +
-            "(:desde IS NULL OR c.fechaEmision >= :desde) AND " +
-            "(:hasta IS NULL OR c.fechaEmision <= :hasta)")
+            "(CAST(:proveedorId AS string) IS NULL OR c.proveedor.id = :proveedorId) AND " +
+            "(CAST(:sedeId AS string) IS NULL OR c.sede.id = :sedeId) AND " +
+            "(CAST(:estado AS string) IS NULL OR c.estadoCompra = :estado) AND " +
+            "(CAST(:desde AS string) IS NULL OR c.fechaEmision >= CAST(CAST(:desde AS string) AS date)) AND " +
+            "(CAST(:hasta AS string) IS NULL OR c.fechaEmision <= CAST(CAST(:hasta AS string) AS date))")
     Page<Compra> search(
             @Param("proveedorId") UUID proveedorId,
             @Param("sedeId") UUID sedeId,
@@ -63,8 +63,8 @@ public interface CompraRepository extends JpaRepository<Compra, UUID> {
     @Query("SELECT COALESCE(SUM(c.subtotalNeto), 0) AS neto, COALESCE(SUM(c.totalIgv), 0) AS igv, " +
             "COALESCE(SUM(c.total), 0) AS total, COUNT(c) AS cantidad FROM Compra c " +
             "WHERE c.estadoCompra = :estado AND c.moneda = :moneda AND " +
-            "c.fechaEmision >= :desde AND c.fechaEmision <= :hasta AND " +
-            "(:sedeId IS NULL OR c.sede.id = :sedeId)")
+            "c.fechaEmision >= CAST(:desde AS date) AND c.fechaEmision <= CAST(:hasta AS date) AND " +
+            "(CAST(:sedeId AS string) IS NULL OR c.sede.id = :sedeId)")
     TotalesFinancierosProjection totalesPorPeriodo(@Param("estado") EstadoCompra estado,
                                                    @Param("moneda") Moneda moneda,
                                                    @Param("desde") LocalDate desde,
@@ -73,8 +73,8 @@ public interface CompraRepository extends JpaRepository<Compra, UUID> {
 
     /** Compras en otra moneda distinta a la indicada (se excluyen del cálculo y se informan). */
     @Query("SELECT COUNT(c) FROM Compra c WHERE c.estadoCompra = :estado AND c.moneda <> :moneda AND " +
-            "c.fechaEmision >= :desde AND c.fechaEmision <= :hasta AND " +
-            "(:sedeId IS NULL OR c.sede.id = :sedeId)")
+            "c.fechaEmision >= CAST(:desde AS date) AND c.fechaEmision <= CAST(:hasta AS date) AND " +
+            "(CAST(:sedeId AS string) IS NULL OR c.sede.id = :sedeId)")
     long contarEnOtraMoneda(@Param("estado") EstadoCompra estado,
                             @Param("moneda") Moneda moneda,
                             @Param("desde") LocalDate desde,
@@ -95,7 +95,7 @@ public interface CompraRepository extends JpaRepository<Compra, UUID> {
             "THEN c.total ELSE 0 END), 0) AS monto, " +
             "MAX(c.fechaEmision) AS ultimaCompra " +
             "FROM Compra c JOIN c.proveedor p " +
-            "WHERE c.fechaEmision >= :desde AND c.fechaEmision < :hasta AND (:sedeId IS NULL OR c.sede.id = :sedeId) " +
+            "WHERE c.fechaEmision >= CAST(:desde AS date) AND c.fechaEmision < CAST(:hasta AS date) AND (CAST(:sedeId AS string) IS NULL OR c.sede.id = :sedeId) " +
             "GROUP BY p.id, p.nombreRazon, p.numeroDocumento")
     java.util.List<ComprasPorProveedorProjection> comprasPorProveedor(@Param("moneda") Moneda moneda,
                                                                       @Param("desde") LocalDate desde,
@@ -108,7 +108,7 @@ public interface CompraRepository extends JpaRepository<Compra, UUID> {
             "k.tipoReferencia = com.policalum.erp.domain.enums.TipoReferencia.COMPRA AND " +
             "k.tipoMovimiento = com.policalum.erp.domain.enums.TipoMovimiento.ENTRADA " +
             "WHERE c.estadoCompra = com.policalum.erp.domain.enums.EstadoCompra.RECIBIDA AND " +
-            "c.fechaEmision >= :desde AND c.fechaEmision < :hasta AND (:sedeId IS NULL OR c.sede.id = :sedeId) " +
+            "c.fechaEmision >= CAST(:desde AS date) AND c.fechaEmision < CAST(:hasta AS date) AND (CAST(:sedeId AS string) IS NULL OR c.sede.id = :sedeId) " +
             "GROUP BY c.id, c.proveedor.id, c.fechaEmision")
     java.util.List<RecepcionCompraProjection> recepcionesCompra(@Param("desde") LocalDate desde,
                                                                 @Param("hasta") LocalDate hasta,

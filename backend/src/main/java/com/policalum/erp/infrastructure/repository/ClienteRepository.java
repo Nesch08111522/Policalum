@@ -48,8 +48,9 @@ public interface ClienteRepository extends JpaRepository<Cliente, UUID> {
      * Ideal para autocompletado y búsquedas rápidas en CRM
      */
     @Query("SELECT c FROM Cliente c WHERE " +
-            "LOWER(c.nombre) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-            "c.numeroDocumento LIKE CONCAT('%', :searchTerm, '%')")
+            "(CAST(:searchTerm AS string) IS NULL OR " +
+            "LOWER(COALESCE(c.nombre, '')) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')) OR " +
+            "COALESCE(c.numeroDocumento, '') LIKE CONCAT('%', CAST(:searchTerm AS string), '%'))")
     Page<Cliente> searchByNombreOrDocumento(@Param("searchTerm") String searchTerm, Pageable pageable);
 
     /**
@@ -106,7 +107,8 @@ public interface ClienteRepository extends JpaRepository<Cliente, UUID> {
      * Busca clientes por coincidencia parcial en dirección
      * Útil para rutas de entrega o zonificación
      */
-    @Query("SELECT c FROM Cliente c WHERE LOWER(c.direccion) LIKE LOWER(CONCAT('%', :direccion, '%'))")
+    @Query("SELECT c FROM Cliente c WHERE CAST(:direccion AS string) IS NULL OR " +
+            "LOWER(COALESCE(c.direccion, '')) LIKE LOWER(CONCAT('%', CAST(:direccion AS string), '%'))")
     List<Cliente> findByDireccionContainingIgnoreCase(@Param("direccion") String direccion);
 
     // ============ CONSULTAS PARA MÓDULO DE PRODUCTOS (Policarbonato) ============
@@ -116,8 +118,8 @@ public interface ClienteRepository extends JpaRepository<Cliente, UUID> {
      * Para búsquedas más precisas
      */
     @Query("SELECT c FROM Cliente c WHERE " +
-            "(:tipoDocumento IS NULL OR c.tipoDocumento = :tipoDocumento) AND " +
-            "(:nombre IS NULL OR LOWER(c.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))")
+            "(CAST(:tipoDocumento AS string) IS NULL OR c.tipoDocumento = :tipoDocumento) AND " +
+            "(CAST(:nombre AS string) IS NULL OR LOWER(COALESCE(c.nombre, '')) LIKE LOWER(CONCAT('%', CAST(:nombre AS string), '%')))")
     Page<Cliente> findClientesByTipoAndNombre(
             @Param("tipoDocumento") String tipoDocumento,
             @Param("nombre") String nombre,
@@ -146,7 +148,7 @@ public interface ClienteRepository extends JpaRepository<Cliente, UUID> {
         SELECT DISTINCT c2.id
         FROM Cliente c2
         JOIN c2.ventas v
-        WHERE v.createdAt >= :fechaDesde
+        WHERE v.createdAt >= CAST(:fechaDesde AS timestamp)
     )
 """)
     List<Cliente> findClientesSinComprasDesde(
@@ -162,7 +164,7 @@ public interface ClienteRepository extends JpaRepository<Cliente, UUID> {
     SELECT DISTINCT c
     FROM Cliente c
     JOIN c.ventas v
-    WHERE v.createdAt >= :fechaDesde
+    WHERE v.createdAt >= CAST(:fechaDesde AS timestamp)
 """)
     List<Cliente> findClientesConComprasDesde(
             @Param("fechaDesde") LocalDateTime fechaDesde

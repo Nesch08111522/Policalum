@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { Subject, forkJoin, of, takeUntil } from 'rxjs';
@@ -39,6 +39,7 @@ function haceDias(dias: number): string {
 })
 export class FinanzasPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly cd = inject(ChangeDetectorRef);
   readonly tabs: TabItem[] = [
     { id: 'resumen', label: 'Resumen' },
     { id: 'cuentas', label: 'Cuentas' },
@@ -133,6 +134,7 @@ export class FinanzasPageComponent implements OnInit, OnDestroy {
       this.utilidad = data.utilidad;
       this.puntos = (data.evolucion?.serie ?? []).map((mes) => ({ label: mes.periodo ?? '', value: Number(mes.utilidadNeta ?? 0) }));
       this.cargandoResumen = false;
+      this.cd.markForCheck();
     });
   }
 

@@ -1,15 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VentasApiService, Producto, Servicio, Fraccion, Cliente, Sede, Almacen, Turno } from './ventas-api.service';
 interface Linea { tipo: 'PRODUCTO'|'SERVICIO'; id: string; nombre: string; precio: number; cantidad: number; fraccion?: Fraccion; }
 @Component({ selector: 'app-pos', standalone: true, imports: [CommonModule, FormsModule], templateUrl: './pos.component.html', styleUrl: './ventas.css' })
 export class PosComponent implements OnInit {
   productos: Producto[]=[]; servicios: Servicio[]=[]; clientes: Cliente[]=[]; sedes: Sede[]=[]; almacenes: Almacen[]=[]; carrito: Linea[]=[]; sedeId=''; almacenId=''; clienteId=''; turno?: Turno; montoInicial=0; busqueda=''; mensaje=''; error='';
+  private readonly cd = inject(ChangeDetectorRef);
   constructor(private api: VentasApiService) {}
-  ngOnInit(): void { this.api.sedes().subscribe({next:p=>{this.sedes=p.content.filter(x=>x.activa); if(this.sedes[0])this.seleccionarSede(this.sedes[0].id)},error:()=>this.error='No se pudieron cargar las sedes.'}); this.cargarCatalogos(); this.api.clientes().subscribe(p=>this.clientes=p.content); }
-  cargarCatalogos():void { this.api.productos(this.busqueda).subscribe(p=>this.productos=p.content); this.api.servicios(this.busqueda).subscribe(p=>this.servicios=p.content); }
-  seleccionarSede(id:string):void { this.sedeId=id; this.almacenId=''; this.api.almacenes(id).subscribe(a=>this.almacenes=a.filter(x=>x.activo)); }
+  ngOnInit(): void { this.api.sedes().subscribe({next:p=>{this.sedes=p.content.filter(x=>x.activa); if(this.sedes[0])this.seleccionarSede(this.sedes[0].id); this.cd.markForCheck();},error:()=>{this.error='No se pudieron cargar las sedes.'; this.cd.markForCheck();}}); this.cargarCatalogos(); this.api.clientes().subscribe(p=>{this.clientes=p.content; this.cd.markForCheck();}); }
+  cargarCatalogos():void { this.api.productos(this.busqueda).subscribe(p=>{this.productos=p.content; this.cd.markForCheck();}); this.api.servicios(this.busqueda).subscribe(p=>{this.servicios=p.content; this.cd.markForCheck();}); }
+  seleccionarSede(id:string):void { this.sedeId=id; this.almacenId=''; this.api.almacenes(id).subscribe(a=>{this.almacenes=a.filter(x=>x.activo); this.cd.markForCheck();}); }
   agregarProducto(p:Producto):void { if(p.esFraccionable) this.api.fracciones(p.id).subscribe(f=>{if(!f.length){this.error='El producto fraccionable no tiene fracciones activas.';return}this.agregar({tipo:'PRODUCTO',id:p.id,nombre:p.nombre,precio:f[0].precioVenta,cantidad:1,fraccion:f[0]})}); else this.agregar({tipo:'PRODUCTO',id:p.id,nombre:p.nombre,precio:p.precioVentaBase,cantidad:1}); }
   agregarServicio(s:Servicio):void { this.agregar({tipo:'SERVICIO',id:s.id,nombre:s.nombre,precio:s.precio,cantidad:1}); }
   agregar(l:Linea):void { const x=this.carrito.find(v=>v.tipo===l.tipo&&v.id===l.id&&v.fraccion?.id===l.fraccion?.id); if(x)x.cantidad+=1;else this.carrito=[...this.carrito,l]; }

@@ -1,0 +1,85 @@
+<section class="module-page perfil">
+  <app-page-header title="Editar perfil" subtitle="Actualiza tu información personal, seguridad y datos laborales registrados en el sistema."></app-page-header>
+  <div class="estado" *ngIf="!perfil && errorDatos">{{ errorDatos }} <button type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button></div>
+
+  <div class="perfil-grid" *ngIf="perfil">
+    <article class="card identidad">
+      <div class="foto">
+        <img *ngIf="vistaFoto" [src]="vistaFoto" alt="Foto de perfil" />
+        <span *ngIf="!vistaFoto">{{ iniciales }}</span>
+        <label class="btn btn-ghost btn-sm">
+          Cambiar foto
+          <input type="file" accept="image/jpeg,image/png,image/webp" (change)="elegirFoto($event)" />
+        </label>
+        <button type="button" class="btn btn-ghost btn-sm" *ngIf="vistaFoto" (click)="quitarFoto()">Quitar foto</button>
+      </div>
+      <h2>{{ perfil.nombre }} {{ perfil.apellido }}</h2>
+      <p class="usuario">{{ perfil.nombreUsuario }}</p>
+      <span class="badge badge-info">{{ rolVisible }}</span>
+      <span class="badge" [class.badge-success]="perfil.activo" [class.badge-danger]="!perfil.activo">{{ perfil.activo ? 'Cuenta activa' : 'Cuenta inactiva' }}</span>
+      <dl>
+        <div><dt>Último ingreso</dt><dd>{{ ultimoIngreso(perfil.ultimoLogin) }}</dd></div>
+        <div><dt>IP registrada</dt><dd>{{ perfil.ultimoIp || 'Sin registro' }}</dd></div>
+      </dl>
+    </article>
+
+    <form class="card datos" [formGroup]="datos" (ngSubmit)="guardar()">
+      <div class="card-header"><h2>Datos de la cuenta</h2></div>
+      <div class="card-body form-grid">
+        <div *ngIf="errorDatos" class="alert alert-error span-2">{{ errorDatos }}</div>
+        <app-form-field label="Nombres" inputId="perfil-nombre" [required]="true" [error]="errorDe('nombre')"><input id="perfil-nombre" class="input" formControlName="nombre" /></app-form-field>
+        <app-form-field label="Apellidos" inputId="perfil-apellido" [required]="true" [error]="errorDe('apellido')"><input id="perfil-apellido" class="input" formControlName="apellido" /></app-form-field>
+        <app-form-field label="Correo electrónico" inputId="perfil-email" [required]="true" [error]="errorDe('email')"><input id="perfil-email" class="input" type="email" formControlName="email" /></app-form-field>
+        <app-form-field label="Teléfono" inputId="perfil-cel" [required]="true" [error]="errorDe('celular')"><input id="perfil-cel" class="input" formControlName="celular" /></app-form-field>
+        <app-form-field label="Documento (DNI/RUC)" inputId="perfil-doc" [error]="errorDe('documento')"><input id="perfil-doc" class="input" formControlName="documento" /></app-form-field>
+        <app-form-field label="Sede asignada" inputId="perfil-sede"><app-select inputId="perfil-sede" [options]="sedes" placeholder="Sin sede" formControlName="sedeId"></app-select></app-form-field>
+        <app-form-field class="span-2" label="Biografía / observaciones" inputId="perfil-bio" [error]="errorDe('biografia')"><textarea id="perfil-bio" class="textarea" rows="4" formControlName="biografia"></textarea></app-form-field>
+      </div>
+      <div class="card-header"><h2>Datos laborales</h2></div>
+      <div class="card-body form-grid">
+        <app-form-field label="Sueldo base" inputId="perfil-sueldo" [hint]="perfil.puedeEditarLaboral ? 'Solo administración puede modificarlo.' : 'Visible desde tu legajo.'">
+          <input id="perfil-sueldo" class="input" type="number" min="0.01" step="0.01" formControlName="sueldoBase" />
+        </app-form-field>
+        <app-form-field label="Día de cobro" inputId="perfil-dia" hint="Día del mes, del 1 al 31.">
+          <input id="perfil-dia" class="input" type="number" min="1" max="31" formControlName="diaCobro" />
+        </app-form-field>
+        <app-form-field label="Tipo de contrato" inputId="perfil-contrato"><input id="perfil-contrato" class="input" [value]="perfil.tipoContrato || 'Sin legajo'" disabled /></app-form-field>
+        <app-form-field label="Sistema de pensión" inputId="perfil-pension"><input id="perfil-pension" class="input" [value]="perfil.sistemaPension || 'Sin legajo'" disabled /></app-form-field>
+        <p class="span-2 ayuda" *ngIf="!perfil.legajoId && perfil.puedeEditarLaboral">Al guardar un sueldo se abre el legajo con contrato PLANILLA, pensión NINGUNO y la fecha de hoy. El detalle se completa en Personas.</p>
+        <p class="span-2 ayuda" *ngIf="!perfil.legajoId && !perfil.puedeEditarLaboral">Todavía no tienes un legajo laboral.</p>
+      </div>
+      <div class="card-footer">
+        <button type="button" class="btn btn-ghost" (click)="cancelar()" [disabled]="guardando">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar cambios' }}</button>
+      </div>
+    </form>
+
+    <aside class="seguridad">
+      <form class="card" [formGroup]="clave" (ngSubmit)="cambiarClave()">
+        <div class="card-header"><h2>Cambiar contraseña</h2></div>
+        <div class="card-body stack">
+          <div *ngIf="errorClave" class="alert alert-error">{{ errorClave }}</div>
+          <app-form-field label="Contraseña actual" inputId="clave-actual" [required]="true" [error]="errorClaveDe('actual')"><input id="clave-actual" class="input" type="password" formControlName="actual" autocomplete="current-password" /></app-form-field>
+          <app-form-field label="Nueva contraseña" inputId="clave-nueva" [required]="true" [error]="errorClaveDe('nueva')"><input id="clave-nueva" class="input" type="password" formControlName="nueva" autocomplete="new-password" /></app-form-field>
+          <app-form-field label="Confirmar contraseña" inputId="clave-conf" [required]="true" [error]="errorClaveDe('confirmacion')"><input id="clave-conf" class="input" type="password" formControlName="confirmacion" autocomplete="new-password" /></app-form-field>
+          <button type="submit" class="btn btn-primary" [disabled]="cambiandoClave">{{ cambiandoClave ? 'Actualizando…' : 'Actualizar contraseña' }}</button>
+        </div>
+      </form>
+      <article class="card">
+        <div class="card-body stack">
+          <label class="factor">
+            <span>Doble factor de autenticación</span>
+            <input class="switch" type="checkbox" [checked]="perfil.totpEnabled" (change)="cambiarTotp($event)" />
+          </label>
+          <p class="ayuda" *ngIf="secreto">Clave nueva: {{ secreto }}</p>
+          <p class="ayuda" *ngIf="secreto">{{ perfil.totpUrl }}</p>
+          <div class="sesiones">
+            <span>Sesiones activas</span>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="confirmarSesiones = true">Cerrar otras sesiones</button>
+          </div>
+        </div>
+      </article>
+    </aside>
+  </div>
+</section>
+<app-confirm-dialog [open]="confirmarSesiones" title="Cerrar otras sesiones" message="Esta sesión seguirá abierta. El resto de accesos con tu usuario deberán iniciar sesión de nuevo." confirmLabel="Cerrar sesiones" [danger]="false" [loading]="cerrando" (confirm)="cerrarSesiones()" (cancel)="confirmarSesiones = false"></app-confirm-dialog>

@@ -39,11 +39,11 @@ public interface OrdenDespachoRepository extends JpaRepository<OrdenDespacho, UU
 
     @EntityGraph(attributePaths = {"venta", "venta.cliente", "sede", "responsable", "movilidad"})
     @Query("SELECT o FROM OrdenDespacho o WHERE " +
-            "(:sedeId IS NULL OR o.sede.id = :sedeId) AND " +
-            "(:estado IS NULL OR o.estado = :estado) AND " +
-            "(:responsableId IS NULL OR o.responsable.id = :responsableId) AND " +
-            "(:ventaId IS NULL OR o.venta.id = :ventaId) AND " +
-            "((o.fechaProgramada >= :desde AND o.fechaProgramada <= :hasta) OR " +
+            "(CAST(:sedeId AS string) IS NULL OR o.sede.id = :sedeId) AND " +
+            "(CAST(:estado AS string) IS NULL OR o.estado = :estado) AND " +
+            "(CAST(:responsableId AS string) IS NULL OR o.responsable.id = :responsableId) AND " +
+            "(CAST(:ventaId AS string) IS NULL OR o.venta.id = :ventaId) AND " +
+            "((o.fechaProgramada >= CAST(:desde AS date) AND o.fechaProgramada <= CAST(:hasta AS date)) OR " +
             "(:incluirSinFecha = true AND o.fechaProgramada IS NULL))")
     Page<OrdenDespacho> search(@Param("sedeId") UUID sedeId,
                                @Param("estado") EstadoDespacho estado,
@@ -63,32 +63,32 @@ public interface OrdenDespachoRepository extends JpaRepository<OrdenDespacho, UU
     // ============ Dashboard ============
 
     @Query("SELECT o.estado AS estado, COUNT(o) AS cantidad FROM OrdenDespacho o WHERE " +
-            "(:sedeId IS NULL OR o.sede.id = :sedeId) AND o.fechaProgramada = :fecha GROUP BY o.estado")
+            "(CAST(:sedeId AS string) IS NULL OR o.sede.id = :sedeId) AND o.fechaProgramada = :fecha GROUP BY o.estado")
     List<DespachosPorEstadoProjection> contarPorEstadoEnFecha(@Param("sedeId") UUID sedeId,
                                                               @Param("fecha") LocalDate fecha);
 
     /** Pendientes o en camino con fecha programada anterior a :fecha. */
-    @Query("SELECT COUNT(o) FROM OrdenDespacho o WHERE (:sedeId IS NULL OR o.sede.id = :sedeId) AND " +
+    @Query("SELECT COUNT(o) FROM OrdenDespacho o WHERE (CAST(:sedeId AS string) IS NULL OR o.sede.id = :sedeId) AND " +
             "o.estado IN (com.policalum.erp.domain.enums.EstadoDespacho.PENDIENTE, " +
-            "com.policalum.erp.domain.enums.EstadoDespacho.EN_CAMINO) AND o.fechaProgramada < :fecha")
+            "com.policalum.erp.domain.enums.EstadoDespacho.EN_CAMINO) AND o.fechaProgramada < CAST(:fecha AS date)")
     long contarAtrasados(@Param("sedeId") UUID sedeId, @Param("fecha") LocalDate fecha);
 
-    @Query("SELECT COUNT(o) FROM OrdenDespacho o WHERE (:sedeId IS NULL OR o.sede.id = :sedeId) AND " +
+    @Query("SELECT COUNT(o) FROM OrdenDespacho o WHERE (CAST(:sedeId AS string) IS NULL OR o.sede.id = :sedeId) AND " +
             "o.estado = com.policalum.erp.domain.enums.EstadoDespacho.ENTREGADO AND " +
-            "o.fechaEntrega >= :desde AND o.fechaEntrega < :hasta")
+            "o.fechaEntrega >= CAST(:desde AS timestamp) AND o.fechaEntrega < CAST(:hasta AS timestamp)")
     long contarEntregados(@Param("sedeId") UUID sedeId, @Param("desde") LocalDateTime desde,
                           @Param("hasta") LocalDateTime hasta);
 
-    @Query("SELECT COUNT(o) FROM OrdenDespacho o WHERE (:sedeId IS NULL OR o.sede.id = :sedeId) AND " +
+    @Query("SELECT COUNT(o) FROM OrdenDespacho o WHERE (CAST(:sedeId AS string) IS NULL OR o.sede.id = :sedeId) AND " +
             "o.estado = com.policalum.erp.domain.enums.EstadoDespacho.ENTREGADO AND " +
-            "o.fechaEntrega >= :desde AND o.fechaEntrega < :hasta AND COALESCE(o.intentosFallidos, 0) = 0")
+            "o.fechaEntrega >= CAST(:desde AS timestamp) AND o.fechaEntrega < CAST(:hasta AS timestamp) AND COALESCE(o.intentosFallidos, 0) = 0")
     long contarEntregadosPrimerIntento(@Param("sedeId") UUID sedeId, @Param("desde") LocalDateTime desde,
                                        @Param("hasta") LocalDateTime hasta);
 
     @Query("SELECT o.responsable.id AS responsableId, o.responsable.nombre AS nombre, o.responsable.apellido AS apellido, " +
             "SUM(CASE WHEN o.estado = com.policalum.erp.domain.enums.EstadoDespacho.PENDIENTE THEN 1 ELSE 0 END) AS pendientes, " +
             "SUM(CASE WHEN o.estado = com.policalum.erp.domain.enums.EstadoDespacho.EN_CAMINO THEN 1 ELSE 0 END) AS enCamino " +
-            "FROM OrdenDespacho o WHERE o.responsable IS NOT NULL AND (:sedeId IS NULL OR o.sede.id = :sedeId) AND " +
+            "FROM OrdenDespacho o WHERE o.responsable IS NOT NULL AND (CAST(:sedeId AS string) IS NULL OR o.sede.id = :sedeId) AND " +
             "o.estado IN (com.policalum.erp.domain.enums.EstadoDespacho.PENDIENTE, " +
             "com.policalum.erp.domain.enums.EstadoDespacho.EN_CAMINO) " +
             "GROUP BY o.responsable.id, o.responsable.nombre, o.responsable.apellido")
@@ -101,21 +101,21 @@ public interface OrdenDespachoRepository extends JpaRepository<OrdenDespacho, UU
 
     /** Vehículos distintos con algún despacho EN_CAMINO ahora. */
     @Query("SELECT COUNT(DISTINCT o.movilidad.id) FROM OrdenDespacho o WHERE o.movilidad IS NOT NULL AND " +
-            "o.estado = com.policalum.erp.domain.enums.EstadoDespacho.EN_CAMINO AND (:sedeId IS NULL OR o.sede.id = :sedeId)")
+            "o.estado = com.policalum.erp.domain.enums.EstadoDespacho.EN_CAMINO AND (CAST(:sedeId AS string) IS NULL OR o.sede.id = :sedeId)")
     long contarVehiculosEnRuta(@Param("sedeId") UUID sedeId);
 
-    @Query("SELECT COUNT(o) FROM OrdenDespacho o WHERE o.movilidad IS NULL AND (:sedeId IS NULL OR o.sede.id = :sedeId) AND " +
-            "o.fechaProgramada >= :desde AND o.fechaProgramada <= :hasta")
+    @Query("SELECT COUNT(o) FROM OrdenDespacho o WHERE o.movilidad IS NULL AND (CAST(:sedeId AS string) IS NULL OR o.sede.id = :sedeId) AND " +
+            "o.fechaProgramada >= CAST(:desde AS date) AND o.fechaProgramada <= CAST(:hasta AS date)")
     long contarSinMovilidad(@Param("sedeId") UUID sedeId, @Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);
 
-    @Query("SELECT COUNT(o) FROM OrdenDespacho o WHERE o.movilidad IS NOT NULL AND (:sedeId IS NULL OR o.sede.id = :sedeId) AND " +
-            "o.estado = com.policalum.erp.domain.enums.EstadoDespacho.ENTREGADO AND o.fechaEntrega >= :desde AND o.fechaEntrega < :hasta")
+    @Query("SELECT COUNT(o) FROM OrdenDespacho o WHERE o.movilidad IS NOT NULL AND (CAST(:sedeId AS string) IS NULL OR o.sede.id = :sedeId) AND " +
+            "o.estado = com.policalum.erp.domain.enums.EstadoDespacho.ENTREGADO AND o.fechaEntrega >= CAST(:desde AS timestamp) AND o.fechaEntrega < CAST(:hasta AS timestamp)")
     long contarEntregasConMovilidad(@Param("sedeId") UUID sedeId, @Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 
     /** Historial de un vehículo, más recientes primero. */
     @EntityGraph(attributePaths = {"venta", "venta.cliente", "sede", "responsable", "movilidad"})
-    @Query(value = "SELECT o FROM OrdenDespacho o WHERE o.movilidad.id = :movilidadId AND (:estado IS NULL OR o.estado = :estado) " +
+    @Query(value = "SELECT o FROM OrdenDespacho o WHERE o.movilidad.id = :movilidadId AND (CAST(:estado AS string) IS NULL OR o.estado = :estado) " +
             "ORDER BY o.createdAt DESC, o.id DESC",
-            countQuery = "SELECT COUNT(o) FROM OrdenDespacho o WHERE o.movilidad.id = :movilidadId AND (:estado IS NULL OR o.estado = :estado)")
+            countQuery = "SELECT COUNT(o) FROM OrdenDespacho o WHERE o.movilidad.id = :movilidadId AND (CAST(:estado AS string) IS NULL OR o.estado = :estado)")
     Page<OrdenDespacho> historialMovilidad(@Param("movilidadId") UUID movilidadId, @Param("estado") EstadoDespacho estado, Pageable pageable);
 }

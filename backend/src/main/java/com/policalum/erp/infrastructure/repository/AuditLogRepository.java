@@ -24,12 +24,12 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
 
     @EntityGraph(attributePaths = {"user"})
     @Query("SELECT a FROM AuditLog a WHERE " +
-            "(:tabla IS NULL OR a.tabla = :tabla) AND " +
-            "(:registroId IS NULL OR a.registroId = :registroId) AND " +
-            "(:userId IS NULL OR a.user.id = :userId) AND " +
-            "(:accion IS NULL OR a.accion = :accion) AND " +
-            "(:desde IS NULL OR a.createdAt >= :desde) AND " +
-            "(:hasta IS NULL OR a.createdAt <= :hasta)")
+            "(CAST(:tabla AS string) IS NULL OR a.tabla = :tabla) AND " +
+            "(CAST(:registroId AS string) IS NULL OR a.registroId = :registroId) AND " +
+            "(CAST(:userId AS string) IS NULL OR a.user.id = :userId) AND " +
+            "(CAST(:accion AS string) IS NULL OR a.accion = :accion) AND " +
+            "a.createdAt >= CAST(:desde AS timestamp) AND " +
+            "a.createdAt <= CAST(:hasta AS timestamp)")
     Page<AuditLog> search(
             @Param("tabla") String tabla,
             @Param("registroId") UUID registroId,
@@ -46,11 +46,11 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
     // Fechas siempre no nulas, rango semiabierto [desde, hasta). incluirSinFecha = true agrega
     // los logs antiguos guardados con created_at NULL (antes del fix del Módulo 13).
 
-    String FILTROS_AUDITORIA = "(:tabla IS NULL OR a.tabla = :tabla) AND " +
-            "(:registroId IS NULL OR a.registroId = :registroId) AND " +
-            "(:userId IS NULL OR a.user.id = :userId) AND " +
-            "(:accion IS NULL OR a.accion = :accion) AND " +
-            "((a.createdAt >= :desde AND a.createdAt < :hasta) OR (:incluirSinFecha = true AND a.createdAt IS NULL))";
+    String FILTROS_AUDITORIA = "(CAST(:tabla AS string) IS NULL OR a.tabla = :tabla) AND " +
+            "(CAST(:registroId AS string) IS NULL OR a.registroId = :registroId) AND " +
+            "(CAST(:userId AS string) IS NULL OR a.user.id = :userId) AND " +
+            "(CAST(:accion AS string) IS NULL OR a.accion = :accion) AND " +
+            "((a.createdAt >= CAST(:desde AS timestamp) AND a.createdAt < CAST(:hasta AS timestamp)) OR (:incluirSinFecha = true AND a.createdAt IS NULL))";
 
     @EntityGraph(attributePaths = {"user"})
     @Query("SELECT a FROM AuditLog a WHERE a.id = :id")
@@ -86,26 +86,26 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
                                       Pageable pageable);
 
     @Query("SELECT a.accion AS accion, COUNT(a) AS cantidad FROM AuditLog a " +
-            "WHERE a.createdAt >= :desde AND a.createdAt < :hasta GROUP BY a.accion")
+            "WHERE a.createdAt >= CAST(:desde AS timestamp) AND a.createdAt < CAST(:hasta AS timestamp) GROUP BY a.accion")
     List<ConteoPorAccionProjection> conteoPorAccion(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 
     @Query("SELECT CAST(a.createdAt AS LocalDate) AS fecha, COUNT(a) AS cantidad FROM AuditLog a " +
-            "WHERE a.createdAt >= :desde AND a.createdAt < :hasta GROUP BY CAST(a.createdAt AS LocalDate)")
+            "WHERE a.createdAt >= CAST(:desde AS timestamp) AND a.createdAt < CAST(:hasta AS timestamp) GROUP BY CAST(a.createdAt AS LocalDate)")
     List<ConteoPorFechaProjection> conteoPorDia(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 
     @Query("SELECT a.tabla AS tabla, COUNT(a) AS cantidad FROM AuditLog a " +
-            "WHERE a.createdAt >= :desde AND a.createdAt < :hasta GROUP BY a.tabla ORDER BY COUNT(a) DESC, a.tabla")
+            "WHERE a.createdAt >= CAST(:desde AS timestamp) AND a.createdAt < CAST(:hasta AS timestamp) GROUP BY a.tabla ORDER BY COUNT(a) DESC, a.tabla")
     List<ConteoPorTablaProjection> topTablas(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta,
                                              Pageable limite);
 
     @Query("SELECT u.id AS userId, u.nombre AS nombre, u.apellido AS apellido, u.email AS email, COUNT(a) AS cantidad " +
-            "FROM AuditLog a JOIN a.user u WHERE a.createdAt >= :desde AND a.createdAt < :hasta " +
+            "FROM AuditLog a JOIN a.user u WHERE a.createdAt >= CAST(:desde AS timestamp) AND a.createdAt < CAST(:hasta AS timestamp) " +
             "GROUP BY u.id, u.nombre, u.apellido, u.email ORDER BY COUNT(a) DESC, u.nombre")
     List<ActividadUsuarioProjection> topUsuarios(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta,
                                                  Pageable limite);
 
     /** Eventos del sistema (sin usuario autenticado: tareas programadas, login fallido...). */
-    @Query("SELECT COUNT(a) FROM AuditLog a WHERE a.user IS NULL AND a.createdAt >= :desde AND a.createdAt < :hasta")
+    @Query("SELECT COUNT(a) FROM AuditLog a WHERE a.user IS NULL AND a.createdAt >= CAST(:desde AS timestamp) AND a.createdAt < CAST(:hasta AS timestamp)")
     long contarSinUsuario(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 
     /** Logs anteriores al fix del Módulo 13 (created_at NULL). */

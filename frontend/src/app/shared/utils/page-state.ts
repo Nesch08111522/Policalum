@@ -1,15 +1,39 @@
+import { signal } from '@angular/core';
 import { QueryMap } from '../../core/api/backend-api.service';
 
+/**
+ * Estado de paginación. Los campos notifican con signals porque el arranque
+ * es zoneless: asignar el resultado del HTTP no refresca la plantilla solo.
+ */
 export class PageState<T> {
-  rows: T[] = [];
-  page = 0;
-  size = 20;
-  sort = 'createdAt,desc';
-  totalElements = 0;
-  totalPages = 0;
-  loading = false;
-  error: string | null = null;
-  status: number | null = null;
+  private readonly rowsSignal = signal<T[]>([]);
+  private readonly pageSignal = signal(0);
+  private readonly sizeSignal = signal(20);
+  private readonly sortSignal = signal('createdAt,desc');
+  private readonly totalElementsSignal = signal(0);
+  private readonly totalPagesSignal = signal(0);
+  private readonly loadingSignal = signal(false);
+  private readonly errorSignal = signal<string | null>(null);
+  private readonly statusSignal = signal<number | null>(null);
+
+  get rows(): T[] { return this.rowsSignal(); }
+  set rows(value: T[]) { this.rowsSignal.set(value); }
+  get page(): number { return this.pageSignal(); }
+  set page(value: number) { this.pageSignal.set(value); }
+  get size(): number { return this.sizeSignal(); }
+  set size(value: number) { this.sizeSignal.set(value); }
+  get sort(): string { return this.sortSignal(); }
+  set sort(value: string) { this.sortSignal.set(value); }
+  get totalElements(): number { return this.totalElementsSignal(); }
+  set totalElements(value: number) { this.totalElementsSignal.set(value); }
+  get totalPages(): number { return this.totalPagesSignal(); }
+  set totalPages(value: number) { this.totalPagesSignal.set(value); }
+  get loading(): boolean { return this.loadingSignal(); }
+  set loading(value: boolean) { this.loadingSignal.set(value); }
+  get error(): string | null { return this.errorSignal(); }
+  set error(value: string | null) { this.errorSignal.set(value); }
+  get status(): number | null { return this.statusSignal(); }
+  set status(value: number | null) { this.statusSignal.set(value); }
 
   reset(): void {
     this.rows = [];

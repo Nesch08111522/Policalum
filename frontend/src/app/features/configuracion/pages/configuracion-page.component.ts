@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -25,6 +25,7 @@ import { ConfiguracionApiService } from '../data-access/configuracion.api';
 })
 export class ConfiguracionPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly cd = inject(ChangeDetectorRef);
   readonly tabs: TabItem[] = [
     { id: 'empresa', label: 'Empresa' },
     { id: 'parametros', label: 'Parámetros' },
@@ -83,26 +84,30 @@ export class ConfiguracionPageComponent implements OnInit, OnDestroy {
   cambiarTab(id: string): void { this.tab = id; this.error = null; }
 
   cargar(): void {
+    this.error = null;
     this.cargando = true;
     this.api.GetApiV1ConfiguracionEmpresa().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (data) => { this.empresa.patchValue({ razonSocial: data.razonSocial ?? '', nombreComercial: data.nombreComercial ?? '', ruc: data.ruc ?? '', direccionFiscal: data.direccionFiscal ?? '', ubigeo: data.ubigeo ?? '', email: data.email ?? '', telefono: data.telefono ?? '', logoUrl: data.logoUrl ?? '' }); this.cargando = false; },
-      error: (error: unknown) => { this.cargando = false; this.error = problemText(error); },
+      next: (data) => { this.empresa.patchValue({ razonSocial: data.razonSocial ?? '', nombreComercial: data.nombreComercial ?? '', ruc: data.ruc ?? '', direccionFiscal: data.direccionFiscal ?? '', ubigeo: data.ubigeo ?? '', email: data.email ?? '', telefono: data.telefono ?? '', logoUrl: data.logoUrl ?? '' }); this.cargando = false; this.cd.markForCheck(); },
+      error: (error: unknown) => { this.cargando = false; this.error = problemText(error); this.cd.markForCheck(); },
     });
     this.api.GetApiV1ConfiguracionParametros().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (data) => this.parametros.patchValue({
-        mesesHistoricosProyeccion: data.finanzas?.mesesHistoricosProyeccion ?? 6,
-        mesesProyeccionDefault: data.finanzas?.mesesProyeccionDefault ?? 3,
-        mesesProyeccionMax: data.finanzas?.mesesProyeccionMax ?? 12,
-        minCaracteresJustificacion: data.inventario?.minCaracteresJustificacion ?? 10,
-        umbralJustificacionAjuste: data.inventario?.umbralJustificacionAjuste ?? 0,
-        maxFilasExportacion: data.reportes?.maxFilasExportacion ?? 5000,
-        preformaMinutosDefault: data.ventas?.preformaMinutosDefault ?? 30,
-        preformaMinutosMin: data.ventas?.preformaMinutosMin ?? 5,
-        preformaMinutosMax: data.ventas?.preformaMinutosMax ?? 120,
-        vigenciaCotizacionDias: data.ventas?.vigenciaCotizacionDias ?? 7,
-      }),
+      next: (data) => {
+        this.parametros.patchValue({
+          mesesHistoricosProyeccion: data.finanzas?.mesesHistoricosProyeccion ?? 6,
+          mesesProyeccionDefault: data.finanzas?.mesesProyeccionDefault ?? 3,
+          mesesProyeccionMax: data.finanzas?.mesesProyeccionMax ?? 12,
+          minCaracteresJustificacion: data.inventario?.minCaracteresJustificacion ?? 10,
+          umbralJustificacionAjuste: data.inventario?.umbralJustificacionAjuste ?? 0,
+          maxFilasExportacion: data.reportes?.maxFilasExportacion ?? 5000,
+          preformaMinutosDefault: data.ventas?.preformaMinutosDefault ?? 30,
+          preformaMinutosMin: data.ventas?.preformaMinutosMin ?? 5,
+          preformaMinutosMax: data.ventas?.preformaMinutosMax ?? 120,
+          vigenciaCotizacionDias: data.ventas?.vigenciaCotizacionDias ?? 7,
+        });
+        this.cd.markForCheck();
+      },
     });
-    this.api.GetApiV1ConfiguracionSeries().pipe(takeUntil(this.destroy$)).subscribe({ next: (rows) => (this.series = rows ?? []), error: () => (this.series = []) });
+    this.api.GetApiV1ConfiguracionSeries().pipe(takeUntil(this.destroy$)).subscribe({ next: (rows) => { this.series = rows ?? []; this.cd.markForCheck(); }, error: () => { this.series = []; this.cd.markForCheck(); } });
   }
 
   guardarEmpresa(): void {

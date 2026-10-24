@@ -44,6 +44,10 @@ export const routes: Routes = [
         canActivate: [RoleGuard],
         data: { expectedRoles: ['ROLE_ADMIN', 'ROLE_MULTIFUNCIONAL'] },
       },
+      {
+        path: 'cuenta/perfil',
+        loadChildren: () => import('./features/perfil/pages/perfil-page.component').then((m) => m.PERFIL_ROUTES),
+      },
       { path: 'workspace/:module', redirectTo: ({ params }) => `/modules/${params['module']}` },
       ...WORKSPACE_ROUTES,
       { path: 'dashboard', redirectTo: 'inicio', pathMatch: 'full' },

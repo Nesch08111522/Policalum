@@ -26,6 +26,7 @@
       <div class="dropdown-panel" *ngIf="menuOpen" role="menu">
         <div class="dropdown-item">{{ userEmail }}</div>
         <div class="dropdown-item text-muted">{{ userRole }}</div>
+        <button type="button" class="menu-item" (click)="ir('/cuenta/perfil')"><app-icon name="users"></app-icon> Editar perfil</button>
         <button type="button" class="menu-item danger" (click)="logout()"><app-icon name="logout"></app-icon> Cerrar sesión</button>
       </div>
     </div>

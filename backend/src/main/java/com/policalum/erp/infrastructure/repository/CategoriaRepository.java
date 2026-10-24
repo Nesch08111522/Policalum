@@ -30,10 +30,10 @@ public interface CategoriaRepository extends JpaRepository<Categoria, UUID> {
      * - El servicio normaliza "" a null antes de llamar a este método.
      */
     @Query("SELECT c FROM Categoria c WHERE "
-            + "(:searchTerm IS NULL OR "
+            + "(CAST(:searchTerm AS string) IS NULL OR "
             + " LOWER(c.nombre) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')) OR "
             + " LOWER(COALESCE(c.slug, '')) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%'))) AND "
-            + "(:activa IS NULL OR c.activa = :activa)")
+            + "(CAST(:activa AS boolean) IS NULL OR c.activa = :activa)")
     Page<Categoria> search(@Param("searchTerm") String searchTerm,
                            @Param("activa") Boolean activa,
                            Pageable pageable);
@@ -46,6 +46,9 @@ public interface CategoriaRepository extends JpaRepository<Categoria, UUID> {
     List<Categoria> findByParentIsNullOrderByNombreAsc();
 
     Optional<Categoria> findBySlugIgnoreCase(String slug);
+
+    @Query("SELECT c FROM Categoria c WHERE LOWER(c.nombre) = LOWER(:valor) OR LOWER(c.slug) = LOWER(:valor)")
+    List<Categoria> buscarPorNombreOSlug(@Param("valor") String valor);
 
     boolean existsBySlugIgnoreCase(String slug);
 

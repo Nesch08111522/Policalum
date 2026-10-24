@@ -39,9 +39,9 @@ public interface StockRepository extends JpaRepository<Stock, UUID> {
      */
     @EntityGraph(attributePaths = {"producto", "almacen"})
     @Query("SELECT s FROM Stock s WHERE s.almacen.id = :almacenId AND " +
-            "(:searchTerm IS NULL OR " +
-            " LOWER(s.producto.nombre) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-            " LOWER(COALESCE(s.producto.codigoSku, '')) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) AND " +
+            "(CAST(:searchTerm AS string) IS NULL OR " +
+            " LOWER(COALESCE(s.producto.nombre, '')) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')) OR " +
+            " LOWER(COALESCE(s.producto.codigoSku, '')) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%'))) AND " +
             "(:soloBajoStock = false OR s.cantidad <= s.stockMinimo)")
     Page<Stock> searchByAlmacen(
             @Param("almacenId") UUID almacenId,
@@ -57,14 +57,14 @@ public interface StockRepository extends JpaRepository<Stock, UUID> {
 
     /** Inventario valorizado a precio de compra (solo cantidades positivas), por sede del almacén. */
     @Query("SELECT s.almacen.sede.id AS sedeId, COALESCE(SUM(s.cantidad * s.producto.precioCompra), 0) AS total " +
-            "FROM Stock s WHERE s.cantidad > 0 AND (:sedeId IS NULL OR s.almacen.sede.id = :sedeId) " +
+            "FROM Stock s WHERE s.cantidad > 0 AND (CAST(:sedeId AS string) IS NULL OR s.almacen.sede.id = :sedeId) " +
             "GROUP BY s.almacen.sede.id")
     List<MontoPorSedeProjection> valorizadoPorSede(@Param("sedeId") UUID sedeId);
 
     /** Filas de stock positivo cuyo producto no tiene costo (no suman al inventario). */
     @Query("SELECT COUNT(s) FROM Stock s WHERE s.cantidad > 0 AND " +
             "(s.producto.precioCompra IS NULL OR s.producto.precioCompra <= 0) AND " +
-            "(:sedeId IS NULL OR s.almacen.sede.id = :sedeId)")
+            "(CAST(:sedeId AS string) IS NULL OR s.almacen.sede.id = :sedeId)")
     long contarSinCosto(@Param("sedeId") UUID sedeId);
 
     // ============ Módulo 10: saldos y valorización ============
@@ -81,10 +81,10 @@ public interface StockRepository extends JpaRepository<Stock, UUID> {
      * codigoSku envuelto en COALESCE para que un producto sin SKU no rompa el LIKE.
      */
     String FILTROS_SALDOS = "(s.cantidad > 0 OR EXISTS (SELECT 1 FROM KardexMovimiento k WHERE k.producto = s.producto AND k.almacen = s.almacen)) AND " +
-            "(:productoId IS NULL OR s.producto.id = :productoId) AND " +
-            "(:almacenId IS NULL OR s.almacen.id = :almacenId) AND " +
-            "(:sedeId IS NULL OR s.almacen.sede.id = :sedeId) AND " +
-            "(:busqueda IS NULL OR LOWER(s.producto.nombre) LIKE :busqueda OR LOWER(COALESCE(s.producto.codigoSku, '')) LIKE :busqueda) AND " +
+            "(CAST(:productoId AS string) IS NULL OR s.producto.id = :productoId) AND " +
+            "(CAST(:almacenId AS string) IS NULL OR s.almacen.id = :almacenId) AND " +
+            "(CAST(:sedeId AS string) IS NULL OR s.almacen.sede.id = :sedeId) AND " +
+            "(CAST(:busqueda AS string) IS NULL OR LOWER(s.producto.nombre) LIKE CAST(:busqueda AS string) OR LOWER(COALESCE(s.producto.codigoSku, '')) LIKE CAST(:busqueda AS string)) AND " +
             "(:soloBajoMinimo = false OR (s.stockMinimo > 0 AND s.cantidad <= s.stockMinimo))";
 
     @Query(value = "SELECT s.producto.id AS productoId, s.producto.nombre AS productoNombre, s.producto.codigoSku AS codigoSku, " +
@@ -104,7 +104,7 @@ public interface StockRepository extends JpaRepository<Stock, UUID> {
     @Query("SELECT p.id AS productoId, p.nombre AS productoNombre, p.codigoSku AS codigoSku, p.unidad AS unidad, " +
             "p.precioCompra AS costoUnitario, SUM(s.cantidad) AS cantidad, COUNT(s) AS almacenes " +
             "FROM Stock s JOIN s.producto p WHERE s.cantidad > 0 AND " +
-            "(:almacenId IS NULL OR s.almacen.id = :almacenId) AND (:sedeId IS NULL OR s.almacen.sede.id = :sedeId) " +
+            "(CAST(:almacenId AS string) IS NULL OR s.almacen.id = :almacenId) AND (CAST(:sedeId AS string) IS NULL OR s.almacen.sede.id = :sedeId) " +
             "GROUP BY p.id, p.nombre, p.codigoSku, p.unidad, p.precioCompra")
     List<ValorizacionProductoProjection> valorizacion(@Param("almacenId") UUID almacenId, @Param("sedeId") UUID sedeId);
 
@@ -114,8 +114,8 @@ public interface StockRepository extends JpaRepository<Stock, UUID> {
      * codigoSku envuelto en COALESCE para que un producto sin SKU no rompa el LIKE.
      */
     String FILTROS_CONSOLIDADO = "(s.cantidad > 0 OR s.stockMinimo > 0) AND " +
-            "(:sedeId IS NULL OR s.almacen.sede.id = :sedeId) AND " +
-            "(:busqueda IS NULL OR LOWER(p.nombre) LIKE :busqueda OR LOWER(COALESCE(p.codigoSku, '')) LIKE :busqueda)";
+            "(CAST(:sedeId AS string) IS NULL OR s.almacen.sede.id = :sedeId) AND " +
+            "(CAST(:busqueda AS string) IS NULL OR LOWER(p.nombre) LIKE CAST(:busqueda AS string) OR LOWER(COALESCE(p.codigoSku, '')) LIKE CAST(:busqueda AS string))";
 
     /** Stock por producto sumando los almacenes (los que tienen stock o un mínimo configurado). */
     @Query(value = "SELECT p.id AS productoId, p.nombre AS productoNombre, p.codigoSku AS codigoSku, p.unidad AS unidad, " +
@@ -128,15 +128,15 @@ public interface StockRepository extends JpaRepository<Stock, UUID> {
                                                  @Param("busqueda") String busqueda,
                                                  Pageable pageable);
 
-    @Query("SELECT COUNT(DISTINCT s.producto.id) FROM Stock s WHERE s.cantidad > 0 AND (:sedeId IS NULL OR s.almacen.sede.id = :sedeId)")
+    @Query("SELECT COUNT(DISTINCT s.producto.id) FROM Stock s WHERE s.cantidad > 0 AND (CAST(:sedeId AS string) IS NULL OR s.almacen.sede.id = :sedeId)")
     long contarProductosConStock(@Param("sedeId") UUID sedeId);
 
     /** Filas con mínimo configurado y cantidad <= mínimo (incluye agotados). */
     @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockMinimo > 0 AND s.cantidad <= s.stockMinimo AND " +
-            "(:sedeId IS NULL OR s.almacen.sede.id = :sedeId)")
+            "(CAST(:sedeId AS string) IS NULL OR s.almacen.sede.id = :sedeId)")
     long contarBajoMinimo(@Param("sedeId") UUID sedeId);
 
     @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockMinimo > 0 AND s.cantidad <= 0 AND " +
-            "(:sedeId IS NULL OR s.almacen.sede.id = :sedeId)")
+            "(CAST(:sedeId AS string) IS NULL OR s.almacen.sede.id = :sedeId)")
     long contarAgotados(@Param("sedeId") UUID sedeId);
 }

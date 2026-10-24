@@ -36,10 +36,10 @@ public interface DevolucionRepository extends JpaRepository<Devolucion, UUID> {
 
     @EntityGraph(attributePaths = {"venta", "sede", "cliente"})
     @Query("SELECT d FROM Devolucion d WHERE " +
-            "(:sedeId IS NULL OR d.sede.id = :sedeId) AND " +
-            "(:estado IS NULL OR d.estado = :estado) AND " +
-            "(:ventaId IS NULL OR d.venta.id = :ventaId) AND " +
-            "d.fechaSolicitud >= :desde AND d.fechaSolicitud < :hasta")
+            "(CAST(:sedeId AS string) IS NULL OR d.sede.id = :sedeId) AND " +
+            "(CAST(:estado AS string) IS NULL OR d.estado = :estado) AND " +
+            "(CAST(:ventaId AS string) IS NULL OR d.venta.id = :ventaId) AND " +
+            "d.fechaSolicitud >= CAST(:desde AS timestamp) AND d.fechaSolicitud < CAST(:hasta AS timestamp)")
     Page<Devolucion> search(@Param("sedeId") UUID sedeId,
                             @Param("estado") EstadoDevolucion estado,
                             @Param("ventaId") UUID ventaId,
@@ -54,14 +54,14 @@ public interface DevolucionRepository extends JpaRepository<Devolucion, UUID> {
     boolean existsByVenta_IdAndEstadoIn(UUID ventaId, Collection<EstadoDevolucion> estados);
 
     @Query("SELECT d.estado AS estado, COUNT(d) AS cantidad, COALESCE(SUM(d.montoTotal), 0) AS monto " +
-            "FROM Devolucion d WHERE (:sedeId IS NULL OR d.sede.id = :sedeId) AND " +
-            "d.fechaSolicitud >= :desde AND d.fechaSolicitud < :hasta GROUP BY d.estado")
+            "FROM Devolucion d WHERE (CAST(:sedeId AS string) IS NULL OR d.sede.id = :sedeId) AND " +
+            "d.fechaSolicitud >= CAST(:desde AS timestamp) AND d.fechaSolicitud < CAST(:hasta AS timestamp) GROUP BY d.estado")
     List<DevolucionesPorEstadoProjection> totalesPorEstado(@Param("sedeId") UUID sedeId,
                                                     @Param("desde") LocalDateTime desde,
                                                     @Param("hasta") LocalDateTime hasta);
 
     @Query("SELECT COALESCE(SUM(d.montoTotal), 0) FROM Devolucion d WHERE d.estado = :estado AND " +
-            "(:sedeId IS NULL OR d.sede.id = :sedeId) AND d.fechaResolucion >= :desde AND d.fechaResolucion < :hasta")
+            "(CAST(:sedeId AS string) IS NULL OR d.sede.id = :sedeId) AND d.fechaResolucion >= CAST(:desde AS timestamp) AND d.fechaResolucion < CAST(:hasta AS timestamp)")
     BigDecimal sumarMontoResuelto(@Param("estado") EstadoDevolucion estado,
                                   @Param("sedeId") UUID sedeId,
                                   @Param("desde") LocalDateTime desde,
@@ -78,7 +78,7 @@ public interface DevolucionRepository extends JpaRepository<Devolucion, UUID> {
             "FROM Devolucion d LEFT JOIN Reembolso r ON r.devolucion = d AND " +
             "r.estado = com.policalum.erp.domain.enums.EstadoReembolso.PROCESADO " +
             "WHERE d.estado = com.policalum.erp.domain.enums.EstadoDevolucion.APROBADA AND " +
-            "d.fechaResolucion >= :desde AND d.fechaResolucion < :hasta AND (:sedeId IS NULL OR d.sede.id = :sedeId)")
+            "d.fechaResolucion >= CAST(:desde AS timestamp) AND d.fechaResolucion < CAST(:hasta AS timestamp) AND (CAST(:sedeId AS string) IS NULL OR d.sede.id = :sedeId)")
     MontoCantidadProjection totalDevueltoPorPeriodo(@Param("sedeId") UUID sedeId,
                                                    @Param("desde") LocalDateTime desde,
                                                    @Param("hasta") LocalDateTime hasta);
@@ -94,7 +94,7 @@ public interface DevolucionRepository extends JpaRepository<Devolucion, UUID> {
             "FROM Devolucion d JOIN d.venta v LEFT JOIN Reembolso r ON r.devolucion = d AND " +
             "r.estado = com.policalum.erp.domain.enums.EstadoReembolso.PROCESADO " +
             "WHERE d.estado = com.policalum.erp.domain.enums.EstadoDevolucion.APROBADA AND " +
-            "d.fechaResolucion >= :desde AND d.fechaResolucion < :hasta AND (:sedeId IS NULL OR d.sede.id = :sedeId) " +
+            "d.fechaResolucion >= CAST(:desde AS timestamp) AND d.fechaResolucion < CAST(:hasta AS timestamp) AND (CAST(:sedeId AS string) IS NULL OR d.sede.id = :sedeId) " +
             "GROUP BY v.cliente.id")
     List<MontoCantidadPorIdProjection> devueltoPorCliente(@Param("desde") LocalDateTime desde,
                                                           @Param("hasta") LocalDateTime hasta,

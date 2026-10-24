@@ -30,10 +30,10 @@ public interface RrhhComisionRepository extends JpaRepository<RrhhComision, UUID
 
     @EntityGraph(attributePaths = {"user", "sede", "aprobadoPor"})
     @Query("SELECT c FROM RrhhComision c WHERE " +
-            "(:periodo IS NULL OR c.periodo = :periodo) AND " +
-            "(:sedeId IS NULL OR c.sede.id = :sedeId) AND " +
-            "(:estado IS NULL OR c.estado = :estado) AND " +
-            "(:userId IS NULL OR c.user.id = :userId)")
+            "(CAST(:periodo AS string) IS NULL OR c.periodo = :periodo) AND " +
+            "(CAST(:sedeId AS string) IS NULL OR c.sede.id = :sedeId) AND " +
+            "(CAST(:estado AS string) IS NULL OR c.estado = :estado) AND " +
+            "(CAST(:userId AS string) IS NULL OR c.user.id = :userId)")
     Page<RrhhComision> search(@Param("periodo") String periodo,
                               @Param("sedeId") UUID sedeId,
                               @Param("estado") EstadoComision estado,
@@ -42,7 +42,7 @@ public interface RrhhComisionRepository extends JpaRepository<RrhhComision, UUID
 
     @EntityGraph(attributePaths = {"user", "sede", "aprobadoPor"})
     @Query("SELECT c FROM RrhhComision c WHERE c.periodo = :periodo AND " +
-            "(:sedeId IS NULL OR c.sede.id = :sedeId) ORDER BY c.montoComision DESC")
+            "(CAST(:sedeId AS string) IS NULL OR c.sede.id = :sedeId) ORDER BY c.montoComision DESC")
     List<RrhhComision> findByPeriodo(@Param("periodo") String periodo, @Param("sedeId") UUID sedeId);
 
     long countByPeriodoAndEstadoAndSede_Id(String periodo, EstadoComision estado, UUID sedeId);

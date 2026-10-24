@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -34,6 +34,7 @@ function haceDias(dias: number): string {
 })
 export class ReportesPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly cd = inject(ChangeDetectorRef);
   readonly tabs: TabItem[] = [
     { id: 'ventas', label: 'Ventas' },
     { id: 'rentabilidad', label: 'Rentabilidad' },
@@ -123,18 +124,18 @@ export class ReportesPageComponent implements OnInit, OnDestroy {
     const params = this.filtros.getRawValue();
     if (this.tab === 'ventas') {
       this.api.GetApiV1ReportesVentasResumen(params).pipe(takeUntil(this.destroy$)).subscribe({
-        next: (data) => { this.resumen = data; this.puntos = (data.periodos ?? []).map((periodo) => ({ label: periodo.etiqueta ?? '', value: Number(periodo.total ?? 0) })); },
-        error: () => { this.resumen = null; this.puntos = []; },
+        next: (data) => { this.resumen = data; this.puntos = (data.periodos ?? []).map((periodo) => ({ label: periodo.etiqueta ?? '', value: Number(periodo.total ?? 0) })); this.cd.markForCheck(); },
+        error: () => { this.resumen = null; this.puntos = []; this.cd.markForCheck(); },
       });
       this.ventas.loading = true;
       this.api.GetApiV1ReportesVentas(this.ventas.query(params)).pipe(takeUntil(this.destroy$)).subscribe({
-        next: (page) => { this.ventas.apply(page); this.loading = false; },
-        error: (error: unknown) => { this.ventas.fail(problemText(error), problemStatus(error)); this.loading = false; this.error = problemText(error); this.status = problemStatus(error); },
+        next: (page) => { this.ventas.apply(page); this.loading = false; this.cd.markForCheck(); },
+        error: (error: unknown) => { this.ventas.fail(problemText(error), problemStatus(error)); this.loading = false; this.error = problemText(error); this.status = problemStatus(error); this.cd.markForCheck(); },
       });
       return;
     }
-    const done = (): void => { this.loading = false; };
-    const fail = (error: unknown): void => { this.loading = false; this.error = problemText(error); this.status = problemStatus(error); };
+    const done = (): void => { this.loading = false; this.cd.markForCheck(); };
+    const fail = (error: unknown): void => { this.loading = false; this.error = problemText(error); this.status = problemStatus(error); this.cd.markForCheck(); };
     if (this.tab === 'rentabilidad') {
       this.api.GetApiV1ReportesProductosRentabilidad(params).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.rentabilidad = data.items ?? []; done(); }, error: fail });
     } else if (this.tab === 'estrella') {

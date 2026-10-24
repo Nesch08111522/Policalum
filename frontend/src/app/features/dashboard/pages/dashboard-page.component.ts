@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { RouterLink, Routes } from '@angular/router';
 import { Subject, forkJoin, of, takeUntil } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -27,6 +27,7 @@ function iso(fecha: Date): string { return fecha.toISOString().slice(0, 10); }
   styleUrls: ['./dashboard-page.component.css'],
 })
 export class DashboardPageComponent implements OnInit, OnDestroy {
+  private readonly cd = inject(ChangeDetectorRef);
   readonly accesos = QUICK_LINKS;
   readonly esAdmin: boolean;
   cargando = true;
@@ -84,6 +85,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
       const vacio = !data.hoy && !data.stock && !data.cxp && !data.ventas && !data.compras;
       this.error = vacio ? 'No hay conexión con el servidor. Reintenta cuando el backend esté disponible.' : null;
       this.cargando = false;
+      this.cd.markForCheck();
     });
   }
 }
