@@ -24,6 +24,6 @@ public interface RrhhLegajoDocumentoRepository extends JpaRepository<RrhhLegajoD
     @Query("SELECT DISTINCT d.legajo.id FROM RrhhLegajoDocumento d WHERE d.tipo = :tipo")
     List<UUID> findLegajoIdsConTipo(@Param("tipo") TipoDocumentoLegajo tipo);
 
-    @Query("SELECT COUNT(d) FROM RrhhLegajoDocumento d WHERE (:sedeId IS NULL OR d.legajo.user.sede.id = :sedeId)")
+    @Query("SELECT COUNT(d) FROM RrhhLegajoDocumento d WHERE (CAST(:sedeId AS string) IS NULL OR d.legajo.user.sede.id = :sedeId)")
     long contarPorSede(@Param("sedeId") UUID sedeId);
 }

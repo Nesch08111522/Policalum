@@ -28,8 +28,8 @@ public interface DetalleVentaRepository extends JpaRepository<DetalleVenta, UUID
             "FROM DetalleVenta dv JOIN dv.venta v LEFT JOIN dv.producto p LEFT JOIN p.categoria c " +
             "LEFT JOIN dv.servicio s LEFT JOIN dv.fraccion f " +
             "WHERE v.estado = com.policalum.erp.domain.enums.EstadoVenta.COMPLETADA AND " +
-            "v.createdAt >= :desde AND v.createdAt < :hasta AND (:sedeId IS NULL OR v.sede.id = :sedeId) AND " +
-            "(:categoriaId IS NULL OR c.id = :categoriaId) " +
+            "v.createdAt >= CAST(:desde AS timestamp) AND v.createdAt < CAST(:hasta AS timestamp) AND (CAST(:sedeId AS string) IS NULL OR v.sede.id = :sedeId) AND " +
+            "(CAST(:categoriaId AS string) IS NULL OR c.id = :categoriaId) " +
             "GROUP BY p.id, s.id, p.nombre, s.nombre, p.codigoSku, p.unidad, c.nombre, p.precioCompra")
     List<RentabilidadProjection> rentabilidad(@Param("desde") LocalDateTime desde,
                                               @Param("hasta") LocalDateTime hasta,

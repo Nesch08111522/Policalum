@@ -25,7 +25,7 @@ public interface RrhhAsistenciaRepository extends JpaRepository<RrhhAsistencia, 
             "JOIN a.empleado u " +
             "WHERE u.id = :empleadoId " +
             "AND u.activo = true " +
-            "AND a.fechaHora >= :inicioDia")
+            "AND a.fechaHora >= CAST(:inicioDia AS timestamp)")
     long countByEmpleadoIdAndFechaHoraAfter(@Param("empleadoId") UUID empleadoId,
                                             @Param("inicioDia") LocalDateTime inicioDia);
 
@@ -64,7 +64,7 @@ public interface RrhhAsistenciaRepository extends JpaRepository<RrhhAsistencia, 
 
     // ✅ Última entrada del día
     @Query("SELECT a FROM RrhhAsistencia a WHERE a.empleado.id = :empleadoId " +
-            "AND a.fechaHora >= :inicioDia AND a.fechaHora < :finDia " +
+            "AND a.fechaHora >= CAST(:inicioDia AS timestamp) AND a.fechaHora < CAST(:finDia AS timestamp) " +
             "AND a.tipoMarcacion = 'ENTRADA' " +
             "ORDER BY a.fechaHora DESC LIMIT 1")
     RrhhAsistencia findUltimaEntradaDelDia(@Param("empleadoId") UUID empleadoId,
@@ -73,7 +73,7 @@ public interface RrhhAsistenciaRepository extends JpaRepository<RrhhAsistencia, 
 
     // ✅ Última salida del día
     @Query("SELECT a FROM RrhhAsistencia a WHERE a.empleado.id = :empleadoId " +
-            "AND a.fechaHora >= :inicioDia AND a.fechaHora < :finDia " +
+            "AND a.fechaHora >= CAST(:inicioDia AS timestamp) AND a.fechaHora < CAST(:finDia AS timestamp) " +
             "AND a.tipoMarcacion = 'SALIDA' " +
             "ORDER BY a.fechaHora DESC LIMIT 1")
     RrhhAsistencia findUltimaSalidaDelDia(@Param("empleadoId") UUID empleadoId,
@@ -83,7 +83,7 @@ public interface RrhhAsistenciaRepository extends JpaRepository<RrhhAsistencia, 
     // ✅ Verificar si marcó entrada hoy
     @Query("SELECT COUNT(a) > 0 FROM RrhhAsistencia a " +
             "WHERE a.empleado.id = :empleadoId " +
-            "AND a.fechaHora >= :inicioDia AND a.fechaHora < :finDia " +
+            "AND a.fechaHora >= CAST(:inicioDia AS timestamp) AND a.fechaHora < CAST(:finDia AS timestamp) " +
             "AND a.tipoMarcacion = 'ENTRADA'")
     boolean yaMarcoEntradaHoy(@Param("empleadoId") UUID empleadoId,
                               @Param("inicioDia") LocalDateTime inicioDia,
@@ -92,7 +92,7 @@ public interface RrhhAsistenciaRepository extends JpaRepository<RrhhAsistencia, 
     // ✅ Verificar si marcó salida hoy
     @Query("SELECT COUNT(a) > 0 FROM RrhhAsistencia a " +
             "WHERE a.empleado.id = :empleadoId " +
-            "AND a.fechaHora >= :inicioDia AND a.fechaHora < :finDia " +
+            "AND a.fechaHora >= CAST(:inicioDia AS timestamp) AND a.fechaHora < CAST(:finDia AS timestamp) " +
             "AND a.tipoMarcacion = 'SALIDA'")
     boolean yaMarcoSalidaHoy(@Param("empleadoId") UUID empleadoId,
                              @Param("inicioDia") LocalDateTime inicioDia,
@@ -104,14 +104,14 @@ public interface RrhhAsistenciaRepository extends JpaRepository<RrhhAsistencia, 
 
     // ✅ Dashboard: Contar presentes hoy
     @Query("SELECT COUNT(DISTINCT a.empleado.id) FROM RrhhAsistencia a " +
-            "WHERE a.fechaHora >= :inicioDia AND a.fechaHora < :finDia " +
+            "WHERE a.fechaHora >= CAST(:inicioDia AS timestamp) AND a.fechaHora < CAST(:finDia AS timestamp) " +
             "AND a.tipoMarcacion = 'ENTRADA'")
     long countPresentesHoy(@Param("inicioDia") LocalDateTime inicioDia,
                            @Param("finDia") LocalDateTime finDia);
 
     // ✅ Dashboard: Contar tardanzas hoy
     @Query("SELECT COUNT(DISTINCT a.empleado.id) FROM RrhhAsistencia a " +
-            "WHERE a.fechaHora >= :inicioDia AND a.fechaHora < :finDia " +
+            "WHERE a.fechaHora >= CAST(:inicioDia AS timestamp) AND a.fechaHora < CAST(:finDia AS timestamp) " +
             "AND a.tipoMarcacion = 'ENTRADA' " +
             "AND EXTRACT(HOUR FROM a.fechaHora) > 8")
     long countTardanzasHoy(@Param("inicioDia") LocalDateTime inicioDia,

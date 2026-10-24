@@ -24,10 +24,10 @@ public interface FinanzasCuentaPorPagarRepository extends JpaRepository<Finanzas
 
     @EntityGraph(attributePaths = {"proveedor", "compra", "sede"})
     @Query("SELECT c FROM FinanzasCuentaPorPagar c WHERE " +
-            "(:sedeId IS NULL OR c.sede.id = :sedeId) AND " +
-            "(:proveedorId IS NULL OR c.proveedor.id = :proveedorId) AND " +
-            "(:estado IS NULL OR c.estado = :estado) AND " +
-            "(:soloVencidas IS NULL OR :soloVencidas = false OR " +
+            "(CAST(:sedeId AS string) IS NULL OR c.sede.id = :sedeId) AND " +
+            "(CAST(:proveedorId AS string) IS NULL OR c.proveedor.id = :proveedorId) AND " +
+            "(CAST(:estado AS string) IS NULL OR c.estado = :estado) AND " +
+            "(CAST(:soloVencidas AS string) IS NULL OR CAST(:soloVencidas AS string) = 'false' OR " +
             " (c.fechaVencimiento IS NOT NULL AND c.fechaVencimiento < CURRENT_DATE " +
             "  AND c.estado <> com.policalum.erp.domain.enums.EstadoCxP.PAGADO))")
     Page<FinanzasCuentaPorPagar> search(
@@ -54,7 +54,7 @@ public interface FinanzasCuentaPorPagarRepository extends JpaRepository<Finanzas
      */
     @Query("SELECT c.sede.id AS sedeId, c.tipoReferencia AS tipo, c.metodoPago AS metodo, COALESCE(SUM(c.montoPagado), 0) AS total " +
             "FROM FinanzasCuentaPorPagar c WHERE c.estado = com.policalum.erp.domain.enums.EstadoCxP.PAGADO AND " +
-            "c.fechaPago >= :desde AND c.fechaPago < :hasta AND (:sedeId IS NULL OR c.sede.id = :sedeId) AND " +
+            "c.fechaPago >= CAST(:desde AS timestamp) AND c.fechaPago < CAST(:hasta AS timestamp) AND (CAST(:sedeId AS string) IS NULL OR c.sede.id = :sedeId) AND " +
             "NOT EXISTS (SELECT 1 FROM PagoCuentaPorPagar p WHERE p.cuentaPorPagar = c) " +
             "GROUP BY c.sede.id, c.tipoReferencia, c.metodoPago")
     List<PagoCxpHistoricoProjection> pagosSinDetallePorSede(@Param("desde") LocalDateTime desde,
@@ -64,19 +64,19 @@ public interface FinanzasCuentaPorPagarRepository extends JpaRepository<Finanzas
     /** Saldo pendiente (total - pagado) de las CxP no pagadas, por sede. */
     @Query("SELECT c.sede.id AS sedeId, COALESCE(SUM(c.montoTotal - COALESCE(c.montoPagado, 0)), 0) AS total " +
             "FROM FinanzasCuentaPorPagar c WHERE c.estado <> com.policalum.erp.domain.enums.EstadoCxP.PAGADO AND " +
-            "(:sedeId IS NULL OR c.sede.id = :sedeId) GROUP BY c.sede.id")
+            "(CAST(:sedeId AS string) IS NULL OR c.sede.id = :sedeId) GROUP BY c.sede.id")
     List<MontoPorSedeProjection> saldoPendientePorSede(@Param("sedeId") UUID sedeId);
 
     /** Igual que saldoPendientePorSede pero solo lo vencido antes de :hoy. */
     @Query("SELECT c.sede.id AS sedeId, COALESCE(SUM(c.montoTotal - COALESCE(c.montoPagado, 0)), 0) AS total " +
             "FROM FinanzasCuentaPorPagar c WHERE c.estado <> com.policalum.erp.domain.enums.EstadoCxP.PAGADO AND " +
-            "c.fechaVencimiento < :hoy AND (:sedeId IS NULL OR c.sede.id = :sedeId) GROUP BY c.sede.id")
+            "c.fechaVencimiento < CAST(:hoy AS date) AND (CAST(:sedeId AS string) IS NULL OR c.sede.id = :sedeId) GROUP BY c.sede.id")
     List<MontoPorSedeProjection> saldoVencidoPorSede(@Param("sedeId") UUID sedeId, @Param("hoy") LocalDate hoy);
 
     /** Saldo pendiente por tipo y fecha de vencimiento (proyección). */
     @Query("SELECT c.tipoReferencia AS tipo, c.fechaVencimiento AS fechaVencimiento, " +
             "COALESCE(SUM(c.montoTotal - COALESCE(c.montoPagado, 0)), 0) AS saldo " +
             "FROM FinanzasCuentaPorPagar c WHERE c.estado <> com.policalum.erp.domain.enums.EstadoCxP.PAGADO AND " +
-            "(:sedeId IS NULL OR c.sede.id = :sedeId) GROUP BY c.tipoReferencia, c.fechaVencimiento")
+            "(CAST(:sedeId AS string) IS NULL OR c.sede.id = :sedeId) GROUP BY c.tipoReferencia, c.fechaVencimiento")
     List<CxpPendienteProjection> pendientesPorVencimiento(@Param("sedeId") UUID sedeId);
 }

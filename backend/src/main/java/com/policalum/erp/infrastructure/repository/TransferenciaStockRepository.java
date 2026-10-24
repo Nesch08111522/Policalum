@@ -17,11 +17,11 @@ import org.springframework.data.repository.query.Param;
  */
 public interface TransferenciaStockRepository extends JpaRepository<TransferenciaStock, UUID> {
 
-    String FILTROS = "(:productoId IS NULL OR t.producto.id = :productoId) AND " +
-            "(:almacenId IS NULL OR t.almacenOrigen.id = :almacenId OR t.almacenDestino.id = :almacenId) AND " +
-            "(:sedeId IS NULL OR t.almacenOrigen.sede.id = :sedeId OR t.almacenDestino.sede.id = :sedeId) AND " +
+    String FILTROS = "(CAST(:productoId AS string) IS NULL OR t.producto.id = :productoId) AND " +
+            "(CAST(:almacenId AS string) IS NULL OR t.almacenOrigen.id = :almacenId OR t.almacenDestino.id = :almacenId) AND " +
+            "(CAST(:sedeId AS string) IS NULL OR t.almacenOrigen.sede.id = :sedeId OR t.almacenDestino.sede.id = :sedeId) AND " +
             "(:soloEntreSedes = false OR t.entreSedes = true) AND " +
-            "t.createdAt >= :desde AND t.createdAt < :hasta";
+            "t.createdAt >= CAST(:desde AS timestamp) AND t.createdAt < CAST(:hasta AS timestamp)";
 
     @EntityGraph(attributePaths = {"producto", "almacenOrigen", "almacenOrigen.sede", "almacenDestino", "almacenDestino.sede",
             "user", "movimientoSalida", "movimientoEntrada"})
@@ -40,7 +40,7 @@ public interface TransferenciaStockRepository extends JpaRepository<Transferenci
                                     @Param("hasta") LocalDateTime hasta,
                                     Pageable pageable);
 
-    @Query("SELECT COUNT(t) FROM TransferenciaStock t WHERE t.createdAt >= :desde AND t.createdAt < :hasta AND " +
-            "(:sedeId IS NULL OR t.almacenOrigen.sede.id = :sedeId OR t.almacenDestino.sede.id = :sedeId)")
+    @Query("SELECT COUNT(t) FROM TransferenciaStock t WHERE t.createdAt >= CAST(:desde AS timestamp) AND t.createdAt < CAST(:hasta AS timestamp) AND " +
+            "(CAST(:sedeId AS string) IS NULL OR t.almacenOrigen.sede.id = :sedeId OR t.almacenDestino.sede.id = :sedeId)")
     long contar(@Param("sedeId") UUID sedeId, @Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 }

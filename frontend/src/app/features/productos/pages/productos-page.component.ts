@@ -156,6 +156,9 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  trackFila(_index: number, fila: FilaCatalogo): string { return fila.producto?.id ?? String(_index); }
+  trackCorte(index: number, corte: CorteVista): string { return `${corte.nombre}:${index}`; }
+
   get filas(): FilaCatalogo[] {
     const filas = this.state.rows.map((producto) => this.fila(producto));
     if (this.stockFiltro === 'CON') return filas.filter((fila) => fila.cantidad > 0);

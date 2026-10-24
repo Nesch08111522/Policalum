@@ -17,7 +17,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface CotizacionRepository extends JpaRepository<Cotizacion, UUID> {
     @EntityGraph(attributePaths = {"sede", "user", "cliente", "venta"})
-    @Query("select c from Cotizacion c where (:clienteId is null or c.cliente.id = :clienteId) and (:sedeId is null or c.sede.id = :sedeId) and (:estado is null or c.estado = :estado) and c.createdAt >= :desde and c.createdAt <= :hasta")
+    @Query("select c from Cotizacion c where (CAST(:clienteId AS string) IS NULL or c.cliente.id = :clienteId) and (CAST(:sedeId AS string) IS NULL or c.sede.id = :sedeId) and (CAST(:estado AS string) IS NULL or c.estado = :estado) and c.createdAt >= CAST(:desde AS timestamp) and c.createdAt <= CAST(:hasta AS timestamp)")
     Page<Cotizacion> buscar(@Param("clienteId") UUID clienteId, @Param("sedeId") UUID sedeId,
                             @Param("estado") EstadoCotizacion estado, @Param("desde") LocalDateTime desde,
                             @Param("hasta") LocalDateTime hasta, Pageable pageable);
@@ -31,7 +31,7 @@ public interface CotizacionRepository extends JpaRepository<Cotizacion, UUID> {
 
     /** Total de cotizaciones aún vigentes (ingreso potencial, no comprometido). */
     @Query("SELECT COALESCE(SUM(c.total), 0) FROM Cotizacion c WHERE c.estado IN :estados AND " +
-            "(c.fechaVigencia IS NULL OR c.fechaVigencia >= :hoy) AND (:sedeId IS NULL OR c.sede.id = :sedeId)")
+            "(c.fechaVigencia IS NULL OR c.fechaVigencia >= CAST(:hoy AS date)) AND (CAST(:sedeId AS string) IS NULL OR c.sede.id = :sedeId)")
     BigDecimal sumarVigentes(@Param("estados") Collection<EstadoCotizacion> estados,
                              @Param("hoy") LocalDate hoy,
                              @Param("sedeId") UUID sedeId);

@@ -40,15 +40,15 @@ public interface MovilidadRepository extends JpaRepository<Movilidad, UUID> {
     /** texto ya viene en minúsculas con comodines (%texto%) o null. */
     @EntityGraph(attributePaths = {"sede", "conductor"})
     @Query(value = "SELECT m FROM Movilidad m LEFT JOIN m.conductor c WHERE " +
-            "(:sedeId IS NULL OR m.sede.id = :sedeId) AND (:activo IS NULL OR m.activo = :activo) AND " +
-            "(:tipo IS NULL OR m.tipo = :tipo) AND (:texto IS NULL OR LOWER(m.placa) LIKE :texto OR " +
-            "LOWER(m.marca) LIKE :texto OR LOWER(m.modelo) LIKE :texto OR " +
-            "LOWER(CONCAT(c.nombre, ' ', c.apellido)) LIKE :texto) ORDER BY m.placa",
+            "(CAST(:sedeId AS string) IS NULL OR m.sede.id = :sedeId) AND (CAST(:activo AS boolean) IS NULL OR m.activo = :activo) AND " +
+            "(CAST(:tipo AS string) IS NULL OR m.tipo = :tipo) AND (CAST(:texto AS string) IS NULL OR LOWER(m.placa) LIKE CAST(:texto AS string) OR " +
+            "LOWER(m.marca) LIKE CAST(:texto AS string) OR LOWER(m.modelo) LIKE CAST(:texto AS string) OR " +
+            "LOWER(CONCAT(c.nombre, ' ', c.apellido)) LIKE CAST(:texto AS string)) ORDER BY m.placa",
             countQuery = "SELECT COUNT(m) FROM Movilidad m LEFT JOIN m.conductor c WHERE " +
-            "(:sedeId IS NULL OR m.sede.id = :sedeId) AND (:activo IS NULL OR m.activo = :activo) AND " +
-            "(:tipo IS NULL OR m.tipo = :tipo) AND (:texto IS NULL OR LOWER(m.placa) LIKE :texto OR " +
-            "LOWER(m.marca) LIKE :texto OR LOWER(m.modelo) LIKE :texto OR " +
-            "LOWER(CONCAT(c.nombre, ' ', c.apellido)) LIKE :texto)")
+            "(CAST(:sedeId AS string) IS NULL OR m.sede.id = :sedeId) AND (CAST(:activo AS boolean) IS NULL OR m.activo = :activo) AND " +
+            "(CAST(:tipo AS string) IS NULL OR m.tipo = :tipo) AND (CAST(:texto AS string) IS NULL OR LOWER(m.placa) LIKE CAST(:texto AS string) OR " +
+            "LOWER(m.marca) LIKE CAST(:texto AS string) OR LOWER(m.modelo) LIKE CAST(:texto AS string) OR " +
+            "LOWER(CONCAT(c.nombre, ' ', c.apellido)) LIKE CAST(:texto AS string))")
     Page<Movilidad> buscar(@Param("sedeId") UUID sedeId,
                            @Param("activo") Boolean activo,
                            @Param("tipo") String tipo,
@@ -67,21 +67,21 @@ public interface MovilidadRepository extends JpaRepository<Movilidad, UUID> {
             "com.policalum.erp.domain.enums.EstadoDespacho.EN_CAMINO) THEN 1 ELSE 0 END) AS pendientes, " +
             "COALESCE(SUM(o.intentosFallidos), 0) AS intentosFallidos " +
             "FROM Movilidad m LEFT JOIN m.conductor c " +
-            "LEFT JOIN OrdenDespacho o ON o.movilidad = m AND o.fechaProgramada >= :desde AND o.fechaProgramada <= :hasta " +
-            "WHERE (:sedeId IS NULL OR m.sede.id = :sedeId) " +
+            "LEFT JOIN OrdenDespacho o ON o.movilidad = m AND o.fechaProgramada >= CAST(:desde AS date) AND o.fechaProgramada <= CAST(:hasta AS date) " +
+            "WHERE (CAST(:sedeId AS string) IS NULL OR m.sede.id = :sedeId) " +
             "GROUP BY m.id, m.placa, m.tipo, c.nombre, c.apellido, m.activo " +
             "HAVING m.activo = true OR COUNT(o) > 0")
     List<UsoMovilidadProjection> uso(@Param("sedeId") UUID sedeId,
                                      @Param("desde") LocalDate desde,
                                      @Param("hasta") LocalDate hasta);
 
-    @Query("SELECT COUNT(m) FROM Movilidad m WHERE (:sedeId IS NULL OR m.sede.id = :sedeId) AND m.activo = :activo")
+    @Query("SELECT COUNT(m) FROM Movilidad m WHERE (CAST(:sedeId AS string) IS NULL OR m.sede.id = :sedeId) AND m.activo = :activo")
     long contarPorEstado(@Param("sedeId") UUID sedeId, @Param("activo") boolean activo);
 
-    @Query("SELECT COUNT(m) FROM Movilidad m WHERE (:sedeId IS NULL OR m.sede.id = :sedeId) AND m.activo = true AND m.conductor IS NULL")
+    @Query("SELECT COUNT(m) FROM Movilidad m WHERE (CAST(:sedeId AS string) IS NULL OR m.sede.id = :sedeId) AND m.activo = true AND m.conductor IS NULL")
     long contarActivosSinConductor(@Param("sedeId") UUID sedeId);
 
     @Query("SELECT m.tipo AS clave, COUNT(m) AS cantidad FROM Movilidad m " +
-            "WHERE (:sedeId IS NULL OR m.sede.id = :sedeId) AND m.activo = true GROUP BY m.tipo")
+            "WHERE (CAST(:sedeId AS string) IS NULL OR m.sede.id = :sedeId) AND m.activo = true GROUP BY m.tipo")
     List<ConteoPorTextoProjection> activosPorTipo(@Param("sedeId") UUID sedeId);
 }

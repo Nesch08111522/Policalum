@@ -8,20 +8,35 @@ import { ApiProblem } from '../api/openapi.types';
 
 const REQUEST_TIMEOUT_MS = 20000;
 
-function normalize(error: HttpErrorResponse): ApiProblem {
-  const body = error.error as {
-    code?: string;
-    error?: string;
-    message?: string;
-    details?: string;
-    errors?: Record<string, string>;
-    fieldErrors?: Record<string, string>;
-    traceId?: string;
-    errores?: Array<{ fila?: number; motivo?: string }>;
-  } | null;
+function leerCuerpo(error: HttpErrorResponse): {
+  code?: string;
+  error?: string;
+  message?: string;
+  details?: string;
+  errors?: Record<string, string>;
+  fieldErrors?: Record<string, string>;
+  traceId?: string;
+  errores?: Array<{ fila?: number; motivo?: string }>;
+} | null {
+  const raw = error.error;
+  if (raw && typeof raw === 'object') return raw as ReturnType<typeof leerCuerpo>;
+  if (typeof raw === 'string' && raw.trim()) return { message: raw };
+  return null;
+}
 
-  let message = body?.message ?? body?.error;
-  if (body?.details && error.status >= 500) message = acotar(body.details);
+function mensajeVisible(texto: string | undefined, status: number): string | undefined {
+  if (!texto) return texto;
+  if (status >= 500 && /jdbc|sql\s*\[|psql|syntax error|no se pudo determinar el tipo/i.test(texto)) {
+    return 'No se pudieron consultar los datos. Vuelve a intentar.';
+  }
+  return texto;
+}
+
+function normalize(error: HttpErrorResponse): ApiProblem {
+  const body = leerCuerpo(error);
+
+  let message = mensajeVisible(body?.message ?? body?.error, error.status);
+  if (body?.details && error.status >= 500) message = mensajeVisible(acotar(body.details), error.status);
   if (error.status === 0) {
     message = 'No hay conexión con el servidor. Puede estar apagado o la respuesta fue bloqueada (CORS).';
   }

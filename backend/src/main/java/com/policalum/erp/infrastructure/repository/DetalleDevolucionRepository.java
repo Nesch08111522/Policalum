@@ -29,8 +29,8 @@ public interface DetalleDevolucionRepository extends JpaRepository<DetalleDevolu
 
     @Query("SELECT COALESCE(SUM(d.cantidadStock), 0) FROM DetalleDevolucion d WHERE " +
             "d.devolucion.estado = com.policalum.erp.domain.enums.EstadoDevolucion.APROBADA AND " +
-            "d.estadoProducto IN :estados AND (:sedeId IS NULL OR d.devolucion.sede.id = :sedeId) AND " +
-            "d.devolucion.fechaResolucion >= :desde AND d.devolucion.fechaResolucion < :hasta")
+            "d.estadoProducto IN :estados AND (CAST(:sedeId AS string) IS NULL OR d.devolucion.sede.id = :sedeId) AND " +
+            "d.devolucion.fechaResolucion >= CAST(:desde AS timestamp) AND d.devolucion.fechaResolucion < CAST(:hasta AS timestamp)")
     BigDecimal sumarUnidadesAprobadas(@Param("estados") Collection<EstadoProducto> estados,
                                       @Param("sedeId") UUID sedeId,
                                       @Param("desde") LocalDateTime desde,
@@ -49,8 +49,8 @@ public interface DetalleDevolucionRepository extends JpaRepository<DetalleDevolu
             "FROM DetalleDevolucion dd JOIN dd.devolucion d JOIN dd.detalleVenta dv JOIN dd.producto p " +
             "LEFT JOIN dd.fraccion f " +
             "WHERE d.estado = com.policalum.erp.domain.enums.EstadoDevolucion.APROBADA AND " +
-            "d.fechaResolucion >= :desde AND d.fechaResolucion < :hasta AND (:sedeId IS NULL OR d.sede.id = :sedeId) AND " +
-            "(:categoriaId IS NULL OR p.categoria.id = :categoriaId) " +
+            "d.fechaResolucion >= CAST(:desde AS timestamp) AND d.fechaResolucion < CAST(:hasta AS timestamp) AND (CAST(:sedeId AS string) IS NULL OR d.sede.id = :sedeId) AND " +
+            "(CAST(:categoriaId AS string) IS NULL OR p.categoria.id = :categoriaId) " +
             "GROUP BY p.id")
     List<DevueltoPorProductoProjection> devueltoPorProducto(@Param("desde") LocalDateTime desde,
                                                             @Param("hasta") LocalDateTime hasta,

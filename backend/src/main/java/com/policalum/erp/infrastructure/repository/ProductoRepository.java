@@ -32,13 +32,13 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
      */
     @EntityGraph(attributePaths = { "categoria", "proveedor", "fracciones" })
     @Query("SELECT p FROM Producto p WHERE "
-            + "(:searchTerm IS NULL OR "
+            + "(CAST(:searchTerm AS string) IS NULL OR "
             + " LOWER(p.nombre) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')) OR "
             + " LOWER(COALESCE(p.codigoSku, '')) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%'))) AND "
-            + "(:categoriaId IS NULL OR p.categoria.id = :categoriaId) AND "
-            + "(:tipo IS NULL OR p.tipo = :tipo) AND "
-            + "(:activo IS NULL OR p.activo = :activo) AND "
-            + "(:esFraccionable IS NULL OR p.esFraccionable = :esFraccionable)")
+            + "(CAST(:categoriaId AS string) IS NULL OR p.categoria.id = :categoriaId) AND "
+            + "(CAST(:tipo AS string) IS NULL OR p.tipo = :tipo) AND "
+            + "(CAST(:activo AS boolean) IS NULL OR p.activo = :activo) AND "
+            + "(CAST(:esFraccionable AS boolean) IS NULL OR p.esFraccionable = :esFraccionable)")
     Page<Producto> search(@Param("searchTerm") String searchTerm,
                           @Param("categoriaId") UUID categoriaId,
                           @Param("tipo") TipoProducto tipo,

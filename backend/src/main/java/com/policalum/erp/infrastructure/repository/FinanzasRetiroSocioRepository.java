@@ -34,11 +34,11 @@ public interface FinanzasRetiroSocioRepository extends JpaRepository<FinanzasRet
 
     @EntityGraph(attributePaths = {"admin", "sede"})
     @Query("SELECT r FROM FinanzasRetiroSocio r WHERE " +
-            "(:adminId IS NULL OR r.admin.id = :adminId) AND " +
-            "(:sedeId IS NULL OR r.sede.id = :sedeId) AND " +
-            "(:estado IS NULL OR r.estado = :estado) AND " +
-            "(:origen IS NULL OR r.origenFondos = :origen) AND " +
-            "r.fechaRetiro >= :desde AND r.fechaRetiro < :hasta")
+            "(CAST(:adminId AS string) IS NULL OR r.admin.id = :adminId) AND " +
+            "(CAST(:sedeId AS string) IS NULL OR r.sede.id = :sedeId) AND " +
+            "(CAST(:estado AS string) IS NULL OR r.estado = :estado) AND " +
+            "(CAST(:origen AS string) IS NULL OR r.origenFondos = :origen) AND " +
+            "r.fechaRetiro >= CAST(:desde AS timestamp) AND r.fechaRetiro < CAST(:hasta AS timestamp)")
     Page<FinanzasRetiroSocio> search(
             @Param("adminId") UUID adminId,
             @Param("sedeId") UUID sedeId,
@@ -51,8 +51,8 @@ public interface FinanzasRetiroSocioRepository extends JpaRepository<FinanzasRet
     @Query("SELECT r.origenFondos AS origen, COUNT(r) AS cantidad, " +
             "COALESCE(SUM(r.montoRetirado), 0) AS total " +
             "FROM FinanzasRetiroSocio r WHERE r.estado = :estado AND " +
-            "(:sedeId IS NULL OR r.sede.id = :sedeId) AND " +
-            "r.fechaRetiro >= :desde AND r.fechaRetiro < :hasta " +
+            "(CAST(:sedeId AS string) IS NULL OR r.sede.id = :sedeId) AND " +
+            "r.fechaRetiro >= CAST(:desde AS timestamp) AND r.fechaRetiro < CAST(:hasta AS timestamp) " +
             "GROUP BY r.origenFondos")
     List<RetiroPorOrigenProjection> totalesPorOrigen(
             @Param("estado") EstadoRetiro estado,
@@ -63,8 +63,8 @@ public interface FinanzasRetiroSocioRepository extends JpaRepository<FinanzasRet
     @Query("SELECT r.admin.id AS adminId, r.admin.nombre AS nombre, r.admin.apellido AS apellido, " +
             "COUNT(r) AS cantidad, COALESCE(SUM(r.montoRetirado), 0) AS total " +
             "FROM FinanzasRetiroSocio r WHERE r.estado = :estado AND " +
-            "(:sedeId IS NULL OR r.sede.id = :sedeId) AND " +
-            "r.fechaRetiro >= :desde AND r.fechaRetiro < :hasta " +
+            "(CAST(:sedeId AS string) IS NULL OR r.sede.id = :sedeId) AND " +
+            "r.fechaRetiro >= CAST(:desde AS timestamp) AND r.fechaRetiro < CAST(:hasta AS timestamp) " +
             "GROUP BY r.admin.id, r.admin.nombre, r.admin.apellido " +
             "ORDER BY SUM(r.montoRetirado) DESC")
     List<RetiroPorAdminProjection> totalesPorAdmin(
@@ -74,8 +74,8 @@ public interface FinanzasRetiroSocioRepository extends JpaRepository<FinanzasRet
             @Param("hasta") LocalDateTime hasta);
 
     @Query("SELECT COUNT(r) FROM FinanzasRetiroSocio r WHERE r.estado = :estado AND " +
-            "(:sedeId IS NULL OR r.sede.id = :sedeId) AND " +
-            "r.fechaRetiro >= :desde AND r.fechaRetiro < :hasta")
+            "(CAST(:sedeId AS string) IS NULL OR r.sede.id = :sedeId) AND " +
+            "r.fechaRetiro >= CAST(:desde AS timestamp) AND r.fechaRetiro < CAST(:hasta AS timestamp)")
     long contarPorEstado(
             @Param("estado") EstadoRetiro estado,
             @Param("sedeId") UUID sedeId,
@@ -83,8 +83,8 @@ public interface FinanzasRetiroSocioRepository extends JpaRepository<FinanzasRet
             @Param("hasta") LocalDateTime hasta);
 
     @Query("SELECT COALESCE(SUM(r.montoRetirado), 0) FROM FinanzasRetiroSocio r WHERE r.estado = :estado AND " +
-            "(:sedeId IS NULL OR r.sede.id = :sedeId) AND " +
-            "r.fechaRetiro >= :desde AND r.fechaRetiro < :hasta")
+            "(CAST(:sedeId AS string) IS NULL OR r.sede.id = :sedeId) AND " +
+            "r.fechaRetiro >= CAST(:desde AS timestamp) AND r.fechaRetiro < CAST(:hasta AS timestamp)")
     BigDecimal sumarMonto(
             @Param("estado") EstadoRetiro estado,
             @Param("sedeId") UUID sedeId,
@@ -94,8 +94,8 @@ public interface FinanzasRetiroSocioRepository extends JpaRepository<FinanzasRet
     // ============ Módulo 6: flujo de caja ============
 
     @Query("SELECT r.sede.id AS sedeId, r.origenFondos AS origen, COALESCE(SUM(r.montoRetirado), 0) AS total " +
-            "FROM FinanzasRetiroSocio r WHERE r.estado = :estado AND r.fechaRetiro >= :desde AND r.fechaRetiro < :hasta AND " +
-            "(:sedeId IS NULL OR r.sede.id = :sedeId) GROUP BY r.sede.id, r.origenFondos")
+            "FROM FinanzasRetiroSocio r WHERE r.estado = :estado AND r.fechaRetiro >= CAST(:desde AS timestamp) AND r.fechaRetiro < CAST(:hasta AS timestamp) AND " +
+            "(CAST(:sedeId AS string) IS NULL OR r.sede.id = :sedeId) GROUP BY r.sede.id, r.origenFondos")
     List<RetiroPorSedeOrigenProjection> totalesPorSedeYOrigen(@Param("estado") EstadoRetiro estado,
                                                              @Param("desde") LocalDateTime desde,
                                                              @Param("hasta") LocalDateTime hasta,

@@ -33,9 +33,9 @@ public interface CatalogoFraccionRepository extends JpaRepository<CatalogoFracci
      */
     @EntityGraph(attributePaths = "producto")
     @Query("SELECT f FROM CatalogoFraccion f WHERE "
-            + "(:productoId IS NULL OR f.producto.id = :productoId) AND "
-            + "(:activo IS NULL OR f.activo = :activo) AND "
-            + "(:searchTerm IS NULL OR "
+            + "(CAST(:productoId AS string) IS NULL OR f.producto.id = :productoId) AND "
+            + "(CAST(:activo AS boolean) IS NULL OR f.activo = :activo) AND "
+            + "(CAST(:searchTerm AS string) IS NULL OR "
             + " LOWER(f.nombreFraccion) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')))")
     Page<CatalogoFraccion> search(@Param("productoId") UUID productoId,
                                   @Param("activo") Boolean activo,
