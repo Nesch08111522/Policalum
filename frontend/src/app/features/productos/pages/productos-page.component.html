@@ -207,4 +207,4 @@
     <button type="button" class="btn btn-ghost" (click)="modalImportar = false" [disabled]="importando">Cerrar</button>
   </div>
 </app-modal>
-<app-confirm-dialog [open]="confirmar" [title]="accion === 'desactivar' ? 'Desactivar producto' : 'Eliminar producto'" [message]="accion === 'desactivar' ? 'El producto dejará de estar activo en el catálogo.' : 'Se eliminará ' + (seleccionado?.nombre || 'este producto') + '.'" [confirmLabel]="accion === 'desactivar' ? 'Desactivar' : 'Eliminar'" [loading]="eliminando" (confirm)="confirmarAccion()" (cancel)="confirmar = false"></app-confirm-dialog>
+<app-confirm-dialog [open]="confirmar" [title]="accion === 'desactivar' ? 'Desactivar producto' : 'Eliminar producto'" [message]="accion === 'desactivar' ? 'El producto dejará de estar activo en el catálogo.' : 'Si ' + (seleccionado?.nombre || 'este producto') + ' no tiene movimientos, se elimina. Si tiene kardex o ventas, se conserva inactivo.'" [confirmLabel]="accion === 'desactivar' ? 'Desactivar' : 'Eliminar'" [loading]="eliminando" (confirm)="confirmarAccion()" (cancel)="confirmar = false"></app-confirm-dialog>

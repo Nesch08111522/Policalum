@@ -12,6 +12,7 @@ import com.policalum.erp.domain.enums.TipoProducto;
 import com.policalum.erp.domain.model.CatalogoFraccion;
 import com.policalum.erp.domain.model.Producto;
 import com.policalum.erp.exception.ResourceNotFoundException;
+import com.policalum.erp.infrastructure.repository.CatalogoFraccionRepository;
 import com.policalum.erp.infrastructure.repository.ProductoRepository;
 import jakarta.validation.ValidationException;
 import java.math.BigDecimal;
@@ -27,6 +28,7 @@ import org.springframework.data.domain.*;
 class ProductoServiceImplTest {
 
     @Mock ProductoRepository productoRepository;
+    @Mock CatalogoFraccionRepository catalogoFraccionRepository;
     @Mock ProductoMapper productoMapper;
     @Mock FileStorageService fileStorageService;
     @InjectMocks ProductoServiceImpl service;
@@ -138,18 +140,86 @@ class ProductoServiceImplTest {
     // ---------------------------------------------------------------- update
 
     @Test
-    void update_mismoSku_permitidoYRegeneraFracciones() {
+    void update_sinListaDeFracciones_conservaLasExistentes() {
         Producto p = Producto.builder().id(id).codigoSku("PC-6").nombre("x").esFraccionable(true)
                 .precioVentaBase(new BigDecimal("100.00")).build();
-        p.addFraccion(CatalogoFraccion.builder().nombreFraccion("vieja").build());
+        p.addFraccion(CatalogoFraccion.builder().nombreFraccion("vieja").factorDescuentoKardex(new BigDecimal("0.5000"))
+                .precioVenta(new BigDecimal("50.00")).build());
         when(productoRepository.findWithRelationsById(id)).thenReturn(Optional.of(p));
         when(productoRepository.findByCodigoSkuIgnoreCase("PC-6")).thenReturn(Optional.of(p));
 
         service.update(id, request("PC-6", true, null));
 
         verify(productoMapper).updateEntityFromDto(any(), eq(p));
-        assertEquals(4, p.getFracciones().size());
-        assertTrue(p.getFracciones().stream().noneMatch(f -> "vieja".equals(f.getNombreFraccion())));
+        assertEquals(1, p.getFracciones().size());
+        assertEquals("vieja", p.getFracciones().get(0).getNombreFraccion());
+    }
+
+    @Test
+    void update_conservaElIdYRecalculaElPrecioProporcional() {
+        UUID fraccionId = UUID.randomUUID();
+        Producto p = Producto.builder().id(id).codigoSku("PC-6").nombre("x").esFraccionable(true)
+                .precioVentaBase(new BigDecimal("100.00")).build();
+        p.addFraccion(CatalogoFraccion.builder().id(fraccionId).nombreFraccion("Media").factorDescuentoKardex(new BigDecimal("0.5000"))
+                .precioVenta(new BigDecimal("50.00")).activo(true).build());
+        when(productoRepository.findWithRelationsById(id)).thenReturn(Optional.of(p));
+        when(productoRepository.findByCodigoSkuIgnoreCase("PC-6")).thenReturn(Optional.of(p));
+        doAnswer(invocacion -> {
+            Producto destino = invocacion.getArgument(1);
+            destino.setPrecioVentaBase(new BigDecimal("200.00"));
+            destino.setEsFraccionable(true);
+            return null;
+        }).when(productoMapper).updateEntityFromDto(any(), any());
+
+        service.update(id, request("PC-6", true, List.of(
+                new CatalogoFraccionRequestDTO(id, "Media plancha", new BigDecimal("0.5"), new BigDecimal("50.00"), true))));
+
+        CatalogoFraccion guardada = p.getFracciones().get(0);
+        assertEquals(1, p.getFracciones().size());
+        assertEquals(fraccionId, guardada.getId());
+        assertEquals("Media plancha", guardada.getNombreFraccion());
+        assertEquals(new BigDecimal("100.00"), guardada.getPrecioVenta());
+    }
+
+    @Test
+    void update_precioPersonalizado_noSePisaAlCambiarLaBase() {
+        Producto p = Producto.builder().id(id).codigoSku("PC-6").nombre("x").esFraccionable(true)
+                .precioVentaBase(new BigDecimal("100.00")).build();
+        p.addFraccion(CatalogoFraccion.builder().id(UUID.randomUUID()).nombreFraccion("Media").factorDescuentoKardex(new BigDecimal("0.5000"))
+                .precioVenta(new BigDecimal("80.00")).activo(true).build());
+        when(productoRepository.findWithRelationsById(id)).thenReturn(Optional.of(p));
+        when(productoRepository.findByCodigoSkuIgnoreCase("PC-6")).thenReturn(Optional.of(p));
+        doAnswer(invocacion -> {
+            Producto destino = invocacion.getArgument(1);
+            destino.setPrecioVentaBase(new BigDecimal("200.00"));
+            destino.setEsFraccionable(true);
+            return null;
+        }).when(productoMapper).updateEntityFromDto(any(), any());
+
+        service.update(id, request("PC-6", true, List.of(
+                new CatalogoFraccionRequestDTO(id, "Media", new BigDecimal("0.5"), new BigDecimal("80.00"), true))));
+
+        assertEquals(new BigDecimal("80.00"), p.getFracciones().get(0).getPrecioVenta());
+    }
+
+    @Test
+    void update_fraccionConHistorialQueSaleDeLaLista_quedaInactiva() {
+        UUID usada = UUID.randomUUID();
+        Producto p = Producto.builder().id(id).codigoSku("PC-6").nombre("x").esFraccionable(true)
+                .precioVentaBase(new BigDecimal("100.00")).build();
+        p.addFraccion(CatalogoFraccion.builder().id(usada).nombreFraccion("Cuarto").factorDescuentoKardex(new BigDecimal("0.2500"))
+                .precioVenta(new BigDecimal("25.00")).activo(true).build());
+        when(productoRepository.findWithRelationsById(id)).thenReturn(Optional.of(p));
+        when(productoRepository.findByCodigoSkuIgnoreCase("PC-6")).thenReturn(Optional.of(p));
+        when(catalogoFraccionRepository.tieneHistorial(usada)).thenReturn(true);
+
+        service.update(id, request("PC-6", true, List.of(
+                new CatalogoFraccionRequestDTO(id, "Completa", BigDecimal.ONE, new BigDecimal("100.00"), true))));
+
+        assertEquals(2, p.getFracciones().size());
+        CatalogoFraccion historica = p.getFracciones().stream().filter(f -> usada.equals(f.getId())).findFirst().orElseThrow();
+        assertFalse(historica.getActivo());
+        assertEquals(usada, historica.getId());
     }
 
     @Test
@@ -238,13 +308,37 @@ class ProductoServiceImplTest {
     }
 
     @Test
-    void delete_existente_borra() {
-        Producto p = Producto.builder().id(id).build();
+    void delete_sinHistorial_borra() {
+        Producto p = Producto.builder().id(id).activo(true).build();
         when(productoRepository.findWithRelationsById(id)).thenReturn(Optional.of(p));
+        when(productoRepository.tieneHistorial(id)).thenReturn(false);
+
+        assertNull(service.delete(id));
+
+        verify(productoRepository).delete(p);
+    }
+
+    @Test
+    void delete_conHistorial_desactivaYNoBorra() {
+        Producto p = Producto.builder().id(id).activo(true).build();
+        when(productoRepository.findWithRelationsById(id)).thenReturn(Optional.of(p));
+        when(productoRepository.tieneHistorial(id)).thenReturn(true);
 
         service.delete(id);
 
-        verify(productoRepository).delete(p);
+        assertFalse(p.getActivo());
+        verify(productoRepository).save(p);
+        verify(productoRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_inactivoConHistorial_rechaza() {
+        Producto p = Producto.builder().id(id).activo(false).build();
+        when(productoRepository.findWithRelationsById(id)).thenReturn(Optional.of(p));
+        when(productoRepository.tieneHistorial(id)).thenReturn(true);
+
+        assertThrows(ValidationException.class, () -> service.delete(id));
+        verify(productoRepository, never()).delete(any());
     }
 
     @Test

@@ -42,6 +42,28 @@ export class PageState<T> {
     this.status = null;
   }
 
+  /** Inserta o reemplaza una fila ya confirmada por el backend, sin volver a pedir la página. */
+  upsert(row: T, same: (item: T) => boolean): boolean {
+    const index = this.rows.findIndex(same);
+    if (index >= 0) {
+      this.rows = this.rows.map((item, position) => (position === index ? row : item));
+      return true;
+    }
+    if (this.page !== 0) return false;
+    this.rows = [row, ...this.rows].slice(0, this.size);
+    this.totalElements += 1;
+    this.totalPages = Math.max(1, Math.ceil(this.totalElements / this.size));
+    return true;
+  }
+
+  removeWhere(same: (item: T) => boolean): void {
+    const next = this.rows.filter((item) => !same(item));
+    if (next.length === this.rows.length) return;
+    this.rows = next;
+    this.totalElements = Math.max(0, this.totalElements - 1);
+    this.totalPages = this.totalElements === 0 ? 0 : Math.ceil(this.totalElements / this.size);
+  }
+
   fail(message: string, status: number | null): void {
     this.loading = false;
     if (!this.rows.length) {

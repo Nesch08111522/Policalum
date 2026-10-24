@@ -25,4 +25,4 @@
     <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
   </div>
 </app-modal>
-<app-confirm-dialog [open]="confirmar" title="Eliminar categoría" [message]="'Se eliminará ' + (seleccionado?.nombre || 'esta categoría') + '.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>
+<app-confirm-dialog [open]="confirmar" title="Eliminar categoría" [message]="'Si ' + (seleccionado?.nombre || 'esta categoría') + ' no tiene productos ni subcategorías, se elimina. Si los tiene, queda inactiva.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>

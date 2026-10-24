@@ -137,8 +137,30 @@ class CatalogoFraccionServiceImplTest {
     }
 
     @Test
-    void delete_yFindById_inexistente() {
+    void delete_sinHistorial_borra() {
+        when(catalogoFraccionRepository.tieneHistorial(media.getId())).thenReturn(false);
+
+        assertNull(service.delete(media.getId()));
+
+        verify(catalogoFraccionRepository).delete(media);
+    }
+
+    @Test
+    void delete_conHistorial_desactiva() {
+        media.setActivo(true);
+        when(catalogoFraccionRepository.tieneHistorial(media.getId())).thenReturn(true);
+
         service.delete(media.getId());
+
+        assertFalse(media.getActivo());
+        verify(catalogoFraccionRepository).save(media);
+        verify(catalogoFraccionRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_yFindById_inexistente() {
+        when(catalogoFraccionRepository.tieneHistorial(media.getId())).thenReturn(false);
+        assertNull(service.delete(media.getId()));
         verify(catalogoFraccionRepository).delete(media);
 
         UUID x = UUID.randomUUID();

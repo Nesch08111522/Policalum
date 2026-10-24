@@ -29,6 +29,7 @@ public interface CategoriaRepository extends JpaRepository<Categoria, UUID> {
      *       ERROR: no existe la función pg_catalog.btrim(bytea)
      * - El servicio normaliza "" a null antes de llamar a este método.
      */
+    @EntityGraph(attributePaths = "parent")
     @Query("SELECT c FROM Categoria c WHERE "
             + "(CAST(:searchTerm AS string) IS NULL OR "
             + " LOWER(c.nombre) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')) OR "
@@ -41,7 +42,13 @@ public interface CategoriaRepository extends JpaRepository<Categoria, UUID> {
     @EntityGraph(attributePaths = "parent")
     Optional<Categoria> findWithParentById(UUID id);
 
+    @EntityGraph(attributePaths = "parent")
     List<Categoria> findByParent_IdOrderByNombreAsc(UUID parentId);
+
+    boolean existsByParent_Id(UUID parentId);
+
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN TRUE ELSE FALSE END FROM Producto p WHERE p.categoria.id = :id")
+    boolean tieneProductos(@Param("id") UUID id);
 
     List<Categoria> findByParentIsNullOrderByNombreAsc();
 

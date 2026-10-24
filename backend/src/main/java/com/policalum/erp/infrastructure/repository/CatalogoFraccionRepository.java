@@ -54,4 +54,15 @@ public interface CatalogoFraccionRepository extends JpaRepository<CatalogoFracci
     long countByProducto_Id(UUID productoId);
 
     long countByActivo(Boolean activo);
+
+    @Query("""
+            SELECT CASE WHEN
+                EXISTS (SELECT 1 FROM DetalleVenta d WHERE d.fraccion.id = :id)
+                OR EXISTS (SELECT 1 FROM DetalleCompra d WHERE d.fraccion.id = :id)
+                OR EXISTS (SELECT 1 FROM DetalleCotizacion d WHERE d.fraccion.id = :id)
+                OR EXISTS (SELECT 1 FROM DetallePreforma d WHERE d.fraccion.id = :id)
+                OR EXISTS (SELECT 1 FROM DetalleDevolucion d WHERE d.fraccion.id = :id)
+            THEN TRUE ELSE FALSE END
+            """)
+    boolean tieneHistorial(@Param("id") UUID id);
 }

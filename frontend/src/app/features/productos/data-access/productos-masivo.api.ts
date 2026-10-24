@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { QueryMap } from '../../../core/api/backend-api.service';
+import { ProductoRequestDTO, ProductoResponseDTO } from '../../../core/api/openapi.types';
 
 export const COLUMNAS_PRODUCTO = [
   'codigoSku',
@@ -68,11 +69,11 @@ export class ProductosMasivoApiService {
     return this.http.post<{ ruta: string }>(`${this.base}/api/v1/productos/imagenes`, cuerpo);
   }
 
-  actualizarConImagen(id: string, producto: unknown, archivo: File): Observable<unknown> {
+  actualizarConImagen(id: string, producto: ProductoRequestDTO, archivo: File): Observable<ProductoResponseDTO> {
     const cuerpo = new FormData();
     cuerpo.append('producto', new Blob([JSON.stringify(producto)], { type: 'application/json' }), 'producto.json');
     cuerpo.append('archivo', archivo);
-    return this.http.put(`${this.base}/api/v1/productos/${id}`, cuerpo);
+    return this.http.put<ProductoResponseDTO>(`${this.base}/api/v1/productos/${id}`, cuerpo);
   }
 
   verImagen(ruta: string): Observable<Blob> {

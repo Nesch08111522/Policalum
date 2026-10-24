@@ -100,10 +100,19 @@ export class CategoriasPageComponent implements OnInit, OnDestroy {
     if (value.id && value.id === value.parentId) { this.errorFormulario = 'Una categoría no puede ser su propio padre.'; return; }
     const body: Api.CategoriaRequestDTO = { nombre: value.nombre.trim(), slug: value.slug.trim(), activa: value.activa, parent: value.parentId ? { id: value.parentId } : undefined };
     this.guardando = true;
-    const request = this.editando && value.id ? this.api.PutApiV1CategoriasId({ id: value.id }, body) : this.api.PostApiV1Categorias({}, body);
+    const modo = this.editando && value.id ? 'actualizar' : 'crear';
+    const request = modo === 'actualizar' ? this.api.PutApiV1CategoriasId({ id: value.id }, body) : this.api.PostApiV1Categorias({}, body);
     request.pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = false; this.lookup.invalidate('categorias'); this.toast.success(this.editando ? 'Categoría actualizada.' : 'Categoría creada.'); this.cargar(); this.cargarPadres(); },
-      error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
+      next: (guardada) => {
+        this.guardando = false;
+        this.modal = false;
+        this.form.reset({ id: '', nombre: '', slug: '', parentId: '', activa: true });
+        this.lookup.invalidate('categorias');
+        this.aplicar(guardada, modo);
+        this.sincronizarPadres(guardada);
+        this.toast.success(modo === 'actualizar' ? 'Categoría actualizada.' : 'Categoría creada.');
+      },
+      error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); this.toast.error(problemText(error)); },
     });
   }
   pedirEliminar(row: unknown): void { this.seleccionado = row as Api.CategoriaResponseDTO; this.confirmar = true; }
@@ -111,9 +120,62 @@ export class CategoriasPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1CategoriasId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.invalidate('categorias'); this.toast.success('Categoría eliminada.'); this.cargar(); this.cargarPadres(); },
+      next: (respuesta: unknown) => {
+        this.eliminando = false;
+        this.confirmar = false;
+        this.lookup.invalidate('categorias');
+        const guardada = this.esCategoria(respuesta) ? respuesta : null;
+        if (guardada) {
+          this.aplicar(guardada, 'actualizar');
+          this.sincronizarPadres(guardada);
+          this.toast.success('La categoría quedó inactiva para conservar sus productos.');
+        } else {
+          this.state.removeWhere((row) => row.id === this.seleccionado?.id);
+          this.sincronizarPadres(this.seleccionado, true);
+          this.toast.success('Categoría eliminada.');
+        }
+      },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
+  }
+
+  private esCategoria(valor: unknown): valor is Api.CategoriaResponseDTO {
+    return !!valor && typeof valor === 'object' && typeof (valor as { id?: unknown }).id === 'string' && 'nombre' in valor;
+  }
+
+  private aplicar(guardada: Api.CategoriaResponseDTO, modo: 'crear' | 'actualizar'): void {
+    if (!guardada.id) return;
+    if (modo === 'crear' && this.state.page !== 0) {
+      this.state.page = 0;
+      this.cargar();
+      return;
+    }
+    const visible = this.visible(guardada);
+    const existe = this.state.rows.some((row) => row.id === guardada.id);
+    if (!visible && existe) this.state.removeWhere((row) => row.id === guardada.id);
+    else if (visible) this.state.upsert(guardada, (row) => row.id === guardada.id);
+  }
+
+  private visible(categoria: Api.CategoriaResponseDTO): boolean {
+    const filtro = this.filtros.getRawValue();
+    const termino = filtro.searchTerm.trim().toLowerCase();
+    if (termino) {
+      const nombre = (categoria.nombre ?? '').toLowerCase();
+      const slug = (categoria.slug ?? '').toLowerCase();
+      if (!nombre.includes(termino) && !slug.includes(termino)) return false;
+    }
+    if (filtro.activa === 'true' && categoria.activa === false) return false;
+    if (filtro.activa === 'false' && categoria.activa !== false) return false;
+    return true;
+  }
+
+  private sincronizarPadres(item: Api.CategoriaResponseDTO | null, quitar = false): void {
+    if (!item?.id) return;
+    const esRaiz = !quitar && !item.parent?.id && item.activa !== false;
+    const resto = this.padres.filter((opcion) => opcion.value !== item.id);
+    this.padres = esRaiz
+      ? [...resto, { value: item.id, label: item.nombre ?? 'Categoría' }].sort((a, b) => a.label.localeCompare(b.label, 'es'))
+      : resto;
   }
   errorDe(nombre: 'nombre' | 'slug'): string | null { return fieldError(this.form.controls[nombre], { pattern: 'Usa minúsculas, números y guiones.' }); }
 }

@@ -35,8 +35,8 @@ public interface ProductoService {
     /**
      * Actualiza la información de un producto existente por su ID.
      * <p>
-     * Reejecuta el procesamiento de fracciones: en caso de cambiar el precio de venta base
-     * o la fraccionabilidad del producto, se limpiarán y recalcularán sus cortes asociados.
+     * Conserva el identificador de cada fracción ya guardada (ventas y compras lo referencian)
+     * y recalcula el precio solo cuando seguía siendo proporcional al precio base anterior.
      * </p>
 
      * @param id Identificador único del producto a actualizar.
@@ -71,12 +71,14 @@ public interface ProductoService {
                                      Boolean activo, Boolean esFraccionable, Pageable pageable);
 
     /**
-     * Elimina un producto por su ID. Las fracciones asociadas se eliminarán en cascada.
+     * Elimina un producto sin historial. Si tiene stock, kardex o documentos, lo deja inactivo.
      *
      * @param id Identificador único del producto a eliminar.
+     * @return el producto inactivo cuando se conserva por historial; {@code null} si se borró.
      * @throws com.policalum.erp.exception.ResourceNotFoundException Si el producto no existe.
+     * @throws jakarta.validation.ValidationException Si ya estaba inactivo y tiene historial.
      */
-    void delete(UUID id);
+    ProductoResponseDTO delete(UUID id);
 
     /**
      * Verifica si un código SKU está disponible para su registro o actualización.

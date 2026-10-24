@@ -4,13 +4,18 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.policalum.erp.application.dto.request.KardexMovimientoRequestDTO;
 import com.policalum.erp.application.dto.request.StockRequestDTO;
 import com.policalum.erp.application.mapper.StockMapper;
+import com.policalum.erp.application.service.KardexService;
+import com.policalum.erp.domain.enums.TipoMovimiento;
+import com.policalum.erp.domain.enums.TipoReferencia;
 import com.policalum.erp.domain.model.Almacen;
 import com.policalum.erp.domain.model.Producto;
 import com.policalum.erp.domain.model.Stock;
 import com.policalum.erp.exception.ResourceNotFoundException;
 import com.policalum.erp.infrastructure.repository.StockRepository;
+import jakarta.validation.ValidationException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -26,6 +31,7 @@ class StockServiceImplTest {
 
     @Mock StockRepository stockRepository;
     @Mock StockMapper stockMapper;
+    @Mock KardexService kardexService;
     @InjectMocks StockServiceImpl service;
 
     Producto producto;
@@ -39,14 +45,24 @@ class StockServiceImplTest {
     }
 
     @Test
-    void saveOrUpdate_filaExistente_actualizaCantidadMinimoYFecha() {
+    void saveOrUpdate_filaExistente_mueveLaDiferenciaPorKardex() {
         Stock s = Stock.builder().producto(producto).almacen(almacen).cantidad(new BigDecimal("3"))
                 .stockMinimo(new BigDecimal("1")).updatedAt(LocalDateTime.now().minusDays(1)).build();
         when(stockRepository.findByAlmacen_IdAndProducto_Id(almacen.getId(), producto.getId())).thenReturn(Optional.of(s));
+        doAnswer(invocacion -> {
+            KardexMovimientoRequestDTO movimiento = invocacion.getArgument(0);
+            s.setCantidad(s.getCantidad().add(movimiento.cantidadMovida()));
+            return null;
+        }).when(kardexService).registrarMovimiento(any());
         LocalDateTime antes = LocalDateTime.now();
 
         service.saveOrUpdate(new StockRequestDTO(producto, almacen, new BigDecimal("10"), new BigDecimal("2"), null));
 
+        ArgumentCaptor<KardexMovimientoRequestDTO> movimiento = ArgumentCaptor.forClass(KardexMovimientoRequestDTO.class);
+        verify(kardexService).registrarMovimiento(movimiento.capture());
+        assertEquals(TipoMovimiento.ENTRADA, movimiento.getValue().tipoMovimiento());
+        assertEquals(TipoReferencia.AJUSTE, movimiento.getValue().tipoReferencia());
+        assertEquals(0, movimiento.getValue().cantidadMovida().compareTo(new BigDecimal("7")));
         assertEquals(new BigDecimal("10"), s.getCantidad());
         assertEquals(new BigDecimal("2"), s.getStockMinimo());
         assertFalse(s.getUpdatedAt().isBefore(antes));
@@ -57,23 +73,56 @@ class StockServiceImplTest {
     void saveOrUpdate_sinMinimo_conservaElAnterior() {
         Stock s = Stock.builder().producto(producto).almacen(almacen).cantidad(BigDecimal.ONE).stockMinimo(new BigDecimal("5")).build();
         when(stockRepository.findByAlmacen_IdAndProducto_Id(any(), any())).thenReturn(Optional.of(s));
+        doAnswer(invocacion -> {
+            KardexMovimientoRequestDTO movimiento = invocacion.getArgument(0);
+            s.setCantidad(movimiento.tipoMovimiento() == TipoMovimiento.SALIDA
+                    ? s.getCantidad().subtract(movimiento.cantidadMovida())
+                    : s.getCantidad().add(movimiento.cantidadMovida()));
+            return null;
+        }).when(kardexService).registrarMovimiento(any());
 
         service.saveOrUpdate(new StockRequestDTO(producto, almacen, new BigDecimal("7"), null, null));
 
         assertEquals(new BigDecimal("5"), s.getStockMinimo());
+        assertEquals(0, s.getCantidad().compareTo(new BigDecimal("7")));
     }
 
     @Test
-    void saveOrUpdate_sinFila_creaStockNuevo() {
-        when(stockRepository.findByAlmacen_IdAndProducto_Id(any(), any())).thenReturn(Optional.empty());
+    void saveOrUpdate_mismaCantidad_noRegistraMovimiento() {
+        Stock s = Stock.builder().producto(producto).almacen(almacen).cantidad(new BigDecimal("4")).stockMinimo(BigDecimal.ONE).build();
+        when(stockRepository.findByAlmacen_IdAndProducto_Id(any(), any())).thenReturn(Optional.of(s));
+
+        service.saveOrUpdate(new StockRequestDTO(producto, almacen, new BigDecimal("4.00"), new BigDecimal("3"), null));
+
+        verify(kardexService, never()).registrarMovimiento(any());
+        assertEquals(new BigDecimal("3"), s.getStockMinimo());
+    }
+
+    @Test
+    void saveOrUpdate_cantidadNegativa_lanzaValidation() {
+        assertThrows(ValidationException.class, () -> service.saveOrUpdate(
+                new StockRequestDTO(producto, almacen, new BigDecimal("-1"), null, null)));
+        verifyNoInteractions(kardexService);
+    }
+
+    @Test
+    void saveOrUpdate_sinFila_creaLaEntradaPorKardex() {
+        Stock creado = Stock.builder().producto(producto).almacen(almacen).cantidad(BigDecimal.ZERO).build();
+        when(stockRepository.findByAlmacen_IdAndProducto_Id(any(), any())).thenReturn(Optional.empty(), Optional.of(creado));
+        doAnswer(invocacion -> {
+            creado.setCantidad(new BigDecimal("4"));
+            return null;
+        }).when(kardexService).registrarMovimiento(any());
 
         service.saveOrUpdate(new StockRequestDTO(producto, almacen, new BigDecimal("4"), null, null));
 
-        ArgumentCaptor<Stock> c = ArgumentCaptor.forClass(Stock.class);
-        verify(stockRepository).save(c.capture());
-        assertSame(producto, c.getValue().getProducto());
-        assertSame(almacen, c.getValue().getAlmacen());
-        assertEquals(new BigDecimal("4"), c.getValue().getCantidad());
+        ArgumentCaptor<KardexMovimientoRequestDTO> movimiento = ArgumentCaptor.forClass(KardexMovimientoRequestDTO.class);
+        verify(kardexService).registrarMovimiento(movimiento.capture());
+        assertEquals(TipoMovimiento.ENTRADA, movimiento.getValue().tipoMovimiento());
+        assertEquals(0, movimiento.getValue().cantidadMovida().compareTo(new BigDecimal("4")));
+        verify(stockRepository).save(creado);
+        assertSame(producto, creado.getProducto());
+        assertSame(almacen, creado.getAlmacen());
     }
 
     @Test

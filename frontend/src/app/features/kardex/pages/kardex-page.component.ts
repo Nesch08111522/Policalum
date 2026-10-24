@@ -54,12 +54,16 @@ export class KardexPageComponent implements OnInit, OnDestroy {
   modal = false;
   guardando = false;
   errorFormulario: string | null = null;
+  private omitirRevision = 0;
   private readonly destroy$ = new Subject<void>();
 
   constructor(private readonly api: KardexApiService, private readonly lookup: LookupService, private readonly inventario: InventarioSyncService, private readonly toast: ToastService, private readonly route: ActivatedRoute) {
     effect(() => {
       const revision = this.inventario.revision();
-      untracked(() => { if (revision) this.cargar(); });
+      untracked(() => {
+        if (!revision || revision === this.omitirRevision) return;
+        this.cargar();
+      });
     });
   }
   ngOnInit(): void {
@@ -140,8 +144,18 @@ export class KardexPageComponent implements OnInit, OnDestroy {
     };
     this.guardando = true;
     this.api.PostApiV1KardexMovimientos({}, body).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = false; this.inventario.marcarCambio(); this.toast.success('Movimiento registrado.'); this.tab = 'movimientos'; this.cargar(); },
-      error: (error: unknown) => { this.guardando = false; this.errorFormulario = problemText(error); },
+      next: () => {
+        this.guardando = false;
+        this.modal = false;
+        this.form.reset({ productoId: '', almacenId: '', tipoMovimiento: 'ENTRADA', tipoReferencia: 'AJUSTE', cantidadMovida: 1, observacion: '' });
+        this.tab = 'movimientos';
+        this.state.page = 0;
+        this.omitirRevision = this.inventario.revision() + 1;
+        this.inventario.marcarCambio();
+        this.toast.success('Movimiento registrado.');
+        this.cargar();
+      },
+      error: (error: unknown) => { this.guardando = false; this.errorFormulario = problemText(error); this.toast.error(problemText(error)); },
     });
   }
 }

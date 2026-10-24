@@ -143,10 +143,25 @@ class CategoriaServiceImplTest {
     }
 
     @Test
-    void delete_existente_borra() {
-        service.delete(hija.getId());
+    void delete_sinUso_borra() {
+        when(categoriaRepository.existsByParent_Id(hija.getId())).thenReturn(false);
+        when(categoriaRepository.tieneProductos(hija.getId())).thenReturn(false);
+
+        assertNull(service.delete(hija.getId()));
 
         verify(categoriaRepository).delete(hija);
+    }
+
+    @Test
+    void delete_conProductos_desactiva() {
+        hija.setActiva(true);
+        when(categoriaRepository.tieneProductos(hija.getId())).thenReturn(true);
+
+        service.delete(hija.getId());
+
+        assertFalse(hija.getActiva());
+        verify(categoriaRepository).save(hija);
+        verify(categoriaRepository, never()).delete(any());
     }
 
     @Test

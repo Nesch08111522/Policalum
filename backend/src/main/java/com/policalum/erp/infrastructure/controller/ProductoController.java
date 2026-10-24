@@ -137,9 +137,12 @@ public class ProductoController {
      * @param id Identificador único del producto a eliminar.
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        productoService.delete(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ProductoResponseDTO> delete(@PathVariable UUID id) {
+        ProductoResponseDTO respuesta = productoService.delete(id);
+        if (respuesta == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(respuesta);
     }
 
     /**

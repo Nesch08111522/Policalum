@@ -1,6 +1,7 @@
 package com.policalum.erp.application.service.serviceImpl;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,14 +83,24 @@ public class CatalogoFraccionServiceImpl implements CatalogoFraccionService {
     }
 
     @Override
-    public void delete(UUID id) {
-        catalogoFraccionRepository.delete(findEntityById(id));
+    public CatalogoFraccionResponseDTO delete(UUID id) {
+        CatalogoFraccion fraccion = findEntityById(id);
+        if (catalogoFraccionRepository.tieneHistorial(id)) {
+            if (Boolean.FALSE.equals(fraccion.getActivo())) {
+                throw new ValidationException("La fracción tiene historial de ventas o compras y permanece inactiva");
+            }
+            fraccion.setActivo(false);
+            return catalogoFraccionMapper.toResponseDto(catalogoFraccionRepository.save(fraccion));
+        }
+        catalogoFraccionRepository.delete(fraccion);
+        return null;
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean isFactorDisponible(UUID productoId, BigDecimal factor, UUID excludeId) {
-        return catalogoFraccionRepository.findByProducto_IdAndFactorDescuentoKardex(productoId, factor)
+        BigDecimal normalizado = factor == null ? null : factor.stripTrailingZeros();
+        return catalogoFraccionRepository.findByProducto_IdAndFactorDescuentoKardex(productoId, normalizado)
                 .map(fraccion -> excludeId != null && fraccion.getId().equals(excludeId))
                 .orElse(true);
     }
@@ -116,7 +127,7 @@ public class CatalogoFraccionServiceImpl implements CatalogoFraccionService {
         if (!productoRepository.existsByIdAndEsFraccionableTrue(producto.getId())) {
             throw new ValidationException("Solo se pueden registrar fracciones para productos fraccionables");
         }
-        BigDecimal factor = requestDTO.factorDescuentoKardex();
+        BigDecimal factor = requestDTO.factorDescuentoKardex().setScale(4, RoundingMode.HALF_UP);
         if (factor.compareTo(BigDecimal.ZERO) <= 0 || factor.compareTo(BigDecimal.ONE) > 0) {
             throw new ValidationException("El factor de la fracción debe ser mayor que 0 y menor o igual que 1");
         }

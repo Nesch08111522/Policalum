@@ -24,7 +24,12 @@ public interface CategoriaService {
 
     List<CategoriaResponseDTO> findChildren(UUID parentId);
 
-    void delete(UUID id);
+    /**
+     * Borra la categoría si no tiene productos ni hijas. Si los tiene, la deja inactiva.
+     *
+     * @return la categoría inactiva cuando se conserva; {@code null} si se borró.
+     */
+    CategoriaResponseDTO delete(UUID id);
 
     boolean isSlugDisponible(String slug, UUID excludeId);
 

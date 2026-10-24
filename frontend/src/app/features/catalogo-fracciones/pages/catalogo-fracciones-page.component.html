@@ -27,4 +27,4 @@
     <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
   </div>
 </app-modal>
-<app-confirm-dialog [open]="confirmar" title="Eliminar fracción" [message]="'Se eliminará ' + (seleccionado?.nombreFraccion || 'esta fracción') + '.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>
+<app-confirm-dialog [open]="confirmar" title="Eliminar fracción" [message]="'Si ' + (seleccionado?.nombreFraccion || 'esta fracción') + ' no está en ventas ni compras, se elimina. Si tiene historial, queda inactiva.'" confirmLabel="Eliminar" [loading]="eliminando" (confirm)="eliminar()" (cancel)="confirmar = false"></app-confirm-dialog>

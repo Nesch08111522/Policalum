@@ -64,4 +64,23 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
     long countByEsFraccionable(Boolean esFraccionable);
 
     long countByTipo(TipoProducto tipo);
+
+    /**
+     * El producto participa en stock, kardex, compras, ventas u otros documentos.
+     * En ese caso no se borra: se desactiva para conservar el historial.
+     */
+    @Query("""
+            SELECT CASE WHEN
+                EXISTS (SELECT 1 FROM KardexMovimiento k WHERE k.producto.id = :id)
+                OR EXISTS (SELECT 1 FROM Stock s WHERE s.producto.id = :id)
+                OR EXISTS (SELECT 1 FROM AjusteStock a WHERE a.producto.id = :id)
+                OR EXISTS (SELECT 1 FROM TransferenciaStock t WHERE t.producto.id = :id)
+                OR EXISTS (SELECT 1 FROM DetalleVenta d WHERE d.producto.id = :id OR d.fraccion.producto.id = :id)
+                OR EXISTS (SELECT 1 FROM DetalleCompra d WHERE d.producto.id = :id OR d.fraccion.producto.id = :id)
+                OR EXISTS (SELECT 1 FROM DetalleCotizacion d WHERE d.producto.id = :id OR d.fraccion.producto.id = :id)
+                OR EXISTS (SELECT 1 FROM DetallePreforma d WHERE d.producto.id = :id OR d.fraccion.producto.id = :id)
+                OR EXISTS (SELECT 1 FROM DetalleDevolucion d WHERE d.producto.id = :id OR d.fraccion.producto.id = :id)
+            THEN TRUE ELSE FALSE END
+            """)
+    boolean tieneHistorial(@Param("id") UUID id);
 }

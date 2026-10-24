@@ -70,9 +70,12 @@ public class CatalogoFraccionController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        catalogoFraccionService.delete(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<CatalogoFraccionResponseDTO> delete(@PathVariable UUID id) {
+        CatalogoFraccionResponseDTO respuesta = catalogoFraccionService.delete(id);
+        if (respuesta == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(respuesta);
     }
 
     @GetMapping("/validar-factor")

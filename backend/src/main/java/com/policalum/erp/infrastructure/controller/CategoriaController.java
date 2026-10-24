@@ -71,9 +71,12 @@ public class CategoriaController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        categoriaService.delete(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<CategoriaResponseDTO> delete(@PathVariable UUID id) {
+        CategoriaResponseDTO respuesta = categoriaService.delete(id);
+        if (respuesta == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(respuesta);
     }
 
     @GetMapping("/validar-slug")

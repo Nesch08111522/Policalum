@@ -49,10 +49,14 @@ function esLogin(url: string): boolean {
   return url.includes('/auth/login');
 }
 
-/** Avisa sin cerrar sesión. El 401 de sesión vencida sigue en el bloque de logout. */
+/** Avisa sin cerrar sesión. El 401 de sesión vencida sigue en el bloque de logout. Los 400 con errores de campo se muestran en el formulario. */
 function avisar(toast: ToastService, problem: ApiProblem): void {
   const status = problem.status ?? 0;
-  if (status === 0 || status === 404 || status >= 500) toast.error(problem.message || 'La operación no pudo completarse.');
+  const tieneCampos = !!problem.fieldErrors && Object.keys(problem.fieldErrors).length > 0;
+  if (status === 400 && tieneCampos) return;
+  if (status === 0 || status === 400 || status === 403 || status === 404 || status === 409 || status >= 500) {
+    toast.error(problem.message || 'La operación no pudo completarse.');
+  }
 }
 
 export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {

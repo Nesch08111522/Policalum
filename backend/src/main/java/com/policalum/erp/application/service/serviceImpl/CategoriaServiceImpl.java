@@ -35,6 +35,7 @@ public class CategoriaServiceImpl implements CategoriaService {
     public CategoriaResponseDTO create(CategoriaRequestDTO requestDTO) {
         validateSlugAvailability(requestDTO.slug(), null);
         Categoria categoria = categoriaMapper.toEntity(requestDTO);
+        resolverParent(categoria, requestDTO);
         normalize(categoria);
         return categoriaMapper.toResponseDto(categoriaRepository.save(categoria));
     }
@@ -45,6 +46,7 @@ public class CategoriaServiceImpl implements CategoriaService {
         validateSlugAvailability(requestDTO.slug(), id);
         validateParent(id, requestDTO.parent());
         categoriaMapper.updateEntityFromDto(requestDTO, categoria);
+        resolverParent(categoria, requestDTO);
         normalize(categoria);
         return categoriaMapper.toResponseDto(categoriaRepository.save(categoria));
     }
@@ -83,8 +85,17 @@ public class CategoriaServiceImpl implements CategoriaService {
     }
 
     @Override
-    public void delete(UUID id) {
-        categoriaRepository.delete(findEntityById(id));
+    public CategoriaResponseDTO delete(UUID id) {
+        Categoria categoria = findEntityById(id);
+        if (categoriaRepository.existsByParent_Id(id) || categoriaRepository.tieneProductos(id)) {
+            if (Boolean.FALSE.equals(categoria.getActiva())) {
+                throw new ValidationException("La categoría tiene productos o subcategorías y permanece inactiva");
+            }
+            categoria.setActiva(false);
+            return categoriaMapper.toResponseDto(categoriaRepository.save(categoria));
+        }
+        categoriaRepository.delete(categoria);
+        return null;
     }
 
     @Override
@@ -133,6 +144,16 @@ public class CategoriaServiceImpl implements CategoriaService {
                 throw new ValidationException("La categoría no puede quedar dentro de su propia descendencia");
             }
         }
+    }
+
+    private void resolverParent(Categoria categoria, CategoriaRequestDTO request) {
+        Categoria pedido = request.parent();
+        if (pedido == null || pedido.getId() == null) {
+            categoria.setParent(null);
+            return;
+        }
+        categoria.setParent(categoriaRepository.findById(pedido.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("La categoría padre no existe")));
     }
 
     private void normalize(Categoria categoria) {

@@ -23,7 +23,12 @@ public interface CatalogoFraccionService {
 
     List<CatalogoFraccionResponseDTO> findAvailableByProducto(UUID productoId);
 
-    void delete(UUID id);
+    /**
+     * Borra la fracción si ningún documento la usa. Si tiene historial, la deja inactiva.
+     *
+     * @return la fracción inactiva cuando se conserva; {@code null} si se borró.
+     */
+    CatalogoFraccionResponseDTO delete(UUID id);
 
     boolean isFactorDisponible(UUID productoId, java.math.BigDecimal factor, UUID excludeId);
 

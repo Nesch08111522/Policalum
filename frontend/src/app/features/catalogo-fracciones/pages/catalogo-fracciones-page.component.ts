@@ -86,10 +86,17 @@ export class CatalogoFraccionesPageComponent implements OnInit, OnDestroy {
     const value = this.form.getRawValue();
     const body: Api.CatalogoFraccionRequestDTO = { productoId: value.productoId, nombreFraccion: value.nombreFraccion.trim(), factorDescuentoKardex: Number(value.factorDescuentoKardex), precioVenta: Number(value.precioVenta), activo: value.activo };
     this.guardando = true;
-    const request = this.editando && value.id ? this.api.PutApiV1CatalogoFraccionesId({ id: value.id }, body) : this.api.PostApiV1CatalogoFracciones({}, body);
+    const modo = this.editando && value.id ? 'actualizar' : 'crear';
+    const request = modo === 'actualizar' ? this.api.PutApiV1CatalogoFraccionesId({ id: value.id }, body) : this.api.PostApiV1CatalogoFracciones({}, body);
     request.pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = false; this.toast.success(this.editando ? 'Fracción actualizada.' : 'Fracción creada.'); this.cargar(); },
-      error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
+      next: (guardada) => {
+        this.guardando = false;
+        this.modal = false;
+        this.form.reset({ id: '', productoId: '', nombreFraccion: '', factorDescuentoKardex: 1, precioVenta: 0, activo: true });
+        this.aplicar(guardada, modo);
+        this.toast.success(modo === 'actualizar' ? 'Fracción actualizada.' : 'Fracción creada.');
+      },
+      error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); this.toast.error(problemText(error)); },
     });
   }
   pedirEliminar(row: unknown): void { this.seleccionado = row as Api.CatalogoFraccionResponseDTO; this.confirmar = true; }
@@ -97,9 +104,47 @@ export class CatalogoFraccionesPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1CatalogoFraccionesId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.toast.success('Fracción eliminada.'); this.cargar(); },
+      next: (respuesta: unknown) => {
+        this.eliminando = false;
+        this.confirmar = false;
+        const guardada = this.esFraccion(respuesta) ? respuesta : null;
+        if (guardada) {
+          this.aplicar(guardada, 'actualizar');
+          this.toast.success('La fracción quedó inactiva para conservar las ventas y compras.');
+        } else {
+          this.state.removeWhere((row) => row.id === this.seleccionado?.id);
+          this.toast.success('Fracción eliminada.');
+        }
+      },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
+  }
+
+  private esFraccion(valor: unknown): valor is Api.CatalogoFraccionResponseDTO {
+    return !!valor && typeof valor === 'object' && typeof (valor as { id?: unknown }).id === 'string' && 'nombreFraccion' in valor;
+  }
+
+  private aplicar(guardada: Api.CatalogoFraccionResponseDTO, modo: 'crear' | 'actualizar'): void {
+    if (!guardada.id) return;
+    if (modo === 'crear' && this.state.page !== 0) {
+      this.state.page = 0;
+      this.cargar();
+      return;
+    }
+    const visible = this.visible(guardada);
+    const existe = this.state.rows.some((row) => row.id === guardada.id);
+    if (!visible && existe) this.state.removeWhere((row) => row.id === guardada.id);
+    else if (visible) this.state.upsert(guardada, (row) => row.id === guardada.id);
+  }
+
+  private visible(fraccion: Api.CatalogoFraccionResponseDTO): boolean {
+    const filtro = this.filtros.getRawValue();
+    const termino = filtro.searchTerm.trim().toLowerCase();
+    if (termino && !(fraccion.nombreFraccion ?? '').toLowerCase().includes(termino)) return false;
+    if (filtro.productoId && fraccion.productoId !== filtro.productoId) return false;
+    if (filtro.activo === 'true' && fraccion.activo === false) return false;
+    if (filtro.activo === 'false' && fraccion.activo !== false) return false;
+    return true;
   }
   errorDe(nombre: 'productoId' | 'nombreFraccion' | 'factorDescuentoKardex'): string | null { return fieldError(this.form.controls[nombre]); }
 }

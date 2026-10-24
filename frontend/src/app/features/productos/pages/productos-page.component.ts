@@ -107,6 +107,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
   private readonly vistas = new Map<string, string>();
   private saldos = new Map<string, Api.SaldoKardexDTO[]>();
   private carga = 0;
+  private omitirRevision = 0;
   private fraccionesActuales: Api.CatalogoFraccionResponseDTO[] = [];
   private readonly buscar$ = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
@@ -134,7 +135,10 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     });
     effect(() => {
       const revision = this.inventario.revision();
-      untracked(() => { if (revision) this.cargar(); });
+      untracked(() => {
+        if (!revision || revision === this.omitirRevision) return;
+        this.cargar();
+      });
     });
   }
 
@@ -297,14 +301,15 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
         ? this.api.PutApiV1ProductosId({ id: value.id }, body)
         : this.api.PostApiV1Productos({}, body);
     request.pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => {
+      next: (guardado) => {
         this.guardando = false;
         this.archivoPendiente = null;
         this.modal = false;
+        this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, incluyeIgv: true, imagen: '' });
         this.lookup.invalidate('productos');
-        this.inventario.marcarCambio();
+        this.aplicarProducto(guardado, this.editando ? 'actualizar' : 'crear');
+        this.avisarInventario();
         this.toast.success(this.editando ? 'Producto actualizado.' : 'Producto creado.');
-        this.cargar();
       },
       error: (error: unknown) => {
         this.guardando = false;
@@ -324,7 +329,20 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1ProductosId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.invalidate('productos'); this.inventario.marcarCambio(); this.toast.success('Producto eliminado.'); this.cargar(); },
+      next: (respuesta: unknown) => {
+        this.eliminando = false;
+        this.confirmar = false;
+        this.lookup.invalidate('productos');
+        const guardado = this.esProducto(respuesta) ? respuesta : null;
+        if (guardado) {
+          this.aplicarProducto(guardado, 'actualizar');
+          this.toast.success('El producto quedó inactivo para conservar su historial.');
+        } else {
+          this.state.removeWhere((row) => row.id === this.seleccionado?.id);
+          this.toast.success('Producto eliminado.');
+        }
+        this.avisarInventario();
+      },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
   }
@@ -470,7 +488,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
           this.importando = false;
           this.importExito = `Se crearon ${resultado.creados} y se actualizaron ${resultado.actualizados}. Ninguna fila quedó a medias.`;
           this.lookup.invalidate('productos');
-          this.inventario.marcarCambio();
+          this.avisarInventario();
           this.cargar();
         },
         error: (error: unknown) => {
@@ -601,12 +619,77 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     this.kardex.GetApiV1KardexMermas({ sedeId, page: 0, size: 3 }).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.mermas = data; }, error: () => { this.mermas = null; } });
   }
 
+  private avisarInventario(): void {
+    this.omitirRevision = this.inventario.revision() + 1;
+    this.inventario.marcarCambio();
+  }
+
+  private esProducto(valor: unknown): valor is Api.ProductoResponseDTO {
+    return !!valor && typeof valor === 'object' && typeof (valor as { id?: unknown }).id === 'string';
+  }
+
+  private aplicarProducto(guardado: Api.ProductoResponseDTO, modo: 'crear' | 'actualizar'): void {
+    if (!guardado.id) return;
+    if (modo === 'crear' && this.state.page !== 0) {
+      this.state.page = 0;
+      this.cargar();
+      return;
+    }
+    const visible = this.visibleEnFiltro(guardado);
+    const existe = this.state.rows.some((row) => row.id === guardado.id);
+    if (!visible && existe) this.state.removeWhere((row) => row.id === guardado.id);
+    else if (visible) this.state.upsert(guardado, (row) => row.id === guardado.id);
+    this.refrescarVista(guardado);
+  }
+
+  private visibleEnFiltro(producto: Api.ProductoResponseDTO): boolean {
+    const filtro = this.filtros.getRawValue();
+    const termino = filtro.searchTerm.trim().toLowerCase();
+    if (termino) {
+      const nombre = (producto.nombre ?? '').toLowerCase();
+      const sku = (producto.codigoSku ?? '').toLowerCase();
+      if (!nombre.includes(termino) && !sku.includes(termino)) return false;
+    }
+    if (filtro.categoriaId && producto.categoria?.id !== filtro.categoriaId) return false;
+    if (filtro.tipo && producto.tipo !== filtro.tipo) return false;
+    if (filtro.activo === 'true' && producto.activo === false) return false;
+    if (filtro.activo === 'false' && producto.activo !== false) return false;
+    if (filtro.esFraccionable === 'true' && producto.esFraccionable !== true) return false;
+    if (filtro.esFraccionable === 'false' && producto.esFraccionable === true) return false;
+    return true;
+  }
+
+  private refrescarVista(producto: Api.ProductoResponseDTO): void {
+    const id = producto.id;
+    const imagen = producto.imagen;
+    if (!id) return;
+    const previa = this.vistas.get(id);
+    if (previa?.startsWith('blob:')) URL.revokeObjectURL(previa);
+    this.vistas.delete(id);
+    if (!imagen) return;
+    if (imagen.startsWith('http://') || imagen.startsWith('https://')) {
+      this.vistas.set(id, imagen);
+      return;
+    }
+    this.masivo.verImagen(imagen).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (blob) => this.vistas.set(id, URL.createObjectURL(blob)),
+      error: () => this.vistas.delete(id),
+    });
+  }
+
   private desactivar(): void {
     const item = this.seleccionado;
     if (!item?.id) return;
     this.eliminando = true;
     this.api.PutApiV1ProductosId({ id: item.id }, this.cuerpoDesde(item, false)).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.invalidate('productos'); this.toast.success('Producto desactivado.'); this.cargar(); },
+      next: (guardado) => {
+        this.eliminando = false;
+        this.confirmar = false;
+        this.lookup.invalidate('productos');
+        this.aplicarProducto(guardado, 'actualizar');
+        this.avisarInventario();
+        this.toast.success('Producto desactivado.');
+      },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
   }

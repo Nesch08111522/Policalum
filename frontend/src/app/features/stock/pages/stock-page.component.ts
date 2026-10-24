@@ -55,13 +55,14 @@ export class StockPageComponent implements OnInit, OnDestroy {
   modal: 'ajuste' | 'transferencia' | null = null;
   guardando = false;
   errorFormulario: string | null = null;
+  private omitirRevision = 0;
   private readonly destroy$ = new Subject<void>();
 
   constructor(private readonly api: StockApiService, private readonly lookup: LookupService, private readonly inventario: InventarioSyncService, private readonly toast: ToastService) {
     effect(() => {
       const revision = this.inventario.revision();
       untracked(() => {
-        if (!revision) return;
+        if (!revision || revision === this.omitirRevision) return;
         this.cargar();
         this.api.GetApiV1StockDashboard().pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.dashboard = data; }, error: () => { this.dashboard = null; } });
       });
@@ -116,8 +117,19 @@ export class StockPageComponent implements OnInit, OnDestroy {
     const value = this.ajuste.getRawValue();
     this.guardando = true;
     this.api.PostApiV1StockAjuste({}, { productoId: value.productoId, almacenId: value.almacenId, cantidad: Number(value.cantidad), motivo: value.motivo.trim(), justificacion: value.justificacion.trim() || undefined }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = null; this.inventario.marcarCambio(); this.toast.success('Ajuste registrado.'); this.tab = 'ajustes'; this.cargar(); },
-      error: (error: unknown) => { this.guardando = false; this.errorFormulario = problemText(error); },
+      next: () => {
+        this.guardando = false;
+        this.modal = null;
+        this.ajuste.reset({ productoId: '', almacenId: '', cantidad: 0, motivo: '', justificacion: '' });
+        this.tab = 'ajustes';
+        this.state.page = 0;
+        this.omitirRevision = this.inventario.revision() + 1;
+        this.inventario.marcarCambio();
+        this.toast.success('Ajuste registrado.');
+        this.cargar();
+        this.api.GetApiV1StockDashboard().pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.dashboard = data; }, error: () => { this.dashboard = null; } });
+      },
+      error: (error: unknown) => { this.guardando = false; this.errorFormulario = problemText(error); this.toast.error(problemText(error)); },
     });
   }
   guardarTransferencia(): void {
@@ -127,8 +139,19 @@ export class StockPageComponent implements OnInit, OnDestroy {
     if (value.almacenOrigenId === value.almacenDestinoId) { this.errorFormulario = 'El origen y el destino deben ser distintos.'; return; }
     this.guardando = true;
     this.api.PostApiV1StockTransferencia({}, { productoId: value.productoId, almacenOrigenId: value.almacenOrigenId, almacenDestinoId: value.almacenDestinoId, cantidad: Number(value.cantidad), motivo: value.motivo.trim() || undefined, referenciaDocumento: value.referenciaDocumento.trim() || undefined }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = null; this.inventario.marcarCambio(); this.toast.success('Transferencia registrada.'); this.tab = 'transferencias'; this.cargar(); },
-      error: (error: unknown) => { this.guardando = false; this.errorFormulario = problemText(error); },
+      next: () => {
+        this.guardando = false;
+        this.modal = null;
+        this.transferencia.reset({ productoId: '', almacenOrigenId: '', almacenDestinoId: '', cantidad: 1, motivo: '', referenciaDocumento: '' });
+        this.tab = 'transferencias';
+        this.state.page = 0;
+        this.omitirRevision = this.inventario.revision() + 1;
+        this.inventario.marcarCambio();
+        this.toast.success('Transferencia registrada.');
+        this.cargar();
+        this.api.GetApiV1StockDashboard().pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.dashboard = data; }, error: () => { this.dashboard = null; } });
+      },
+      error: (error: unknown) => { this.guardando = false; this.errorFormulario = problemText(error); this.toast.error(problemText(error)); },
     });
   }
   errorAjuste(nombre: 'productoId' | 'almacenId' | 'cantidad' | 'motivo'): string | null { return fieldError(this.ajuste.controls[nombre]); }

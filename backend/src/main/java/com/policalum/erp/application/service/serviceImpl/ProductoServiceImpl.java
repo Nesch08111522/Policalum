@@ -2,10 +2,13 @@ package com.policalum.erp.application.service.serviceImpl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -13,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.policalum.erp.application.dto.request.CatalogoFraccionRequestDTO;
 import com.policalum.erp.application.dto.request.ProductoRequestDTO;
 import com.policalum.erp.application.dto.response.ProductoResponseDTO;
 import com.policalum.erp.application.mapper.ProductoMapper;
@@ -22,6 +26,7 @@ import com.policalum.erp.domain.enums.TipoProducto;
 import com.policalum.erp.domain.model.CatalogoFraccion;
 import com.policalum.erp.domain.model.Producto;
 import com.policalum.erp.exception.ResourceNotFoundException;
+import com.policalum.erp.infrastructure.repository.CatalogoFraccionRepository;
 import com.policalum.erp.infrastructure.repository.CategoriaRepository;
 import com.policalum.erp.infrastructure.repository.ProductoRepository;
 import com.policalum.erp.infrastructure.repository.ProveedorRepository;
@@ -44,6 +49,7 @@ public class ProductoServiceImpl implements ProductoService {
     private static final String ENTITY_NAME = "Producto";
 
     private final ProductoRepository productoRepository;
+    private final CatalogoFraccionRepository catalogoFraccionRepository;
     private final CategoriaRepository categoriaRepository;
     private final ProveedorRepository proveedorRepository;
     private final ProductoMapper productoMapper;
@@ -60,8 +66,7 @@ public class ProductoServiceImpl implements ProductoService {
         resolverReferencias(producto, requestDTO);
         normalize(producto);
 
-        // Aplica el cálculo algorítmico si el producto es fraccionable
-        procesarFracciones(producto, requestDTO);
+        procesarFracciones(producto, requestDTO, null);
 
         Producto productoGuardado = productoRepository.save(producto);
         return productoMapper.toResponseDto(productoGuardado);
@@ -75,13 +80,13 @@ public class ProductoServiceImpl implements ProductoService {
         Producto producto = findEntityById(id);
         validateSkuAvailability(requestDTO.codigoSku(), id);
         String imagenAnterior = producto.getImagen();
+        BigDecimal precioAnterior = producto.getPrecioVentaBase();
 
         productoMapper.updateEntityFromDto(requestDTO, producto);
         resolverReferencias(producto, requestDTO);
         normalize(producto);
 
-        // Recalcula o elimina el catálogo de fracciones según el nuevo estado del DTO
-        procesarFracciones(producto, requestDTO);
+        procesarFracciones(producto, requestDTO, precioAnterior);
 
         Producto productoActualizado = productoRepository.save(producto);
         descartarImagenAnterior(imagenAnterior, productoActualizado.getImagen());
@@ -113,12 +118,20 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     /**
-     * {@inheritDoc}''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+     * {@inheritDoc}
      */
     @Override
-    public void delete(UUID id) {
+    public ProductoResponseDTO delete(UUID id) {
         Producto producto = findEntityById(id);
+        if (productoRepository.tieneHistorial(id)) {
+            if (Boolean.FALSE.equals(producto.getActivo())) {
+                throw new ValidationException("El producto tiene historial de inventario o ventas y permanece inactivo");
+            }
+            producto.setActivo(false);
+            return productoMapper.toResponseDto(productoRepository.save(producto));
+        }
         productoRepository.delete(producto);
+        return null;
     }
 
     /**
@@ -156,42 +169,136 @@ public class ProductoServiceImpl implements ProductoService {
     // =========================================================================
 
     /**
-     * Administra el catálogo de fracciones de un producto.
-     * <p>
-     * Limpia la colección anterior (desencadenando {@code orphanRemoval} en Hibernate) y
-     * determina si genera la tabla estándar de proporciones o procesa la lista enviada en la petición.
-     * </p>
-     *
-     * @param producto Entidad del producto a modificar.
-     * @param requestDTO DTO de origen que contiene los parámetros de fraccionabilidad.
+     * Concilia las fracciones sin cambiar el id de las que ya existen.
+     * Una fracción usada en ventas o compras se desactiva; no se borra.
+     * Si el precio enviado sigue siendo el proporcional al precio base anterior, se recalcula.
      */
-    private void procesarFracciones(Producto producto, ProductoRequestDTO requestDTO) {
-        // Limpieza de fracciones anteriores para evitar inconsistencias u huérfanos
-        producto.clearFracciones();
+    private void procesarFracciones(Producto producto, ProductoRequestDTO requestDTO, BigDecimal precioAnterior) {
+        List<CatalogoFraccion> actuales = producto.getFracciones() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(producto.getFracciones());
 
         if (!Boolean.TRUE.equals(producto.getEsFraccionable())) {
+            reemplazarFracciones(producto, conservarConHistorial(actuales, Set.of()));
             return;
         }
 
-        // Si la petición no especifica precios personalizados por fracción, genera el estándar
-        if (requestDTO.fracciones() == null || requestDTO.fracciones().isEmpty()) {
-            generarFraccionesEstandar(producto);
-        } else {
-            // Procesa la lista explicita provista en la petición HTTP
-            requestDTO.fracciones().forEach(dto -> {
-                BigDecimal precioFinal = dto.precioVenta() != null
-                        ? dto.precioVenta()
-                        : calcularPrecioFraccion(producto.getPrecioVentaBase(), dto.factorDescuentoKardex());
+        List<CatalogoFraccionRequestDTO> pedidas = requestDTO.fracciones();
+        if (pedidas == null || pedidas.isEmpty()) {
+            if (actuales.isEmpty()) {
+                generarFraccionesEstandar(producto);
+                return;
+            }
+            for (CatalogoFraccion actual : actuales) {
+                if (precioProporcional(actual.getPrecioVenta(), precioAnterior, actual.getFactorDescuentoKardex())) {
+                    actual.setPrecioVenta(calcularPrecioFraccion(producto.getPrecioVentaBase(), actual.getFactorDescuentoKardex()));
+                }
+            }
+            return;
+        }
 
-                CatalogoFraccion fraccion = CatalogoFraccion.builder()
-                        .nombreFraccion(dto.nombreFraccion())
+        validarFactores(pedidas);
+        Set<CatalogoFraccion> usadas = new HashSet<>();
+        List<CatalogoFraccion> resultado = new ArrayList<>();
+        for (CatalogoFraccionRequestDTO dto : pedidas) {
+            CatalogoFraccion existente = buscarPorFactor(actuales, dto.factorDescuentoKardex(), usadas);
+            if (existente == null) {
+                CatalogoFraccion nueva = CatalogoFraccion.builder()
+                        .nombreFraccion(dto.nombreFraccion() == null ? null : dto.nombreFraccion().trim())
                         .factorDescuentoKardex(dto.factorDescuentoKardex())
-                        .precioVenta(precioFinal)
+                        .precioVenta(dto.precioVenta() != null
+                                ? dto.precioVenta()
+                                : calcularPrecioFraccion(producto.getPrecioVentaBase(), dto.factorDescuentoKardex()))
                         .activo(dto.activo() != null ? dto.activo() : true)
                         .build();
+                resultado.add(nueva);
+            } else {
+                usadas.add(existente);
+                existente.setNombreFraccion(dto.nombreFraccion().trim());
+                existente.setFactorDescuentoKardex(dto.factorDescuentoKardex());
+                existente.setPrecioVenta(resolverPrecio(producto, dto, precioAnterior));
+                existente.setActivo(dto.activo() != null ? dto.activo() : true);
+                resultado.add(existente);
+            }
+        }
+        resultado.addAll(conservarConHistorial(actuales, usadas));
+        reemplazarFracciones(producto, resultado);
+    }
 
-                producto.addFraccion(fraccion);
-            });
+    private void validarFactores(List<CatalogoFraccionRequestDTO> pedidas) {
+        Set<String> vistos = new HashSet<>();
+        for (CatalogoFraccionRequestDTO dto : pedidas) {
+            if (dto.factorDescuentoKardex() == null) {
+                throw new ValidationException("El factor de la fracción es requerido");
+            }
+            if (dto.nombreFraccion() == null || dto.nombreFraccion().isBlank()) {
+                throw new ValidationException("El nombre de la fracción es requerido");
+            }
+            String clave = dto.factorDescuentoKardex().stripTrailingZeros().toPlainString();
+            if (!vistos.add(clave)) {
+                throw new ValidationException("No se puede repetir el factor de una fracción en el mismo producto");
+            }
+        }
+    }
+
+    private CatalogoFraccion buscarPorFactor(List<CatalogoFraccion> actuales, BigDecimal factor, Set<CatalogoFraccion> usadas) {
+        if (factor == null) {
+            return null;
+        }
+        for (CatalogoFraccion actual : actuales) {
+            if (usadas.contains(actual) || actual.getFactorDescuentoKardex() == null) {
+                continue;
+            }
+            if (actual.getFactorDescuentoKardex().compareTo(factor) == 0) {
+                return actual;
+            }
+        }
+        return null;
+    }
+
+    private BigDecimal resolverPrecio(Producto producto,
+                                      CatalogoFraccionRequestDTO dto,
+                                      BigDecimal precioAnterior) {
+        if (dto.precioVenta() == null) {
+            return calcularPrecioFraccion(producto.getPrecioVentaBase(), dto.factorDescuentoKardex());
+        }
+        if (precioAnterior != null
+                && producto.getPrecioVentaBase() != null
+                && precioAnterior.compareTo(producto.getPrecioVentaBase()) != 0
+                && precioProporcional(dto.precioVenta(), precioAnterior, dto.factorDescuentoKardex())) {
+            return calcularPrecioFraccion(producto.getPrecioVentaBase(), dto.factorDescuentoKardex());
+        }
+        return dto.precioVenta();
+    }
+
+    private boolean precioProporcional(BigDecimal precio, BigDecimal base, BigDecimal factor) {
+        if (precio == null || base == null || factor == null) {
+            return false;
+        }
+        return precio.compareTo(calcularPrecioFraccion(base, factor)) == 0;
+    }
+
+    private List<CatalogoFraccion> conservarConHistorial(List<CatalogoFraccion> actuales, Set<CatalogoFraccion> usadas) {
+        List<CatalogoFraccion> historicas = new ArrayList<>();
+        for (CatalogoFraccion actual : actuales) {
+            if (usadas.contains(actual) || actual.getId() == null) {
+                continue;
+            }
+            if (catalogoFraccionRepository.tieneHistorial(actual.getId())) {
+                actual.setActivo(false);
+                historicas.add(actual);
+            }
+        }
+        return historicas;
+    }
+
+    private void reemplazarFracciones(Producto producto, List<CatalogoFraccion> destino) {
+        if (producto.getFracciones() == null) {
+            producto.setFracciones(new ArrayList<>());
+        }
+        producto.getFracciones().clear();
+        for (CatalogoFraccion fraccion : destino) {
+            producto.addFraccion(fraccion);
         }
     }
 
