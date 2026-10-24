@@ -19,7 +19,7 @@
 .sunat-kicker { margin: 2px 0 0; color: var(--color-text-muted); font-size: var(--text-xs); }
 .sunat-grid {
   display: grid;
-  grid-template-columns: minmax(180px, 0.9fr) minmax(240px, 1.3fr) minmax(210px, 0.9fr);
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr) minmax(0, 0.9fr);
   gap: 16px;
 }
 .sunat-mark {
@@ -73,6 +73,6 @@
 .dot.activo { background: var(--color-success); }
 .sunat-note { margin: 8px 0 0; color: var(--color-text-muted); font-size: var(--text-xs); }
 
-@media (max-width: 1100px) {
+@media (max-width: 1280px) {
   .sunat-grid { grid-template-columns: 1fr; }
 }

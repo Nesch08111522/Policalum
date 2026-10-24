@@ -2,11 +2,11 @@
 
 .panel { display: grid; gap: 14px; }
 .panel-title { display: flex; align-items: center; justify-content: space-between; }
-.panel-title h1 { margin: 0; font-size: 1.35rem; }
+.panel-title h1 { margin: 0; font-size: var(--text-xl); }
 
 .panel-grid {
   display: grid;
-  grid-template-columns: minmax(280px, 1.35fr) minmax(220px, 0.9fr) minmax(240px, 1fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr) minmax(0, 1fr);
   grid-template-areas:
     "utilidad inventario ventas"
     "rendimiento kardex atajos"
@@ -85,7 +85,7 @@
 .rendimiento div { display: grid; gap: 4px; }
 .rendimiento span, .fila span, .atajos span { color: var(--color-text-muted); font-size: var(--text-xs); }
 
-@media (max-width: 1100px) {
+@media (max-width: 1280px) {
   .panel-grid {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:

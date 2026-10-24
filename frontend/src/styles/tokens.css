@@ -21,10 +21,10 @@
   --color-info: #61d4e8;
   --color-info-bg: rgba(97, 212, 232, 0.14);
 
-  --color-bg: #121722;
-  --color-bg-subtle: #0d121b;
-  --color-surface: #1b2333;
-  --color-surface-raised: #222c3f;
+  --color-bg: #1A1C2B;
+  --color-bg-subtle: #151726;
+  --color-surface: #232538;
+  --color-surface-raised: #2c2f46;
   --color-text: #f4f7fb;
   --color-text-muted: #a9b7c9;
   --color-border: rgba(255, 255, 255, 0.1);
@@ -36,22 +36,22 @@
   --color-neutral-500: #8b9bb0;
   --color-neutral-900: #10151f;
 
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
+  --space-1: clamp(0.2rem, 0.16rem + 0.15vw, 0.35rem);
+  --space-2: clamp(0.4rem, 0.32rem + 0.25vw, 0.65rem);
+  --space-3: clamp(0.6rem, 0.45rem + 0.4vw, 1rem);
+  --space-4: clamp(0.85rem, 0.55rem + 0.55vw, 1.35rem);
+  --space-5: clamp(1.1rem, 0.7rem + 0.85vw, 1.85rem);
+  --space-6: clamp(1.4rem, 0.85rem + 1.15vw, 2.5rem);
+  --space-7: clamp(1.8rem, 1rem + 1.7vw, 3.5rem);
 
   --font-sans: "Segoe UI", Inter, system-ui, -apple-system, sans-serif;
   --font-mono: "Cascadia Code", "Segoe UI Mono", ui-monospace, monospace;
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-md: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.375rem;
-  --text-2xl: 1.75rem;
+  --text-xs: clamp(0.7rem, 0.66rem + 0.12vw, 0.8rem);
+  --text-sm: clamp(0.8rem, 0.74rem + 0.18vw, 0.95rem);
+  --text-md: clamp(0.9rem, 0.8rem + 0.28vw, 1.2rem);
+  --text-lg: clamp(1rem, 0.88rem + 0.35vw, 1.35rem);
+  --text-xl: clamp(1.15rem, 0.92rem + 0.6vw, 1.75rem);
+  --text-2xl: clamp(1.35rem, 0.95rem + 1vw, 2.25rem);
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
@@ -80,9 +80,12 @@
   --z-toast: 80;
   --z-tooltip: 90;
 
-  --sidebar-width: 268px;
-  --sidebar-collapsed: 76px;
-  --header-height: 64px;
+  --sidebar-width: clamp(13.5rem, 16vw, 20rem);
+  --sidebar-collapsed: clamp(4.25rem, 5vw, 4.75rem);
+  --header-height: clamp(3.5rem, 2.8rem + 1.2vw, 4.5rem);
+  --modal-sm: clamp(16rem, 88vw, 26rem);
+  --modal-md: clamp(18rem, 92vw, 40rem);
+  --modal-lg: clamp(18rem, 94vw, 65rem);
 
   color-scheme: dark;
   --scrollbar-size: 8px;
