@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.policalum.erp.application.dto.request.EmpresaRequestDTO;
+import com.policalum.erp.application.dto.request.MarcaRequestDTO;
 import com.policalum.erp.application.dto.request.ParametrosFinanzasRequestDTO;
 import com.policalum.erp.application.dto.request.ParametrosInventarioRequestDTO;
 import com.policalum.erp.application.dto.request.ParametrosRequestDTO;
@@ -22,6 +23,7 @@ import com.policalum.erp.application.dto.response.SerieComprobanteResponseDTO;
 import com.policalum.erp.application.mapper.ConfiguracionMapper;
 import com.policalum.erp.application.mapper.SerieComprobanteMapper;
 import com.policalum.erp.application.service.AuditService;
+import com.policalum.erp.application.service.FileStorageService;
 import com.policalum.erp.domain.enums.AccionAudit;
 import com.policalum.erp.domain.enums.RolNombre;
 import com.policalum.erp.domain.enums.TipoComprobante;
@@ -79,6 +81,7 @@ class ConfiguracionServiceImplTest {
     @Mock SedeRepository sedeRepository;
     @Mock UserRepository userRepository;
     @Mock AuditService auditService;
+    @Mock FileStorageService fileStorageService;
     @Spy ConfiguracionMapper mapper = Mappers.getMapper(ConfiguracionMapper.class);
     @Spy SerieComprobanteMapper serieMapper = Mappers.getMapper(SerieComprobanteMapper.class);
     @InjectMocks ConfiguracionServiceImpl service;
@@ -244,6 +247,32 @@ class ConfiguracionServiceImplTest {
 
         assertEquals(new ConfiguracionPublicaDTO("Policalum", "https://x/logo.png"), r);
         assertEquals(2, ConfiguracionPublicaDTO.class.getRecordComponents().length, "no agregar datos internos al DTO público");
+    }
+
+    @Test
+    void actualizarMarca_cambiaNombreYLogoSinTocarElRuc() {
+        ConfiguracionEmpresa actual = ConfiguracionEmpresa.builder().id(1L).nombreComercial("POLICALUM").ruc(null).build();
+        when(empresaRepository.findParaActualizar(1L)).thenReturn(Optional.of(actual));
+        when(empresaRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        ConfiguracionPublicaDTO marca = service.actualizarMarca(new MarcaRequestDTO("  Poli Calum  ", "empresa/2026/10/logo.png"));
+
+        assertEquals("Poli Calum", marca.nombreComercial());
+        assertEquals("empresa/2026/10/logo.png", marca.logoUrl());
+        assertNull(actual.getRuc());
+        verify(auditService).registrar(eq("configuracion_empresa"), eq(ConfiguracionServiceImpl.registroId("configuracion_empresa")),
+                eq(AccionAudit.UPDATE), anyMap());
+    }
+
+    @Test
+    void actualizarMarca_sinCambios_noGuarda() {
+        ConfiguracionEmpresa actual = ConfiguracionEmpresa.builder().id(1L).nombreComercial("POLICALUM").build();
+        when(empresaRepository.findParaActualizar(1L)).thenReturn(Optional.of(actual));
+
+        service.actualizarMarca(new MarcaRequestDTO("POLICALUM", null));
+
+        verify(empresaRepository, never()).save(any());
+        verify(auditService, never()).registrar(anyString(), any(), any(), anyMap());
     }
 
     // ================================================================ parámetros

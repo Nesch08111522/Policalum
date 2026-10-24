@@ -9,6 +9,7 @@ import { PenPipe } from '../../shared/pipes/format.pipes';
 import { CajaSessionService } from '../../shared/services/caja-session.service';
 import { InventarioSyncService } from '../../shared/services/inventario-sync.service';
 import { LookupService } from '../../shared/services/lookup.service';
+import { MarcaService } from '../../shared/services/marca.service';
 import { CotizacionesApiService } from '../cotizaciones/data-access/cotizaciones.api';
 import { FacturacionElectronicaApiService } from '../facturacion-electronica/data-access/facturacion-electronica.api';
 import { PreformasApiService } from '../preformas/data-access/preformas.api';
@@ -95,6 +96,7 @@ export class PosComponent implements OnInit, OnDestroy {
     private readonly preformas: PreformasApiService,
     private readonly cotizaciones: CotizacionesApiService,
     private readonly sunat: FacturacionElectronicaApiService,
+    readonly marca: MarcaService,
     private readonly cdr: ChangeDetectorRef,
   ) {}
 

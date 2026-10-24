@@ -3,6 +3,7 @@ import { Component, Input, OnChanges, OnDestroy, OnInit, ChangeDetectionStrategy
 import { RouterLink } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { PenPipe } from '../../../shared/pipes/format.pipes';
+import { MarcaService } from '../../../shared/services/marca.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { problemText } from '../../../shared/utils/feedback';
 import { ComprobanteSunat, FacturacionElectronicaApiService, FacturacionElectronicaPanel } from '../data-access/facturacion-electronica.api';
@@ -24,7 +25,7 @@ export class FacturacionSunatComponent implements OnInit, OnChanges, OnDestroy {
 
   private iniciado = false;
 
-  constructor(private readonly api: FacturacionElectronicaApiService, private readonly toast: ToastService) {}
+  constructor(private readonly api: FacturacionElectronicaApiService, private readonly toast: ToastService, readonly marca: MarcaService) {}
 
   ngOnInit(): void { this.iniciado = true; this.cargar(); }
   ngOnChanges(): void { if (this.iniciado) this.cargar(); }

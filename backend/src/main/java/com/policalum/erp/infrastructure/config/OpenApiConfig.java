@@ -47,6 +47,7 @@ public class OpenApiConfig {
     static final List<String> RUTAS_PUBLICAS = List.of(
             "/api/v1/auth/",
             "/api/v1/configuracion/publica",
+            "/api/v1/configuracion/logo",
             "/api/v1/rrhh/asistencias/qr-publico",
             "/api/v1/rrhh/asistencias/marcar-qr-real",
             "/api/v1/rrhh/asistencias/empleados");

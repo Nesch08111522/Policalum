@@ -1,6 +1,7 @@
 package com.policalum.erp.application.service.serviceImpl;
 
 import com.policalum.erp.application.dto.request.EmpresaRequestDTO;
+import com.policalum.erp.application.dto.request.MarcaRequestDTO;
 import com.policalum.erp.application.dto.request.ParametrosFinanzasRequestDTO;
 import com.policalum.erp.application.dto.request.ParametrosInventarioRequestDTO;
 import com.policalum.erp.application.dto.request.ParametrosReportesRequestDTO;
@@ -20,6 +21,7 @@ import com.policalum.erp.application.mapper.ConfiguracionMapper;
 import com.policalum.erp.application.mapper.SerieComprobanteMapper;
 import com.policalum.erp.application.service.AuditService;
 import com.policalum.erp.application.service.ConfiguracionService;
+import com.policalum.erp.application.service.FileStorageService;
 import com.policalum.erp.domain.enums.AccionAudit;
 import com.policalum.erp.domain.enums.RolNombre;
 import com.policalum.erp.domain.enums.TipoComprobante;
@@ -31,6 +33,7 @@ import com.policalum.erp.domain.model.ConfiguracionVentas;
 import com.policalum.erp.domain.model.Sede;
 import com.policalum.erp.domain.model.SerieComprobante;
 import com.policalum.erp.domain.model.User;
+import com.policalum.erp.exception.FileStorageException;
 import com.policalum.erp.exception.ResourceNotFoundException;
 import com.policalum.erp.infrastructure.repository.ConfiguracionEmpresaRepository;
 import com.policalum.erp.infrastructure.repository.ConfiguracionFinanzasRepository;
@@ -54,10 +57,12 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -88,6 +93,11 @@ public class ConfiguracionServiceImpl implements ConfiguracionService {
     private final ConfiguracionMapper mapper;
     private final SerieComprobanteMapper serieMapper;
     private final AuditService auditService;
+    private final FileStorageService fileStorageService;
+
+    private static final long LOGO_MAX_BYTES = 2L * 1024 * 1024;
+    private static final Set<String> LOGO_EXTENSIONES = Set.of("jpg", "jpeg", "png", "webp");
+    private static final java.util.regex.Pattern LOGO_VALIDO = java.util.regex.Pattern.compile("https?://\\S+|empresa/[A-Za-z0-9._/-]+");
 
     // ================================================================ empresa
 
@@ -133,6 +143,72 @@ public class ConfiguracionServiceImpl implements ConfiguracionService {
     public ConfiguracionPublicaDTO publica() {
         ConfiguracionEmpresa e = empresaRepository.findById(ID).orElseGet(ConfiguracionServiceImpl::empresaPorDefecto);
         return new ConfiguracionPublicaDTO(e.getNombreComercial(), e.getLogoUrl());
+    }
+
+    @Override
+    public ConfiguracionPublicaDTO actualizarMarca(MarcaRequestDTO request) {
+        User admin = exigirAdmin();
+        String nombre = request.nombreComercial() == null ? "" : request.nombreComercial().trim();
+        if (nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre comercial es obligatorio");
+        }
+        String logo = request.logoUrl() == null ? null : vacioANull(request.logoUrl());
+        if (logo != null && !LOGO_VALIDO.matcher(logo).matches()) {
+            throw new IllegalArgumentException("El logo debe ser una URL http(s) o un archivo de la empresa");
+        }
+
+        Optional<ConfiguracionEmpresa> actual = empresaRepository.findParaActualizar(ID);
+        ConfiguracionEmpresa e = actual.orElseGet(ConfiguracionServiceImpl::empresaPorDefecto);
+        Map<String, Object> antes = datosEmpresa(e);
+        e.setId(ID);
+        e.setNombreComercial(nombre);
+        if (request.logoUrl() != null) {
+            e.setLogoUrl(logo);
+        }
+        if (e.getNombreComercial() == null) {
+            e.setNombreComercial(ConfiguracionEmpresa.NOMBRE_COMERCIAL_DEFAULT);
+        }
+        Map<String, Object> despues = datosEmpresa(e);
+        if (actual.isPresent() && antes.equals(despues)) {
+            return new ConfiguracionPublicaDTO(e.getNombreComercial(), e.getLogoUrl());
+        }
+        e.setActualizadoPor(admin);
+        ConfiguracionEmpresa guardada = empresaRepository.save(e);
+        auditar(TABLA_EMPRESA, actual.isPresent() ? AccionAudit.UPDATE : AccionAudit.INSERT, antes, despues);
+        return new ConfiguracionPublicaDTO(guardada.getNombreComercial(), guardada.getLogoUrl());
+    }
+
+    @Override
+    public String guardarLogo(MultipartFile archivo) {
+        exigirAdmin();
+        if (archivo == null || archivo.isEmpty()) {
+            throw new IllegalArgumentException("Selecciona un archivo de imagen");
+        }
+        if (archivo.getSize() > LOGO_MAX_BYTES) {
+            throw new IllegalArgumentException("La imagen no puede superar 2 MB");
+        }
+        String nombre = archivo.getOriginalFilename() != null ? archivo.getOriginalFilename() : "";
+        int punto = nombre.lastIndexOf('.');
+        String extension = punto >= 0 ? nombre.substring(punto + 1).toLowerCase(Locale.ROOT) : "";
+        if (!LOGO_EXTENSIONES.contains(extension)) {
+            throw new IllegalArgumentException("La imagen debe ser JPG, PNG o WEBP");
+        }
+        String tipo = archivo.getContentType() != null ? archivo.getContentType().toLowerCase(Locale.ROOT) : "";
+        if (!tipo.isBlank() && !tipo.startsWith("image/")) {
+            throw new FileStorageException("El archivo no es una imagen");
+        }
+        return fileStorageService.guardar(archivo, "empresa");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Resource cargarLogo() {
+        ConfiguracionEmpresa e = empresaRepository.findById(ID).orElseGet(ConfiguracionServiceImpl::empresaPorDefecto);
+        String ruta = e.getLogoUrl();
+        if (ruta == null || ruta.isBlank() || ruta.contains("..") || !ruta.startsWith("empresa/")) {
+            throw new ResourceNotFoundException("La empresa no tiene un logo guardado en el sistema");
+        }
+        return fileStorageService.cargar(ruta);
     }
 
     // ================================================================ parámetros

@@ -113,6 +113,10 @@
     </section>
 
     <aside class="cobro">
+      <header class="comprobante-marca">
+        <img [src]="marca.logoSrc()" [alt]="marca.nombre()" (error)="marca.usarRespaldo()" />
+        <strong>{{ marca.nombre() }}</strong>
+      </header>
       <h2>Seleccionar tipo de comprobante</h2>
       <div class="opciones">
         <button type="button" [attr.aria-pressed]="comprobante === 'BOLETA'" (click)="comprobante = 'BOLETA'">Boleta</button>

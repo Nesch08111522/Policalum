@@ -5,15 +5,17 @@
     </button>
   </div>
   <div class="search-shell">
+    <app-icon name="search"></app-icon>
     <label class="sr-only" for="global-search">Ir a un módulo</label>
     <input id="global-search" class="input" type="search" placeholder="Ir a un módulo..." [value]="query" (input)="onQuery($event)" (keydown.enter)="goFirst()" />
-    <div class="dropdown-panel" *ngIf="results.length" style="left:0; right:auto; width:100%">
+    <div class="dropdown-panel search-results" *ngIf="results.length">
       <a class="dropdown-item" *ngFor="let item of results" [routerLink]="item.path" (click)="clear()">{{ item.label }}</a>
     </div>
   </div>
   <div class="cluster">
     <div class="dropdown" [class.menu-open]="sedesAbiertas">
-      <button type="button" class="btn btn-ghost btn-sm" (click)="sedesAbiertas = !sedesAbiertas" aria-haspopup="listbox" [attr.aria-expanded]="sedesAbiertas">
+      <button type="button" class="btn btn-ghost btn-sm sede-btn" (click)="sedesAbiertas = !sedesAbiertas" aria-haspopup="listbox" [attr.aria-expanded]="sedesAbiertas">
+        <app-icon name="building"></app-icon>
         <span>{{ sedeFiltro.nombre() }}</span>
         <app-icon name="chevronDown"></app-icon>
       </button>
@@ -26,9 +28,20 @@
       <app-icon [name]="theme.theme() === 'dark' ? 'moon' : 'sun'"></app-icon>
       <span class="text-sm">{{ theme.theme() === 'dark' ? 'Modo noche' : 'Modo día' }}</span>
     </button>
-    <button type="button" class="btn btn-ghost icon-btn tooltip" data-tip="Sin notificaciones nuevas" aria-label="Notificaciones">
-      <app-icon name="bell"></app-icon>
-    </button>
+    <div class="dropdown" [class.menu-open]="avisosAbiertos">
+      <button type="button" class="btn btn-ghost icon-btn bell" (click)="avisosAbiertos = !avisosAbiertos" aria-haspopup="menu" [attr.aria-expanded]="avisosAbiertos" aria-label="Notificaciones">
+        <app-icon name="bell"></app-icon>
+        <span class="badge-count" *ngIf="avisos.length">{{ avisos.length }}</span>
+      </button>
+      <div class="dropdown-panel avisos-panel" *ngIf="avisosAbiertos" role="menu">
+        <p class="avisos-titulo">Notificaciones</p>
+        <p class="dropdown-item text-muted" *ngIf="!avisos.length">No hay avisos nuevos.</p>
+        <a class="dropdown-item aviso" *ngFor="let aviso of avisos" [routerLink]="aviso.ruta" (click)="avisosAbiertos = false">
+          <strong>{{ aviso.titulo }}</strong>
+          <span>{{ aviso.detalle }}</span>
+        </a>
+      </div>
+    </div>
     <div class="dropdown" [class.menu-open]="menuOpen">
       <button type="button" class="btn btn-ghost" (click)="menuOpen = !menuOpen" aria-haspopup="menu" [attr.aria-expanded]="menuOpen">
         <span class="avatar">{{ initials }}</span>

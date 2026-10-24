@@ -73,6 +73,9 @@
 .pin { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; padding: 0; background: transparent; }
 .pin.on { color: var(--color-warning); }
 
+.comprobante-marca { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.8rem; min-width: 0; }
+.comprobante-marca img { width: 2.2rem; height: 2.2rem; object-fit: contain; flex-shrink: 0; border-radius: 0.5rem; background: var(--color-bg); }
+.comprobante-marca strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .venta header { margin-bottom: 10px; }
 .venta h2, .cobro h2 { margin: 0 0 8px; font-size: 1rem; }
 .fila { display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(3.2rem, 5.5rem)) 1.75rem; gap: 6px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--color-border); font-size: var(--text-sm); min-width: 0; }

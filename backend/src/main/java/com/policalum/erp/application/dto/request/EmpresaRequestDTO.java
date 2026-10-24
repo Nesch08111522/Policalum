@@ -17,4 +17,4 @@ public record EmpresaRequestDTO(
         @NotBlank @Pattern(regexp = "\\d{6}", message = "El ubigeo debe tener 6 dígitos (código INEI)") String ubigeo,
         @Pattern(regexp = "[0-9+() -]{6,20}", message = "Teléfono inválido (6 a 20 dígitos, +, (), espacios o guiones)") String telefono,
         @Email @Size(max = 150) String email,
-        @Size(max = 500) @Pattern(regexp = "https?://\\S+", message = "logoUrl debe ser una URL http(s)") String logoUrl) { }
+        @Size(max = 500) @Pattern(regexp = "https?://\\S+|empresa/[A-Za-z0-9._/-]+", message = "El logo debe ser una URL http(s) o un archivo de la empresa") String logoUrl) { }

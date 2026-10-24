@@ -3,6 +3,23 @@
   <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
   <div *ngIf="error && tab === 'empresa'" class="alert alert-error"><div><strong>No se cargó la empresa</strong><p>{{ error }}</p></div><button type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button></div>
 
+  <form *ngIf="tab === 'empresa'" class="card card-body marca-card" [formGroup]="marcaForm" (ngSubmit)="guardarMarca()">
+    <h2>Marca de la empresa</h2>
+    <p class="text-muted">El nombre y el logo se ven en el menú, el acceso y los comprobantes.</p>
+    <div class="marca-row">
+      <img class="marca-logo" [src]="vistaLogo" [alt]="marca.nombre()" (error)="marca.usarRespaldo()" />
+      <app-form-field label="Nombre de la empresa" inputId="marca-nombre" [required]="true">
+        <input id="marca-nombre" class="input" formControlName="nombreComercial" />
+      </app-form-field>
+    </div>
+    <label class="file-field" for="marca-logo">
+      <span class="field-label">Logo</span>
+      <input id="marca-logo" class="file-input" type="file" accept="image/png,image/jpeg,image/webp" (change)="elegirLogo($event)" />
+      <span class="file-name">{{ archivoLogo ? archivoLogo.name : 'Elegir imagen PNG, JPG o WEBP' }}</span>
+    </label>
+    <div class="filter-actions"><button type="submit" class="btn btn-primary" [disabled]="marcaForm.invalid || guardandoMarca">Guardar marca</button></div>
+  </form>
+
   <form *ngIf="tab === 'empresa'" class="card card-body form-grid" [formGroup]="empresa" (ngSubmit)="guardarEmpresa()">
     <app-form-field label="Razón social" inputId="emp-razon" [required]="true" [error]="errorEmpresa('razonSocial')"><input id="emp-razon" class="input" formControlName="razonSocial" /></app-form-field>
     <app-form-field label="Nombre comercial" inputId="emp-nom"><input id="emp-nom" class="input" formControlName="nombreComercial" /></app-form-field>

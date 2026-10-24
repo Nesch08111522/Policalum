@@ -1,7 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
+import { of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import * as Api from '../../../core/api/openapi.types';
+import { StockApiService } from '../../../features/stock/data-access/stock.api';
 import { AuthService } from '../../../services/auth.service';
 import { TokenService } from '../../../services/token.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
@@ -24,6 +27,8 @@ export class HeaderComponent implements OnInit {
   results: NavItem[] = [];
   menuOpen = false;
   sedesAbiertas = false;
+  avisosAbiertos = false;
+  avisos: { titulo: string; detalle: string; ruta: string }[] = [];
   sedes: Api.SedeResponseDTO[] = [];
   private items: NavItem[] = [];
 
@@ -34,6 +39,7 @@ export class HeaderComponent implements OnInit {
     private readonly auth: AuthService,
     private readonly tokens: TokenService,
     private readonly lookup: LookupService,
+    private readonly stock: StockApiService,
     private readonly router: Router,
   ) {}
 
@@ -41,6 +47,18 @@ export class HeaderComponent implements OnInit {
     const role = this.tokens.session()?.rol ?? '';
     this.items = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => !item.roles || item.roles.includes(role));
     this.lookup.loadSedes().subscribe((rows) => { this.sedes = rows.filter((sede) => sede.activa !== false); });
+    this.stock.GetApiV1StockDashboard().pipe(catchError(() => of(null))).subscribe((data) => {
+      const avisos: { titulo: string; detalle: string; ruta: string }[] = [];
+      const bajo = data?.alertasBajoMinimo ?? 0;
+      const agotados = data?.agotados ?? 0;
+      if (bajo > 0) {
+        avisos.push({ titulo: 'Stock bajo el mínimo', detalle: `${bajo} producto(s)`, ruta: '/modules/stock' });
+      }
+      if (agotados > 0) {
+        avisos.push({ titulo: 'Productos agotados', detalle: `${agotados} producto(s)`, ruta: '/modules/stock' });
+      }
+      this.avisos = avisos;
+    });
   }
 
   elegirSede(id: string, nombre: string): void {
@@ -93,6 +111,7 @@ export class HeaderComponent implements OnInit {
     if (!target.closest('.dropdown')) {
       this.menuOpen = false;
       this.sedesAbiertas = false;
+      this.avisosAbiertos = false;
     }
     if (!target.closest('.search-shell')) this.results = [];
   }

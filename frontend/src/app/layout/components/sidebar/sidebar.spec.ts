@@ -1,3 +1,4 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
@@ -13,6 +14,7 @@ describe('Sidebar', () => {
       imports: [SidebarComponent],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
         { provide: AuthService, useValue: { getCurrentUser: () => null } },
       ],
     }).compileComponents();

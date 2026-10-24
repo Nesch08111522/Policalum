@@ -1,66 +1,38 @@
-<div class="login-wrapper">
-  <!-- Fondo oscuro con overlay -->
-  <div class="background-overlay"></div>
+<div class="login-split">
+  <section class="login-story" aria-hidden="true">
+    <img class="story-logo" [src]="marca.logoSrc()" [alt]="marca.nombre()" (error)="marca.usarRespaldo()" />
+    <p class="story-kicker">Sistema de gestión</p>
+    <h1>{{ marca.nombre() }}</h1>
+    <p>Ventas, inventario, compras y finanzas en un solo acceso.</p>
+  </section>
 
-  <!-- Logo en esquina superior izquierda -->
-  <div class="top-logo">
-    <img src="/POLICALUM.png" alt="POLICALUM" class="logo-img" />
-  </div>
+  <section class="login-pane">
+    <form class="login-card" (ngSubmit)="onSubmit()">
+      <header>
+        <h2>Iniciar sesión</h2>
+        <p>Usa el correo que te asignó el administrador.</p>
+      </header>
 
-  <!-- Tarjeta centrada -->
-  <div class="login-card">
-    <!-- Título principal con el nombre de la empresa -->
-    <h1 class="brand-title">POLICALUM</h1>
-    <h2 class="card-title">Iniciar Sesión</h2>
+      <label class="float">
+        <input id="email" type="email" name="email" [(ngModel)]="email" required placeholder=" " autocomplete="email" [disabled]="isLoading" />
+        <span>Correo</span>
+      </label>
 
-    <form (ngSubmit)="onSubmit()" class="login-form">
-      <!-- Email -->
-      <div class="input-group">
-        <input
-          type="email"
-          id="email"
-          [(ngModel)]="email"
-          name="email"
-          required
-          placeholder="Email"
-          [disabled]="isLoading"
-          autocomplete="email"
-        />
-      </div>
-
-      <!-- Contraseña -->
-      <div class="input-group password-group">
-        <input
-          [type]="showPassword ? 'text' : 'password'"
-          id="password"
-          [(ngModel)]="password"
-          name="password"
-          required
-          placeholder="Contraseña"
-          [disabled]="isLoading"
-          autocomplete="current-password"
-        />
-        <button type="button" class="toggle-password" (click)="togglePassword()" tabindex="-1">
-          <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+      <label class="float">
+        <input id="password" [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="password" required placeholder=" " autocomplete="current-password" [disabled]="isLoading" />
+        <span>Contraseña</span>
+        <button type="button" class="toggle-password" (click)="togglePassword()" [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+          {{ showPassword ? 'Ocultar' : 'Ver' }}
         </button>
-      </div>
+      </label>
 
-      <div *ngIf="notice" class="error-message">{{ notice }}</div>
-      <!-- Mensaje de error -->
-      <div *ngIf="error" class="error-message">
-        <i class="fas fa-exclamation-triangle"></i> {{ error }}
-      </div>
+      <p *ngIf="notice" class="error-message">{{ notice }}</p>
+      <p *ngIf="error" class="error-message" role="alert">{{ error }}</p>
 
-      <!-- Botón -->
       <button type="submit" class="btn-login" [disabled]="isLoading">
-        <span *ngIf="!isLoading">Iniciar Sesión</span>
-        <span *ngIf="isLoading" class="spinner">
-          <i class="fas fa-circle-notch fa-spin"></i> Procesando...
-        </span>
+        {{ isLoading ? 'Procesando...' : 'Iniciar sesión' }}
       </button>
-
+      <p class="support-text">La contraseña la restablece un administrador desde Usuarios.</p>
     </form>
-
-    <p class="support-text">La contraseña la restablece un administrador desde Usuarios.</p>
-  </div>
+  </section>
 </div>

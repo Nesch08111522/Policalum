@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { ApiProblem } from '../../core/api/openapi.types';
 import { LoginResponse } from '../../models/user.model';
 import { AuthService } from '../../services/auth.service';
+import { MarcaService } from '../../shared/services/marca.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Default,
@@ -26,6 +27,7 @@ export class LoginComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
+    readonly marca: MarcaService,
   ) {}
 
   ngOnInit(): void {

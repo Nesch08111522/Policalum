@@ -1,8 +1,8 @@
 <div class="sidebar-backdrop" *ngIf="layout.mobileOpen()" (click)="layout.closeMobile()"></div>
 <aside class="app-sidebar" aria-label="Navegación principal">
   <div class="sidebar-brand">
-    <span class="brand-mark">P</span>
-    <span class="brand-name"><strong>POLICALUM</strong><br /><span class="text-xs">ERP</span></span>
+    <img class="brand-logo" [src]="marca.logoSrc()" [alt]="marca.nombre()" (error)="marca.usarRespaldo()" />
+    <span class="brand-name"><strong>{{ marca.nombre() }}</strong><span class="text-xs">ERP</span></span>
   </div>
   <nav class="sidebar-scroll">
     <section *ngFor="let section of sections" class="nav-group">

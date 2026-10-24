@@ -1,6 +1,7 @@
 package com.policalum.erp.application.service;
 
 import com.policalum.erp.application.dto.request.EmpresaRequestDTO;
+import com.policalum.erp.application.dto.request.MarcaRequestDTO;
 import com.policalum.erp.application.dto.request.ParametrosRequestDTO;
 import com.policalum.erp.application.dto.request.SeriesRequestDTO;
 import com.policalum.erp.application.dto.response.ConfiguracionPublicaDTO;
@@ -13,6 +14,8 @@ import com.policalum.erp.application.dto.response.ParametrosVentasDTO;
 import com.policalum.erp.application.dto.response.SerieComprobanteResponseDTO;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.core.io.Resource;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Configuración global (Módulo 14): empresa, parámetros de negocio por dominio y series de comprobante.
@@ -40,6 +43,15 @@ public interface ConfiguracionService {
 
     /** Nombre comercial y logo, sin autenticación. */
     ConfiguracionPublicaDTO publica();
+
+    /** Cambia solo el nombre comercial y el logo. Solo ADMIN. No exige RUC. */
+    ConfiguracionPublicaDTO actualizarMarca(MarcaRequestDTO request);
+
+    /** Guarda el archivo del logo y devuelve la ruta relativa. No actualiza la empresa hasta {@link #actualizarMarca}. */
+    String guardarLogo(MultipartFile archivo);
+
+    /** Archivo del logo guardado en disco. 404 si la marca usa una URL externa o todavía no hay archivo. */
+    Resource cargarLogo();
 
     /** Snapshot de ventas para otros servicios; si la fila no existe devuelve los valores de fábrica. */
     ParametrosVentasDTO ventas();

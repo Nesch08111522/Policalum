@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { APP_VERSION, MarcaService } from '../../../shared/services/marca.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Default,
@@ -9,4 +10,6 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 })
 export class FooterComponent {
   readonly year = new Date().getFullYear();
+  readonly version = APP_VERSION;
+  constructor(readonly marca: MarcaService) {}
 }

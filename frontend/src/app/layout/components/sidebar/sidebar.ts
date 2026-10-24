@@ -6,6 +6,7 @@ import { filter } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { LayoutService } from '../../../shared/services/layout.service';
+import { MarcaService } from '../../../shared/services/marca.service';
 import { NAV_SECTIONS, NavSection } from '../../navigation';
 
 const GROUPS_KEY = 'erp-nav-groups';
@@ -29,6 +30,7 @@ export class SidebarComponent implements OnInit {
 
   constructor(
     readonly layout: LayoutService,
+    readonly marca: MarcaService,
     private readonly auth: AuthService,
     private readonly router: Router,
   ) {}

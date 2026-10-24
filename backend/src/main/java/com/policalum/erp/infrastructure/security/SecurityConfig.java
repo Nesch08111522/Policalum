@@ -44,7 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
 
                         // ✅ Marca (nombre comercial + logo) para la pantalla de login
-                        .requestMatchers(HttpMethod.GET, "/api/v1/configuracion/publica").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/configuracion/publica", "/api/v1/configuracion/logo").permitAll()
 
                         // QR de kiosco. La marcación autenticada y el listado de empleados exigen sesión.
                         .requestMatchers(HttpMethod.GET, "/api/v1/rrhh/asistencias/qr-publico").permitAll()

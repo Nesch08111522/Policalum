@@ -12,6 +12,7 @@ import { SelectComponent } from '../../../shared/components/select/select.compon
 import { TabsComponent } from '../../../shared/components/tabs/tabs.component';
 import { ColumnDef, SelectOption, TabItem } from '../../../shared/models/ui.models';
 import { LookupService } from '../../../shared/services/lookup.service';
+import { MarcaService } from '../../../shared/services/marca.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemText } from '../../../shared/utils/feedback';
 import { ConfiguracionApiService } from '../data-access/configuracion.api';
@@ -32,6 +33,12 @@ export class ConfiguracionPageComponent implements OnInit, OnDestroy {
     { id: 'series', label: 'Series' },
   ];
   tab = 'empresa';
+  readonly marcaForm = this.fb.nonNullable.group({
+    nombreComercial: ['', [Validators.required, Validators.maxLength(150)]],
+  });
+  archivoLogo: File | null = null;
+  vistaLogo = '/POLICALUM.png';
+  guardandoMarca = false;
   readonly empresa = this.fb.nonNullable.group({
     razonSocial: ['', [Validators.required, Validators.maxLength(200)]],
     nombreComercial: [''],
@@ -73,7 +80,7 @@ export class ConfiguracionPageComponent implements OnInit, OnDestroy {
   error: string | null = null;
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: ConfiguracionApiService, private readonly lookup: LookupService, private readonly toast: ToastService) {}
+  constructor(private readonly api: ConfiguracionApiService, private readonly lookup: LookupService, private readonly toast: ToastService, readonly marca: MarcaService) {}
 
   ngOnInit(): void {
     this.lookup.loadSedes().pipe(takeUntil(this.destroy$)).subscribe((rows) => (this.sedes = this.lookup.options(rows, (row) => (row as Api.SedeResponseDTO).nombre ?? 'Sede')));
@@ -86,7 +93,13 @@ export class ConfiguracionPageComponent implements OnInit, OnDestroy {
   cargar(): void {
     this.cargando = true;
     this.api.GetApiV1ConfiguracionEmpresa().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (data) => { this.empresa.patchValue({ razonSocial: data.razonSocial ?? '', nombreComercial: data.nombreComercial ?? '', ruc: data.ruc ?? '', direccionFiscal: data.direccionFiscal ?? '', ubigeo: data.ubigeo ?? '', email: data.email ?? '', telefono: data.telefono ?? '', logoUrl: data.logoUrl ?? '' }); this.cargando = false; },
+      next: (data) => {
+        this.empresa.patchValue({ razonSocial: data.razonSocial ?? '', nombreComercial: data.nombreComercial ?? '', ruc: data.ruc ?? '', direccionFiscal: data.direccionFiscal ?? '', ubigeo: data.ubigeo ?? '', email: data.email ?? '', telefono: data.telefono ?? '', logoUrl: data.logoUrl ?? '' });
+        this.marcaForm.patchValue({ nombreComercial: data.nombreComercial?.trim() || data.razonSocial?.trim() || 'POLICALUM' });
+        this.marca.aplicar(data.nombreComercial, data.logoUrl);
+        this.vistaLogo = this.marca.logoSrc();
+        this.cargando = false;
+      },
       error: (error: unknown) => { this.cargando = false; this.error = problemText(error); },
     });
     this.api.GetApiV1ConfiguracionParametros().pipe(takeUntil(this.destroy$)).subscribe({
@@ -104,6 +117,47 @@ export class ConfiguracionPageComponent implements OnInit, OnDestroy {
       }),
     });
     this.api.GetApiV1ConfiguracionSeries().pipe(takeUntil(this.destroy$)).subscribe({ next: (rows) => (this.series = rows ?? []), error: () => (this.series = []) });
+  }
+
+  elegirLogo(event: Event): void {
+    const archivo = (event.target as HTMLInputElement).files?.[0] ?? null;
+    this.archivoLogo = archivo;
+    if (!archivo) return;
+    if (archivo.size > 2 * 1024 * 1024) {
+      this.archivoLogo = null;
+      this.toast.error('La imagen no puede superar 2 MB.');
+      return;
+    }
+    const lector = new FileReader();
+    lector.onload = () => { this.vistaLogo = String(lector.result); };
+    lector.readAsDataURL(archivo);
+  }
+
+  guardarMarca(): void {
+    this.marcaForm.markAllAsTouched();
+    if (this.marcaForm.invalid || this.guardandoMarca) return;
+    const nombre = this.marcaForm.controls.nombreComercial.value.trim();
+    this.guardandoMarca = true;
+    const publicar = (logoUrl: string | null) => this.marca.guardar(nombre, logoUrl).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (data) => {
+        this.guardandoMarca = false;
+        this.archivoLogo = null;
+        this.marca.aplicar(data.nombreComercial, data.logoUrl);
+        this.vistaLogo = this.marca.logoSrc();
+        this.empresa.controls.nombreComercial.setValue(data.nombreComercial ?? '');
+        this.empresa.controls.logoUrl.setValue(data.logoUrl ?? '');
+        this.toast.success('Marca actualizada.');
+      },
+      error: (error: unknown) => { this.guardandoMarca = false; this.toast.error(problemText(error)); },
+    });
+    if (!this.archivoLogo) {
+      publicar(this.empresa.controls.logoUrl.value.trim() || null);
+      return;
+    }
+    this.marca.subirLogo(this.archivoLogo).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (respuesta) => publicar(respuesta.ruta),
+      error: (error: unknown) => { this.guardandoMarca = false; this.toast.error(problemText(error)); },
+    });
   }
 
   guardarEmpresa(): void {
