@@ -25,7 +25,7 @@ export class RoleGuard {
       return true;
     }
 
-    void this.router.navigate(['/inicio']);
+    void this.router.navigate(['/error', 'permisos']);
     return false;
   }
 }

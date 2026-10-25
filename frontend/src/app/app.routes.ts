@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { AsistenciaComponent } from './components/asistencia/asistencia';
 import { LoginComponent } from './components/login/login.component';
 import { PosComponent } from './features/ventas/pos.component';
+import { ErrorPageComponent } from './features/errores/error-page.component';
 import { AuthGuard } from './guards/auth.guard';
 import { RoleGuard } from './guards/role.guard';
 import { AuthenticatedLayoutComponent } from './layout/authenticated-layout.component';
@@ -64,5 +65,8 @@ export const routes: Routes = [
       { path: 'config/auditoria', pathMatch: 'full', redirectTo: 'modules/auditoria' },
     ],
   },
-  { path: '**', redirectTo: '/login' },
+  { path: 'error/404', component: ErrorPageComponent, title: 'Página no encontrada', data: { codigo: '404' } },
+  { path: 'error/500', component: ErrorPageComponent, title: 'Error del servidor', data: { codigo: '500' } },
+  { path: 'error/permisos', component: ErrorPageComponent, title: 'Error de permisos', data: { codigo: 'permisos' } },
+  { path: '**', component: ErrorPageComponent, title: 'Página no encontrada', data: { codigo: '404' } },
 ];
