@@ -8,6 +8,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ExportButtonsComponent } from '../../../shared/components/export-buttons/export-buttons.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { StatCardComponent } from '../../../shared/components/stat-card/stat-card.component';
@@ -30,7 +31,7 @@ function hoy(): string {
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-compras-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent, StatCardComponent, PenPipe],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, ExportButtonsComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent, StatCardComponent, PenPipe],
   templateUrl: './compras-page.component.html',
   styleUrls: ['./compras-page.component.css'],
 })

@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, effect, inject, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
+import { environment } from '../../../../environments/environment';
 import { Subject, takeUntil } from 'rxjs';
 import * as Api from '../../../core/api/openapi.types';
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
@@ -36,6 +38,13 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
     montoFinalDeclarado: [0, [Validators.required, Validators.min(0)]],
     observaciones: [''],
   });
+  readonly cajaChica = this.fb.nonNullable.group({
+    tipo: ['EGRESO', Validators.required],
+    concepto: ['TRANSPORTE', Validators.required],
+    monto: [0, [Validators.required, Validators.min(0.01)]],
+    detalle: ['', Validators.maxLength(255)],
+  });
+  movimientos: CajaChicaFila[] = [];
   sedes: SelectOption[] = [];
   turno: Api.TurnoCajaResponseDTO | null = null;
   resumen: Api.ResumenCierreCajaDTO | null = null;
@@ -43,7 +52,7 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
   error: string | null = null;
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: TurnosCajaApiService, private readonly lookup: LookupService, private readonly toast: ToastService) {
+  constructor(private readonly api: TurnosCajaApiService, private readonly lookup: LookupService, private readonly toast: ToastService, private readonly http: HttpClient) {
     effect(() => {
       const actividad = this.caja.actividad();
       untracked(() => { if (actividad && this.cierre.controls.id.value) this.verResumen(); });
@@ -51,14 +60,27 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
   }
   ngOnInit(): void {
     this.lookup.loadSedes().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.sedes = this.lookup.options(rows, (row) => (row as Api.SedeResponseDTO).nombre ?? 'Sede'); });
-    const turno = this.caja.turno();
-    if (!turno?.id) return;
+    this.http.get<{ abierto?: boolean; turno?: Api.TurnoCajaResponseDTO | null }>(`${environment.apiUrl}/api/v1/turnos-caja/abierto`).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (respuesta) => {
+        if (respuesta?.abierto && respuesta.turno?.id) this.recordarTurno(respuesta.turno);
+      },
+      error: () => {
+        const turno = this.caja.turno();
+        if (turno?.id) this.recordarTurno(turno);
+      },
+    });
+  }
+
+  private recordarTurno(turno: Api.TurnoCajaResponseDTO): void {
     this.turno = turno;
-    this.cierre.controls.id.setValue(turno.id);
+    this.cierre.controls.id.setValue(turno.id ?? '');
+    this.caja.recordar(turno);
+    this.cargarCajaChica();
   }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
   abrir(): void {
+    if (this.guardando) return;
     this.apertura.markAllAsTouched();
     if (this.apertura.invalid) return;
     const value = this.apertura.getRawValue();
@@ -70,6 +92,7 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
         this.turno = turno;
         this.cierre.controls.id.setValue(turno.id ?? '');
         this.caja.recordar(turno);
+        this.cargarCajaChica();
         this.toast.success('Caja abierta.');
       },
       error: (error: unknown) => { this.guardando = false; this.error = problemText(error); },
@@ -77,6 +100,7 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
   }
 
   verResumen(): void {
+    if (this.guardando) return;
     const id = this.cierre.controls.id.value.trim();
     if (!id) return;
     this.guardando = true;
@@ -87,6 +111,7 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
   }
 
   cerrar(): void {
+    if (this.guardando) return;
     this.cierre.markAllAsTouched();
     if (this.cierre.invalid) return;
     const value = this.cierre.getRawValue();
@@ -98,11 +123,55 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
         this.turno = null;
         this.cierre.controls.id.setValue('');
         this.caja.recordar(null);
+        this.movimientos = [];
+        this.error = null;
         this.toast.success('Caja cerrada.');
       },
       error: (error: unknown) => { this.guardando = false; this.error = problemText(error); },
     });
   }
+
+  cargarCajaChica(): void {
+    const id = this.turno?.id;
+    if (!id) { this.movimientos = []; return; }
+    this.http.get<CajaChicaFila[]>(`${environment.apiUrl}/api/v1/turnos-caja/${id}/caja-chica`).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (filas) => { this.movimientos = filas ?? []; },
+      error: () => { this.movimientos = []; },
+    });
+  }
+
+  registrarCajaChica(): void {
+    if (this.guardando) return;
+    this.cajaChica.markAllAsTouched();
+    const id = this.turno?.id;
+    if (!id || this.cajaChica.invalid) return;
+    const value = this.cajaChica.getRawValue();
+    this.guardando = true;
+    this.http.post(`${environment.apiUrl}/api/v1/turnos-caja/${id}/caja-chica`, {
+      tipo: value.tipo,
+      concepto: value.concepto,
+      monto: Number(value.monto),
+      detalle: value.detalle.trim() || null,
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.guardando = false;
+        this.cajaChica.reset({ tipo: 'EGRESO', concepto: 'TRANSPORTE', monto: 0, detalle: '' });
+        this.toast.success('Movimiento de caja chica registrado.');
+        this.cargarCajaChica();
+        this.verResumen();
+      },
+      error: (error: unknown) => { this.guardando = false; this.error = problemText(error); },
+    });
+  }
+}
+
+interface CajaChicaFila {
+  id?: string;
+  tipo?: string;
+  concepto?: string;
+  monto?: number;
+  detalle?: string;
+  createdAt?: string;
 }
 
 export const TURNOS_CAJA_ROUTES: Routes = [

@@ -23,6 +23,7 @@
             </div>
           </div>
           <div class="filtros-acciones">
+            <app-export-buttons modulo="productos"></app-export-buttons>
             <button type="button" class="btn btn-primary" (click)="abrirCrear()"><app-icon name="plus"></app-icon> Nuevo producto</button>
             <div class="menu-exportar">
               <button type="button" class="btn btn-ghost" (click)="menuExportar = !menuExportar" aria-haspopup="menu" [attr.aria-expanded]="menuExportar"><app-icon name="file"></app-icon> Exportar</button>

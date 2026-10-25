@@ -1,5 +1,7 @@
 <section class="module-page">
-  <app-page-header title="Reportes" subtitle="Ventas, rentabilidad, clientes, proveedores y arqueos de caja. La exportación de archivos queda pendiente: el cliente generado espera JSON."></app-page-header>
+  <app-page-header title="Reportes" subtitle="Ventas, rentabilidad, clientes, proveedores y arqueos. PDF y Excel salen con el formato corporativo.">
+    <app-export-buttons [modulo]="moduloExportacion"></app-export-buttons>
+  </app-page-header>
   <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
   <app-filter-bar>
     <app-form-field label="Desde" inputId="rep-desde"><input id="rep-desde" class="input" type="date" [formControl]="filtros.controls.desde" /></app-form-field>

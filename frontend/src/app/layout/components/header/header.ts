@@ -4,7 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import * as Api from '../../../core/api/openapi.types';
-import { StockApiService } from '../../../features/stock/data-access/stock.api';
+import { Notificacion, NotificacionesApi } from '../../../features/notificaciones/notificaciones.api';
 import { AuthService } from '../../../services/auth.service';
 import { TokenService } from '../../../services/token.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
@@ -28,7 +28,8 @@ export class HeaderComponent implements OnInit {
   menuOpen = false;
   sedesAbiertas = false;
   avisosAbiertos = false;
-  avisos: { titulo: string; detalle: string; ruta: string }[] = [];
+  avisos: Notificacion[] = [];
+  noLeidas = 0;
   sedes: Api.SedeResponseDTO[] = [];
   private items: NavItem[] = [];
 
@@ -39,7 +40,7 @@ export class HeaderComponent implements OnInit {
     private readonly auth: AuthService,
     private readonly tokens: TokenService,
     private readonly lookup: LookupService,
-    private readonly stock: StockApiService,
+    private readonly notificaciones: NotificacionesApi,
     private readonly router: Router,
   ) {}
 
@@ -47,18 +48,23 @@ export class HeaderComponent implements OnInit {
     const role = this.tokens.session()?.rol ?? '';
     this.items = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => !item.roles || item.roles.includes(role));
     this.lookup.loadSedes().subscribe((rows) => { this.sedes = rows.filter((sede) => sede.activa !== false); });
-    this.stock.GetApiV1StockDashboard().pipe(catchError(() => of(null))).subscribe((data) => {
-      const avisos: { titulo: string; detalle: string; ruta: string }[] = [];
-      const bajo = data?.alertasBajoMinimo ?? 0;
-      const agotados = data?.agotados ?? 0;
-      if (bajo > 0) {
-        avisos.push({ titulo: 'Stock bajo el mínimo', detalle: `${bajo} producto(s)`, ruta: '/modules/stock' });
-      }
-      if (agotados > 0) {
-        avisos.push({ titulo: 'Productos agotados', detalle: `${agotados} producto(s)`, ruta: '/modules/stock' });
-      }
-      this.avisos = avisos;
+    this.cargarAvisos();
+  }
+
+  cargarAvisos(): void {
+    this.notificaciones.listar().pipe(catchError(() => of([] as Notificacion[]))).subscribe((lista) => {
+      const nuevas = lista.filter((aviso) => !aviso.leida && !aviso.eliminada);
+      this.noLeidas = nuevas.length;
+      this.avisos = nuevas.slice(0, 6);
     });
+  }
+
+  abrirAviso(aviso: Notificacion): void {
+    this.avisosAbiertos = false;
+    const ir = () => void this.router.navigateByUrl(aviso.ruta || '/modules/notificaciones');
+    if (aviso.leida) { ir(); return; }
+    this.notificaciones.leida(aviso.id).subscribe({ next: () => this.cargarAvisos(), error: () => undefined });
+    ir();
   }
 
   elegirSede(id: string, nombre: string): void {

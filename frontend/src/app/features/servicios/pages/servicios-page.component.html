@@ -17,6 +17,8 @@
           </div>
           <div class="filtros-acciones">
             <button type="button" class="btn btn-primary" (click)="abrirCrear()"><app-icon name="plus"></app-icon> Nuevo servicio</button>
+            <button type="button" class="btn btn-ghost" (click)="plantillaServicios()">Plantilla Excel</button>
+            <label class="btn btn-ghost">Importar Excel/CSV<input class="sr-only" type="file" accept=".xlsx,.xls,.csv" (change)="importarServicios($event)" /></label>
             <button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar filtros</button>
           </div>
         </div>

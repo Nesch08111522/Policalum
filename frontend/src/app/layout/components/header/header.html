@@ -29,17 +29,18 @@
       <span class="text-sm">{{ theme.theme() === 'dark' ? 'Modo noche' : 'Modo día' }}</span>
     </button>
     <div class="dropdown" [class.menu-open]="avisosAbiertos">
-      <button type="button" class="btn btn-ghost icon-btn bell" (click)="avisosAbiertos = !avisosAbiertos" aria-haspopup="menu" [attr.aria-expanded]="avisosAbiertos" aria-label="Notificaciones">
+      <button type="button" class="btn btn-ghost icon-btn bell" (click)="avisosAbiertos = !avisosAbiertos; cargarAvisos()" aria-haspopup="menu" [attr.aria-expanded]="avisosAbiertos" aria-label="Notificaciones">
         <app-icon name="bell"></app-icon>
-        <span class="badge-count" *ngIf="avisos.length">{{ avisos.length }}</span>
+        <span class="badge-count" *ngIf="noLeidas">{{ noLeidas }}</span>
       </button>
       <div class="dropdown-panel avisos-panel" *ngIf="avisosAbiertos" role="menu">
         <p class="avisos-titulo">Notificaciones</p>
         <p class="dropdown-item text-muted" *ngIf="!avisos.length">No hay avisos nuevos.</p>
-        <a class="dropdown-item aviso" *ngFor="let aviso of avisos" [routerLink]="aviso.ruta" (click)="avisosAbiertos = false">
+        <button type="button" class="dropdown-item aviso" *ngFor="let aviso of avisos" (click)="abrirAviso(aviso)">
           <strong>{{ aviso.titulo }}</strong>
           <span>{{ aviso.detalle }}</span>
-        </a>
+        </button>
+        <a class="dropdown-item" routerLink="/modules/notificaciones" (click)="avisosAbiertos = false">Ver todas</a>
       </div>
     </div>
     <div class="dropdown" [class.menu-open]="menuOpen">

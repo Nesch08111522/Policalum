@@ -20,6 +20,10 @@ import java.util.UUID;
 @Repository
 public interface StockRepository extends JpaRepository<Stock, UUID> {
 
+    @Query("SELECT s FROM Stock s JOIN FETCH s.producto JOIN FETCH s.almacen a JOIN FETCH a.sede " +
+            "WHERE s.stockMinimo > 0 AND s.cantidad <= s.stockMinimo")
+    java.util.List<Stock> alertasDeStock();
+
     @EntityGraph(attributePaths = {"producto", "almacen"})
     Optional<Stock> findByAlmacen_IdAndProducto_Id(UUID almacenId, UUID productoId);
 
@@ -102,10 +106,10 @@ public interface StockRepository extends JpaRepository<Stock, UUID> {
 
     /** Existencias positivas por producto en los almacenes filtrados, con el costo promedio del producto. */
     @Query("SELECT p.id AS productoId, p.nombre AS productoNombre, p.codigoSku AS codigoSku, p.unidad AS unidad, " +
-            "p.precioCompra AS costoUnitario, SUM(s.cantidad) AS cantidad, COUNT(s) AS almacenes " +
+            "p.precioCompra AS costoUnitario, p.precioVentaBase AS precioVenta, SUM(s.cantidad) AS cantidad, COUNT(s) AS almacenes " +
             "FROM Stock s JOIN s.producto p WHERE s.cantidad > 0 AND " +
             "(CAST(:almacenId AS string) IS NULL OR s.almacen.id = :almacenId) AND (CAST(:sedeId AS string) IS NULL OR s.almacen.sede.id = :sedeId) " +
-            "GROUP BY p.id, p.nombre, p.codigoSku, p.unidad, p.precioCompra")
+            "GROUP BY p.id, p.nombre, p.codigoSku, p.unidad, p.precioCompra, p.precioVentaBase")
     List<ValorizacionProductoProjection> valorizacion(@Param("almacenId") UUID almacenId, @Param("sedeId") UUID sedeId);
 
     // ============ Módulo 11: consolidado y dashboard ============

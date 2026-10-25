@@ -1,5 +1,7 @@
 <section class="module-page">
-  <app-page-header title="Clientes" subtitle="Maestro de clientes para ventas, cotizaciones y despachos." actionLabel="Nuevo cliente" (action)="abrirCrear()"></app-page-header>
+  <app-page-header title="Clientes" subtitle="Maestro de clientes para ventas, cotizaciones y despachos." actionLabel="Nuevo cliente" (action)="abrirCrear()">
+    <app-export-buttons modulo="clientes"></app-export-buttons>
+  </app-page-header>
   <app-filter-bar>
     <app-form-field label="Buscar" inputId="cliente-buscar">
       <input id="cliente-buscar" class="input" type="search" [value]="filtros.controls.searchTerm.value" (input)="onBuscar($event)" placeholder="Nombre o documento" />

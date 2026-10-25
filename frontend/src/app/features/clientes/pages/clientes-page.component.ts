@@ -8,6 +8,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ExportButtonsComponent } from '../../../shared/components/export-buttons/export-buttons.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ColumnDef } from '../../../shared/models/ui.models';
 import { LookupService } from '../../../shared/services/lookup.service';
@@ -22,7 +23,7 @@ import { ClientesApiService } from '../data-access/clientes.api';
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-clientes-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, ExportButtonsComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent],
   templateUrl: './clientes-page.component.html',
   styleUrls: ['./clientes-page.component.css'],
 })

@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 export const MODULE_ROUTES: Routes = [
   { path: 'inicio', loadChildren: () => import('./features/dashboard/pages/dashboard-page.component').then((m) => m.DASHBOARD_ROUTES) },
+  { path: 'modules/notificaciones', loadChildren: () => import('./features/notificaciones/notificaciones-page.component').then((m) => m.NOTIFICACIONES_ROUTES) },
   { path: 'modules/ventas', loadChildren: () => import('./features/ventas/pages/ventas-page.component').then((m) => m.VENTAS_ROUTES) },
   { path: 'modules/clientes', loadChildren: () => import('./features/clientes/pages/clientes-page.component').then((m) => m.CLIENTES_ROUTES) },
   { path: 'modules/cotizaciones', loadChildren: () => import('./features/cotizaciones/pages/cotizaciones-page.component').then((m) => m.COTIZACIONES_ROUTES) },

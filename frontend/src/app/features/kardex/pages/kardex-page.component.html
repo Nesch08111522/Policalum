@@ -1,5 +1,7 @@
 <section class="module-page">
-  <app-page-header title="Kardex" subtitle="Historial de entradas, salidas, saldos y valorización." actionLabel="Registrar movimiento" (action)="abrir()"></app-page-header>
+  <app-page-header title="Kardex" subtitle="Cada movimiento guarda el precio de compra y el de venta para ver el margen." actionLabel="Registrar movimiento" (action)="abrir()">
+    <app-export-buttons modulo="kardex" [filtros]="textoFiltros"></app-export-buttons>
+  </app-page-header>
   <app-stat-card *ngIf="tab === 'valorizacion' && valorizacion" label="Valor total" [value]="(valorizacion.valorTotal | pen)" icon="chart"></app-stat-card>
   <app-stat-card *ngIf="tab === 'mermas' && mermas" label="Valor de mermas" [value]="(mermas.valorTotal | pen)" icon="alert"></app-stat-card>
   <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>

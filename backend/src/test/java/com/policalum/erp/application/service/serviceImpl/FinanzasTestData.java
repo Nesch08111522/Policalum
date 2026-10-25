@@ -24,7 +24,7 @@ final class FinanzasTestData {
                 bd(devolucionesNetas), bd(devolucionesNetas), 0, reales,
                 bd(compras), bd(compras), 0, 0,
                 reales.subtract(bd(compras)), bd(nominas), 0, bd(utilidad), bd(utilidad), bd(margen),
-                bd(retiros), bd(utilidad).subtract(bd(retiros)), BigDecimal.ZERO);
+                bd(retiros), bd(utilidad).subtract(bd(retiros)), BigDecimal.ZERO, BigDecimal.ZERO, 0);
     }
 
     static UtilidadNetaResponseDTO utilidadCero() {

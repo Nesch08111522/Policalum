@@ -1,0 +1,15 @@
+.aviso-card {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.aviso-card.pasada { opacity: 0.78; }
+.tipo { margin: 0; color: var(--color-primary); font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+h2 { margin: 0.2rem 0; font-size: var(--text-lg); }
+.fecha { color: var(--color-text-muted); font-size: var(--text-xs); }

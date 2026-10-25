@@ -8,6 +8,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ExportButtonsComponent } from '../../../shared/components/export-buttons/export-buttons.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { ColumnDef, SelectOption } from '../../../shared/models/ui.models';
@@ -27,7 +28,7 @@ import { VentasApiService } from '../data-access/ventas.api';
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-ventas-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, FormFieldComponent, SelectComponent, PenPipe],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, ExportButtonsComponent, FilterBarComponent, DataTableComponent, ModalComponent, FormFieldComponent, SelectComponent, PenPipe],
   templateUrl: './ventas-page.component.html',
   styleUrls: ['./ventas-page.component.css'],
 })

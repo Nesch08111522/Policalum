@@ -8,6 +8,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ExportButtonsComponent } from '../../../shared/components/export-buttons/export-buttons.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
@@ -52,7 +53,7 @@ interface FilaCatalogo {
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-productos-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent, PaginationComponent, IconComponent, PenPipe],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, ExportButtonsComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent, PaginationComponent, IconComponent, PenPipe],
   templateUrl: './productos-page.component.html',
   styleUrls: ['./productos-page.component.css'],
 })

@@ -8,6 +8,7 @@ import { BarChartComponent, ChartPoint } from '../../../shared/components/bar-ch
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
+import { ExportButtonsComponent } from '../../../shared/components/export-buttons/export-buttons.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { StatCardComponent } from '../../../shared/components/stat-card/stat-card.component';
@@ -24,7 +25,7 @@ import { ReportesApiService } from '../data-access/reportes.api';
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-reportes-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, TabsComponent, FilterBarComponent, FormFieldComponent, SelectComponent, DataTableComponent, StatCardComponent, BarChartComponent, PenPipe],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, ExportButtonsComponent, TabsComponent, FilterBarComponent, FormFieldComponent, SelectComponent, DataTableComponent, StatCardComponent, BarChartComponent, PenPipe],
   templateUrl: './reportes-page.component.html',
   styleUrls: ['./reportes-page.component.css'],
 })
@@ -39,6 +40,12 @@ export class ReportesPageComponent implements OnInit, OnDestroy {
     { id: 'arqueos', label: 'Arqueos' },
   ];
   tab = 'ventas';
+  get moduloExportacion(): string {
+    if (this.tab === 'clientes') return 'clientes';
+    if (this.tab === 'proveedores') return 'compras';
+    if (this.tab === 'estrella' || this.tab === 'rentabilidad') return 'productos';
+    return 'ventas';
+  }
   readonly ventas = new PageState<Api.VentaReporteDTO>();
   readonly filtros = this.fb.nonNullable.group({
     desde: [haceDias(30)],

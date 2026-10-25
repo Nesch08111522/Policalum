@@ -466,7 +466,7 @@ export interface CotizacionListadoDTO {
   clienteId?: string;
   clienteNombre?: string;
   createdAt?: string;
-  estado?: "EMITIDA" | "ACEPTADA" | "RECHAZADA" | "VENCIDA" | "CONVERTIDA";
+  estado?: "EMITIDA" | "ACEPTADA" | "RECHAZADA" | "VENCIDA" | "CONVERTIDA" | "NO_COMPRADO";
   fechaVigencia?: string;
   id?: string;
   sedeId?: string;
@@ -485,7 +485,7 @@ export interface CotizacionResponseDTO {
   clienteId?: string;
   clienteNombre?: string;
   createdAt?: string;
-  estado?: "EMITIDA" | "ACEPTADA" | "RECHAZADA" | "VENCIDA" | "CONVERTIDA";
+  estado?: "EMITIDA" | "ACEPTADA" | "RECHAZADA" | "VENCIDA" | "CONVERTIDA" | "NO_COMPRADO";
   fechaVigencia?: string;
   id?: string;
   lineas?: Array<DetalleCotizacionResponseDTO>;
@@ -844,6 +844,9 @@ export interface KardexMovimientoDetalleDTO {
   unidad?: string;
   userId?: string;
   userNombre?: string;
+  costoUnitario?: number;
+  precioVenta?: number;
+  margenUnitario?: number;
 }
 
 export interface KardexMovimientoRequestDTO {
@@ -2743,6 +2746,8 @@ export interface UtilidadNetaResponseDTO {
   utilidadBruta?: number;
   utilidadNetaReal?: number;
   utilidadOperativa?: number;
+  gastosEmpresariales?: number;
+  cantidadGastosEmpresariales?: number;
   valorMermas?: number;
   ventasNetas?: number;
   ventasNetasReales?: number;
@@ -2776,6 +2781,8 @@ export interface ValorizacionProductoDTO {
   productoNombre?: string;
   unidad?: string;
   valorTotal?: number;
+  precioVenta?: number;
+  gananciaEstimada?: number;
 }
 
 export interface VentaDetalleResponseDTO {

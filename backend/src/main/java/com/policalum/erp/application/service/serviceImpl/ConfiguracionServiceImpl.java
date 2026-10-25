@@ -108,6 +108,7 @@ public class ConfiguracionServiceImpl implements ConfiguracionService {
     }
 
     @Override
+    @org.springframework.cache.annotation.CacheEvict(value = "configuracion-publica", allEntries = true)
     public EmpresaResponseDTO actualizarEmpresa(EmpresaRequestDTO r) {
         User admin = exigirAdmin();
         validarRuc(r.ruc());
@@ -141,12 +142,14 @@ public class ConfiguracionServiceImpl implements ConfiguracionService {
 
     @Override
     @Transactional(readOnly = true)
+    @org.springframework.cache.annotation.Cacheable("configuracion-publica")
     public ConfiguracionPublicaDTO publica() {
         ConfiguracionEmpresa e = empresaRepository.findById(ID).orElseGet(ConfiguracionServiceImpl::empresaPorDefecto);
         return new ConfiguracionPublicaDTO(e.getNombreComercial(), e.getLogoUrl());
     }
 
     @Override
+    @org.springframework.cache.annotation.CacheEvict(value = "configuracion-publica", allEntries = true)
     public ConfiguracionPublicaDTO actualizarMarca(MarcaRequestDTO request) {
         User admin = exigirAdmin();
         String nombre = request.nombreComercial() == null ? "" : request.nombreComercial().trim();

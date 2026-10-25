@@ -10,6 +10,7 @@ import com.policalum.erp.domain.enums.Moneda;
 import com.policalum.erp.domain.enums.RolNombre;
 import com.policalum.erp.domain.model.User;
 import com.policalum.erp.infrastructure.repository.CompraRepository;
+import com.policalum.erp.infrastructure.repository.GastoEmpresarialRepository;
 import com.policalum.erp.infrastructure.repository.DevolucionRepository;
 import com.policalum.erp.infrastructure.repository.FinanzasRetiroSocioRepository;
 import com.policalum.erp.infrastructure.repository.KardexRepository;
@@ -49,6 +50,7 @@ public class UtilidadNetaServiceImpl implements UtilidadNetaService {
     private final UserRepository userRepository;
     private final DevolucionRepository devolucionRepository;
     private final KardexRepository kardexRepository;
+    private final GastoEmpresarialRepository gastoRepository;
 
     @Override
     public UtilidadNetaResponseDTO calcular(UUID sedeId, LocalDate desde, LocalDate hasta) {
@@ -93,8 +95,10 @@ public class UtilidadNetaServiceImpl implements UtilidadNetaService {
         // Mermas: informativo. Con el método "compras como costo" la mercadería ya se restó al comprarla
         BigDecimal mermas = cero(kardexRepository.valorMermas(sedeId, ini, finExclusivo)).setScale(2, RoundingMode.HALF_UP);
 
+        BigDecimal gastosEmpresa = cero(gastoRepository.sumar(sedeId, d, h));
+        long cantGastos = gastoRepository.contar(sedeId, d, h);
         BigDecimal utilidadBruta = ventasNetasReales.subtract(comprasNetas);
-        BigDecimal utilidadOperativa = utilidadBruta.subtract(nominas);
+        BigDecimal utilidadOperativa = utilidadBruta.subtract(nominas).subtract(gastosEmpresa);
         BigDecimal utilidadNeta = utilidadOperativa;
         BigDecimal margen = ventasNetasReales.signum() > 0
                 ? utilidadNeta.multiply(CIEN).divide(ventasNetasReales, 2, RoundingMode.HALF_UP)
@@ -109,7 +113,7 @@ public class UtilidadNetaServiceImpl implements UtilidadNetaService {
                 devolucionesNetas, devolucionesTotales, cantDevoluciones, ventasNetasReales,
                 comprasNetas, comprasTotales, cantCompras, comprasOtraMoneda,
                 utilidadBruta, nominas, cantNominas, utilidadOperativa, utilidadNeta, margen,
-                retiros, utilidadNeta.subtract(retiros), mermas);
+                retiros, utilidadNeta.subtract(retiros), mermas, gastosEmpresa, cantGastos);
     }
 
     @Override

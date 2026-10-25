@@ -305,6 +305,7 @@ class KardexServiceImplTest {
             public String getCodigoSku() { return null; }
             public String getUnidad() { return "UNID"; }
             public BigDecimal getCostoUnitario() { return new BigDecimal(costo); }
+            public BigDecimal getPrecioVenta() { return new BigDecimal(costo).multiply(new BigDecimal("1.25")); }
             public BigDecimal getCantidad() { return new BigDecimal(cantidad); }
             public Long getAlmacenes() { return almacenes; }
         };

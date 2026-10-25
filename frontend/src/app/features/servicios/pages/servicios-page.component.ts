@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Component, HostListener, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink, Routes } from '@angular/router';
+import { environment } from '../../../../environments/environment';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import * as Api from '../../../core/api/openapi.types';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -12,6 +14,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { PenPipe } from '../../../shared/pipes/format.pipes';
 import { LookupService } from '../../../shared/services/lookup.service';
+import { guardarBlob } from '../../../shared/services/report.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { ignoreStale, PageState } from '../../../shared/utils/page-state';
@@ -59,6 +62,7 @@ export class ServiciosPageComponent implements OnInit, OnDestroy {
     private readonly rrhh: RrhhApiService,
     private readonly lookup: LookupService,
     private readonly toast: ToastService,
+    private readonly http: HttpClient,
   ) {
     this.state.sort = 'nombre,asc';
   }
@@ -232,6 +236,29 @@ export class ServiciosPageComponent implements OnInit, OnDestroy {
   }
 
   errorDe(nombre: 'nombre' | 'descripcion' | 'precio'): string | null { return fieldError(this.form.controls[nombre]); }
+
+  plantillaServicios(): void {
+    this.http.get(`${environment.apiUrl}/api/v1/servicios/importar/plantilla`, { responseType: 'blob' }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (blob) => guardarBlob(blob, 'plantilla-servicios.xlsx'),
+      error: (error: unknown) => this.toast.error(problemText(error)),
+    });
+  }
+
+  importarServicios(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    input.value = '';
+    if (!archivo) return;
+    const cuerpo = new FormData();
+    cuerpo.append('archivo', archivo);
+    this.http.post<{ creados: number; actualizados: number }>(`${environment.apiUrl}/api/v1/servicios/importar`, cuerpo).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (resultado) => {
+        this.toast.success(`Servicios importados: ${resultado.creados} nuevos, ${resultado.actualizados} actualizados.`);
+        this.cargar();
+      },
+      error: (error: unknown) => this.toast.error(problemText(error)),
+    });
+  }
 
   vacio(): string {
     return this.filtros.controls.searchTerm.value ? 'No hay resultados' : 'No hay servicios con estos filtros.';

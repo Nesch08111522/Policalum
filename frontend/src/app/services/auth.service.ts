@@ -22,6 +22,7 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials).pipe(
       tap((response) => {
         this.tokenService.setToken(response.token);
+        this.tokenService.setRefresh(response.refreshToken);
         this.tokenService.setUser({
           id: response.usuarioId,
           nombre: response.nombre,
@@ -34,7 +35,15 @@ export class AuthService {
   }
 
   logout(): void {
-    this.tokenService.logout();
+    const token = this.tokenService.getToken();
+    if (!token) {
+      this.tokenService.logout();
+      return;
+    }
+    this.http.post(`${this.apiUrl}/logout`, {}).subscribe({
+      next: () => this.tokenService.logout(),
+      error: () => this.tokenService.logout(),
+    });
   }
 
   isAuthenticated(): boolean {

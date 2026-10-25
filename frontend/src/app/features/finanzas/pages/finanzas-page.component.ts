@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
+import { environment } from '../../../../environments/environment';
 import { Subject, forkJoin, of, takeUntil } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import * as Api from '../../../core/api/openapi.types';
@@ -12,6 +14,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ExportButtonsComponent } from '../../../shared/components/export-buttons/export-buttons.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { StatCardComponent } from '../../../shared/components/stat-card/stat-card.component';
@@ -29,7 +32,7 @@ import { FinanzasApiService } from '../data-access/finanzas.api';
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-finanzas-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, TabsComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent, StatCardComponent, BarChartComponent, PenPipe],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, ExportButtonsComponent, TabsComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent, StatCardComponent, BarChartComponent, PenPipe],
   templateUrl: './finanzas-page.component.html',
   styleUrls: ['./finanzas-page.component.css'],
 })
@@ -37,12 +40,14 @@ export class FinanzasPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   readonly tabs: TabItem[] = [
     { id: 'resumen', label: 'Resumen' },
+    { id: 'gastos', label: 'Gastos empresariales' },
     { id: 'cuentas', label: 'Cuentas' },
     { id: 'retiros', label: 'Retiros de socios' },
   ];
   tab = 'resumen';
   readonly cuentasState = new PageState<Api.CuentaFinancieraResponseDTO>();
   readonly retiros = new PageState<Api.RetiroSocioListadoDTO>();
+  readonly gastos = new PageState<GastoEmpresarialFila>();
   readonly columnasCuentas: ColumnDef[] = [
     { key: 'nombre', label: 'Cuenta' },
     { key: 'tipo', label: 'Tipo', kind: 'badge', badge: { EFECTIVO: 'success', BANCO: 'info', BILLETERA_DIGITAL: 'warning' } },
@@ -88,6 +93,7 @@ export class FinanzasPageComponent implements OnInit, OnDestroy {
   modalCuenta = false;
   modalSaldo = false;
   modalRetiro = false;
+  modalGasto = false;
   modalAnular = false;
   confirmar = false;
   editando = false;
@@ -98,7 +104,22 @@ export class FinanzasPageComponent implements OnInit, OnDestroy {
   private todas: Api.CuentaFinancieraResponseDTO[] = [];
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: FinanzasApiService, private readonly lookup: LookupService, private readonly toast: ToastService) {}
+  readonly columnasGastos: ColumnDef[] = [
+    { key: 'fecha', label: 'Fecha', kind: 'date' },
+    { key: 'tipo', label: 'Tipo', kind: 'badge', badge: { ALQUILER: 'info', AGUA: 'info', LUZ: 'warning', PERSONAL: 'success', OTRO: 'neutral' } },
+    { key: 'descripcion', label: 'Detalle' },
+    { key: 'sedeNombre', label: 'Sede' },
+    { key: 'monto', label: 'Monto', kind: 'money', align: 'end' },
+  ];
+  readonly gastoForm = this.fb.nonNullable.group({
+    sedeId: [''],
+    tipo: ['ALQUILER', Validators.required],
+    monto: [0, [Validators.required, Validators.min(0.01)]],
+    fecha: [fechaLocal(), Validators.required],
+    descripcion: ['', Validators.maxLength(255)],
+  });
+
+  constructor(private readonly api: FinanzasApiService, private readonly lookup: LookupService, private readonly toast: ToastService, private readonly http: HttpClient) {}
 
   ngOnInit(): void {
     this.lookup.loadSedes().pipe(takeUntil(this.destroy$)).subscribe((rows) => (this.sedes = this.lookup.options(rows, (row) => (row as Api.SedeResponseDTO).nombre ?? 'Sede')));
@@ -110,8 +131,20 @@ export class FinanzasPageComponent implements OnInit, OnDestroy {
   cambiarTab(id: string): void {
     this.tab = id;
     if (id === 'resumen') this.cargarResumen();
+    if (id === 'gastos') this.cargarGastos();
     if (id === 'cuentas') this.cargarCuentas();
     if (id === 'retiros') this.cargarRetiros();
+  }
+
+  accionCabecera(): void {
+    if (this.tab === 'cuentas') this.abrirCuenta();
+    else if (this.tab === 'retiros') this.abrirRetiro();
+    else if (this.tab === 'gastos') this.abrirGasto();
+  }
+
+  get textoFiltros(): string {
+    const fechas = this.periodo.getRawValue();
+    return [fechas.desde ? `desde ${fechas.desde}` : '', fechas.hasta ? `hasta ${fechas.hasta}` : ''].filter(Boolean).join(' ');
   }
 
   cargarResumen(): void {
@@ -259,6 +292,61 @@ export class FinanzasPageComponent implements OnInit, OnDestroy {
   }
 
   errorCuenta(nombre: 'nombre' | 'ultimosDigitos'): string | null { return fieldError(this.cuenta.controls[nombre], { pattern: 'Usa exactamente 4 dígitos.' }); }
+
+  cargarGastos(): void {
+    this.gastos.loading = true;
+    const fechas = this.periodo.getRawValue();
+    const params: Record<string, string> = { page: String(this.gastos.page), size: String(this.gastos.size), sort: 'fecha,desc' };
+    if (fechas.sedeId) params['sedeId'] = fechas.sedeId;
+    if (fechas.desde) params['desde'] = fechas.desde;
+    if (fechas.hasta) params['hasta'] = fechas.hasta;
+    this.http.get<{ content?: GastoEmpresarialFila[]; totalElements?: number; totalPages?: number; number?: number }>(`${environment.apiUrl}/api/v1/finanzas/gastos`, { params }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (page) => this.gastos.apply(page),
+      error: (error: unknown) => this.gastos.fail(problemText(error), problemStatus(error)),
+    });
+  }
+
+  cambiarPaginaGastos(page: number): void { this.gastos.page = page; this.cargarGastos(); }
+  cambiarTamanoGastos(size: number): void { this.gastos.size = size; this.gastos.page = 0; this.cargarGastos(); }
+  abrirGasto(): void {
+    this.gastoForm.reset({ sedeId: this.periodo.controls.sedeId.value, tipo: 'ALQUILER', monto: 0, fecha: fechaLocal(), descripcion: '' });
+    this.modalGasto = true;
+  }
+
+  guardarGasto(): void {
+    this.gastoForm.markAllAsTouched();
+    if (this.gastoForm.invalid) return;
+    const value = this.gastoForm.getRawValue();
+    this.guardando = true;
+    this.http.post(`${environment.apiUrl}/api/v1/finanzas/gastos`, {
+      sedeId: value.sedeId || null,
+      tipo: value.tipo,
+      monto: Number(value.monto),
+      fecha: value.fecha,
+      descripcion: value.descripcion.trim() || null,
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.guardando = false; this.modalGasto = false; this.toast.success('Gasto empresarial registrado.'); this.cargarGastos(); this.cargarResumen(); },
+      error: (error: unknown) => { this.guardando = false; this.toast.error(problemText(error)); },
+    });
+  }
+
+  anularGasto(row: unknown): void {
+    const gasto = row as GastoEmpresarialFila;
+    if (!gasto.id) return;
+    this.http.delete(`${environment.apiUrl}/api/v1/finanzas/gastos/${gasto.id}`).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.toast.success('Gasto anulado.'); this.cargarGastos(); },
+      error: (error: unknown) => this.toast.error(problemText(error)),
+    });
+  }
+}
+
+interface GastoEmpresarialFila {
+  id?: string;
+  sedeNombre?: string;
+  tipo?: string;
+  monto?: number;
+  fecha?: string;
+  descripcion?: string;
 }
 
 export const FINANZAS_ROUTES: Routes = [{

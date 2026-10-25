@@ -293,6 +293,7 @@
 .filter-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 .page-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-4); align-items: flex-start; min-width: 0; }
+.page-header-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
 .page-header h1 { font-size: var(--text-2xl); line-height: var(--leading-tight); }
 .page-header p { color: var(--color-text-muted); margin-top: 4px; }
 

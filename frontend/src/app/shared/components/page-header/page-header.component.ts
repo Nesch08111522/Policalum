@@ -22,10 +22,13 @@ import { IconComponent } from '../icon/icon.component';
         <h1>{{ title }}</h1>
         <p *ngIf="subtitle">{{ subtitle }}</p>
       </div>
-      <button *ngIf="actionLabel" type="button" class="btn btn-primary" (click)="action.emit()">
-        <app-icon name="plus"></app-icon>
-        {{ actionLabel }}
-      </button>
+      <div class="page-header-actions">
+        <ng-content></ng-content>
+        <button *ngIf="actionLabel" type="button" class="btn btn-primary" (click)="action.emit()">
+          <app-icon name="plus"></app-icon>
+          {{ actionLabel }}
+        </button>
+      </div>
     </header>
   `,
 })

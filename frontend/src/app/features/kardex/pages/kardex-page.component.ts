@@ -8,6 +8,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ExportButtonsComponent } from '../../../shared/components/export-buttons/export-buttons.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { StatCardComponent } from '../../../shared/components/stat-card/stat-card.component';
@@ -25,7 +26,7 @@ import { KardexApiService } from '../data-access/kardex.api';
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-kardex-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, FormFieldComponent, SelectComponent, TabsComponent, StatCardComponent, PenPipe],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, ExportButtonsComponent, FilterBarComponent, DataTableComponent, ModalComponent, FormFieldComponent, SelectComponent, TabsComponent, StatCardComponent, PenPipe],
   templateUrl: './kardex-page.component.html',
   styleUrls: ['./kardex-page.component.css'],
 })
@@ -78,6 +79,12 @@ export class KardexPageComponent implements OnInit, OnDestroy {
   }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
+  get textoFiltros(): string {
+    const filtros = this.filtros.getRawValue();
+    const partes = [filtros.desde ? `desde ${filtros.desde}` : '', filtros.hasta ? `hasta ${filtros.hasta}` : ''].filter(Boolean);
+    return partes.join(' ');
+  }
+
   get columns(): ColumnDef[] {
     if (this.tab === 'saldos') return [
       { key: 'productoNombre', label: 'Producto' }, { key: 'codigoSku', label: 'SKU' }, { key: 'almacenNombre', label: 'Almacén' },
@@ -85,7 +92,10 @@ export class KardexPageComponent implements OnInit, OnDestroy {
     ];
     if (this.tab === 'valorizacion') return [
       { key: 'productoNombre', label: 'Producto' }, { key: 'cantidad', label: 'Cantidad', kind: 'number', align: 'end' },
-      { key: 'costoUnitario', label: 'Costo', kind: 'money', align: 'end' }, { key: 'valorTotal', label: 'Valor', kind: 'money', align: 'end' },
+      { key: 'costoUnitario', label: 'Precio compra', kind: 'money', align: 'end' },
+      { key: 'precioVenta', label: 'Precio venta', kind: 'money', align: 'end' },
+      { key: 'gananciaEstimada', label: 'Ganancia', kind: 'money', align: 'end' },
+      { key: 'valorTotal', label: 'Valor', kind: 'money', align: 'end' },
     ];
     if (this.tab === 'mermas') return [
       { key: 'fecha', label: 'Fecha', kind: 'date' }, { key: 'productoNombre', label: 'Producto' }, { key: 'almacenNombre', label: 'Almacén' },
@@ -95,6 +105,9 @@ export class KardexPageComponent implements OnInit, OnDestroy {
       { key: 'createdAt', label: 'Fecha', kind: 'date' }, { key: 'productoNombre', label: 'Producto' }, { key: 'almacenNombre', label: 'Almacén' },
       { key: 'tipoMovimiento', label: 'Movimiento', kind: 'badge', badge: { ENTRADA: 'success', SALIDA: 'danger' } },
       { key: 'tipoReferencia', label: 'Origen', kind: 'badge' }, { key: 'cantidadMovida', label: 'Cantidad', kind: 'number', align: 'end' },
+      { key: 'costoUnitario', label: 'Precio compra', kind: 'money', align: 'end' },
+      { key: 'precioVenta', label: 'Precio venta', kind: 'money', align: 'end' },
+      { key: 'margenUnitario', label: 'Margen', kind: 'money', align: 'end' },
       { key: 'stockResultante', label: 'Saldo', kind: 'number', align: 'end' },
     ];
   }

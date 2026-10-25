@@ -133,6 +133,8 @@ public class KardexServiceImpl implements KardexService {
                 .tipoMovimiento(dto.tipoMovimiento())
                 .cantidadMovida(dto.cantidadMovida())
                 .stockResultante(stockNuevo)
+                .costoUnitario(producto.getPrecioCompra())
+                .precioVenta(producto.getPrecioVentaBase())
                 .user(usuario)
                 .observacion(dto.observacion())
                 .build();
@@ -379,8 +381,11 @@ public class KardexServiceImpl implements KardexService {
             ValorizacionProductoProjection f = filas.get(i);
             BigDecimal valor = valores.get(i);
             BigDecimal pct = total.signum() > 0 ? valor.multiply(CIEN).divide(total, 2, RoundingMode.HALF_UP) : BigDecimal.ZERO.setScale(2);
+            BigDecimal venta = cero(f.getPrecioVenta());
+            BigDecimal ganancia = venta.subtract(cero(f.getCostoUnitario())).multiply(cero(f.getCantidad())).setScale(2, RoundingMode.HALF_UP);
             detalle.add(new ValorizacionProductoDTO(f.getProductoId(), f.getProductoNombre(), f.getCodigoSku(), f.getUnidad(),
-                    cero(f.getCantidad()), cero(f.getCostoUnitario()), valor, pct, f.getAlmacenes() != null ? f.getAlmacenes() : 0L));
+                    cero(f.getCantidad()), cero(f.getCostoUnitario()), valor, pct, f.getAlmacenes() != null ? f.getAlmacenes() : 0L,
+                    venta, ganancia));
         }
         detalle.sort(Comparator.comparing(ValorizacionProductoDTO::valorTotal).reversed()
                 .thenComparing(ValorizacionProductoDTO::productoNombre, Comparator.nullsLast(String::compareToIgnoreCase)));

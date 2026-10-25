@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Component, OnDestroy, effect, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, Routes } from '@angular/router';
 import { Subject, forkJoin, of, takeUntil } from 'rxjs';
@@ -19,6 +20,7 @@ import { ReportesApiService } from '../../reportes/data-access/reportes.api';
 import { StockApiService } from '../../stock/data-access/stock.api';
 import { VentasApiService } from '../../ventas/data-access/ventas.api';
 import { fechaLocal } from '../../../shared/utils/fecha-local';
+import { environment } from '../../../../environments/environment';
 
 function iso(fecha: Date): string { return fechaLocal(fecha); }
 
@@ -49,6 +51,8 @@ export class DashboardPageComponent implements OnDestroy {
   productoFraccion = 'Sin fracciones activas';
   clientes = 0;
   cotizaciones = 0;
+  estrella: Api.RentabilidadItemDTO[] = [];
+  vendedores: Array<{ vendedor: string; ventas: number; total: number }> = [];
   private readonly destroy$ = new Subject<void>();
   private carga = 0;
 
@@ -65,6 +69,7 @@ export class DashboardPageComponent implements OnDestroy {
     private readonly cotizacionesApi: CotizacionesApiService,
     private readonly sedeFiltro: SedeFiltroService,
     readonly caja: CajaSessionService,
+    private readonly http: HttpClient,
   ) {
     this.esAdmin = this.token.getRol() === 'ROLE_ADMIN';
     effect(() => {
@@ -145,6 +150,8 @@ export class DashboardPageComponent implements OnDestroy {
       cotizaciones: this.cotizacionesApi.GetApiV1Cotizaciones({ ...sede, page: 0, size: 1, sort: 'createdAt,desc' }).pipe(catchError(() => of(null))),
       kpis: this.esAdmin ? this.finanzas.GetApiV1FinanzasDashboardKpis(rango).pipe(catchError(() => of(null))) : of(null),
       evolucion: this.esAdmin ? this.finanzas.GetApiV1FinanzasDashboardEvolucionMensual({ ...sede, meses: 7 }).pipe(catchError(() => of(null))) : of(null),
+      estrella: this.reportes.GetApiV1ReportesProductosEstrella({ ...rango, top: 5, criterio: 'CANTIDAD' }).pipe(catchError(() => of(null))),
+      vendedores: this.http.get<Array<{ vendedor: string; ventas: number; total: number }>>(`${environment.apiUrl}/api/v1/reportes/ventas/vendedores`, { params: { desde: iso(desde), hasta: hoy, top: 5 } }).pipe(catchError(() => of([]))),
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (data) => {
       if (ticket !== this.carga) return;
@@ -173,6 +180,8 @@ export class DashboardPageComponent implements OnDestroy {
       }));
       this.clientes = data.clientes?.totalElements ?? 0;
       this.cotizaciones = data.cotizaciones?.totalElements ?? 0;
+      this.estrella = (data.estrella?.items ?? []).filter((item) => !!item).slice(0, 5);
+      this.vendedores = data.vendedores ?? [];
       const vacio = !data.hoy && !data.stock && !data.cxp && !data.ventas && !data.compras;
       this.error = vacio ? 'No hay conexión con el servidor. Reintenta cuando el backend esté disponible.' : null;
       this.cargando = false;

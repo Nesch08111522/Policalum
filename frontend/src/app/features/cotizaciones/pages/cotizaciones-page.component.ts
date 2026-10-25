@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
+import { environment } from '../../../../environments/environment';
 import { Subject, takeUntil } from 'rxjs';
 import * as Api from '../../../core/api/openapi.types';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -17,6 +19,7 @@ import { PenPipe } from '../../../shared/pipes/format.pipes';
 import { CajaSessionService } from '../../../shared/services/caja-session.service';
 import { InventarioSyncService } from '../../../shared/services/inventario-sync.service';
 import { LookupService } from '../../../shared/services/lookup.service';
+import { ReportService } from '../../../shared/services/report.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { ignoreStale, PageState } from '../../../shared/utils/page-state';
@@ -45,7 +48,7 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
   readonly state = new PageState<Api.CotizacionListadoDTO>();
   readonly columns: ColumnDef[] = [
     { key: 'clienteNombre', label: 'Cliente' },
-    { key: 'estado', label: 'Estado', kind: 'badge', badge: { EMITIDA: 'info', ACEPTADA: 'success', RECHAZADA: 'danger', VENCIDA: 'warning', CONVERTIDA: 'neutral' } },
+    { key: 'estado', label: 'Estado', kind: 'badge', badge: { EMITIDA: 'info', ACEPTADA: 'success', RECHAZADA: 'danger', VENCIDA: 'warning', CONVERTIDA: 'neutral', NO_COMPRADO: 'warning' } },
     { key: 'fechaVigencia', label: 'Vigencia', kind: 'date' },
     { key: 'createdAt', label: 'Creada', kind: 'date', sortable: true },
     { key: 'total', label: 'Total', kind: 'money', align: 'end' },
@@ -85,7 +88,8 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
   confirmar = false;
   eliminando = false;
   seleccionado: Api.CotizacionListadoDTO | null = null;
-  constructor(private readonly api: CotizacionesApiService, private readonly lookup: LookupService, private readonly toast: ToastService) {}
+  documentoId = '';
+  constructor(private readonly api: CotizacionesApiService, private readonly lookup: LookupService, private readonly toast: ToastService, private readonly reportes: ReportService, private readonly http: HttpClient) {}
 
   ngOnInit(): void {
     this.cargar();
@@ -237,6 +241,25 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
     this.api.DeleteApiV1CotizacionesId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => { this.eliminando = false; this.confirmar = false; this.toast.success('Cotización eliminada.'); this.cargar(); },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
+    });
+  }
+
+  descargar(row: unknown, formato: 'pdf' | 'xlsx'): void {
+    const item = row as Api.CotizacionListadoDTO;
+    if (!item.id || this.documentoId) return;
+    this.documentoId = item.id;
+    this.reportes.cotizacion(item.id, formato).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.documentoId = ''; this.toast.success(formato === 'pdf' ? 'Cotización PDF descargada.' : 'Cotización Excel descargada.'); },
+      error: (error: unknown) => { this.documentoId = ''; this.toast.error(problemText(error)); },
+    });
+  }
+
+  noComprada(row: unknown): void {
+    const item = row as Api.CotizacionListadoDTO;
+    if (!item.id) return;
+    this.http.post(`${environment.apiUrl}/api/v1/cotizaciones/${item.id}/no-comprada`, {}).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.toast.success('La cotización quedó como no comprada. El stock no se movió.'); this.cargar(); },
+      error: (error: unknown) => this.toast.error(problemText(error)),
     });
   }
 

@@ -29,6 +29,8 @@ public interface CotizacionService {
     CotizacionResponseDTO aceptar(UUID id);
     /** Rejects an issued quotation with an auditable reason. */
     CotizacionResponseDTO rechazar(UUID id, RechazarCotizacionRequestDTO request);
+    /** Guarda la cotización como no comprada, sin tocar el stock. */
+    CotizacionResponseDTO marcarNoComprada(UUID id);
     /** Converts an accepted quotation into the atomic POS sale workflow. */
     VentaProcesadaResponseDTO convertir(UUID id, ConvertirCotizacionRequestDTO request);
     /** Marks expired issued quotations and returns them. */
