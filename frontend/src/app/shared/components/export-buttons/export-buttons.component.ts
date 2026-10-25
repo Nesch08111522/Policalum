@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, Input } from '@angular/core';
+import { IconComponent } from '../icon/icon.component';
 import { ToastService } from '../../services/toast.service';
 import { ReportService } from '../../services/report.service';
 
 @Component({
   selector: 'app-export-buttons',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <div class="export-wrap">
       <button type="button" class="btn btn-ghost" (click)="abierto = !abierto" [disabled]="generando" aria-haspopup="menu" [attr.aria-expanded]="abierto">
@@ -14,8 +15,8 @@ import { ReportService } from '../../services/report.service';
         {{ generando ? 'Generando...' : 'Exportar' }}
       </button>
       <div class="export-menu" *ngIf="abierto" role="menu">
-        <button type="button" role="menuitem" (click)="bajar('pdf')">📄 Descargar PDF</button>
-        <button type="button" role="menuitem" (click)="bajar('xlsx')">📊 Descargar Excel</button>
+        <button type="button" role="menuitem" (click)="bajar('pdf')"><app-icon name="file"></app-icon> Descargar PDF</button>
+        <button type="button" role="menuitem" (click)="bajar('xlsx')"><app-icon name="chart"></app-icon> Descargar Excel</button>
       </div>
     </div>
   `,
@@ -34,7 +35,9 @@ import { ReportService } from '../../services/report.service';
       box-shadow: var(--shadow-lg);
     }
     .export-menu button {
-      display: block;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
       width: 100%;
       text-align: left;
       border: 0;

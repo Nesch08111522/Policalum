@@ -20,6 +20,7 @@ const ICONS: Record<string, string> = {
   cart: 'M4 6h2l2 11h10l2-8H8',
   users: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 19a6 6 0 0 1 12 0M17 11a3 3 0 1 0-2-5M21 19a6 6 0 0 0-4-5.6',
   file: 'M7 3h7l5 5v13H7zM14 3v5h5',
+  clipboard: 'M9 4h6l1 2h3v14H5V6h3zM9 4a2 2 0 0 1 2-1h2a2 2 0 0 1 2 1',
   box: 'M3 8l9-5 9 5-9 5-9-5zM3 8v8l9 5 9-5V8M12 13v8',
   wrench: 'M14 7a4 4 0 0 0-5.7 5.2L4 16.5 7.5 20l4.3-4.3A4 4 0 0 0 17 10l-3 3-3-3 3-3z',
   folder: 'M3 7h6l2 2h10v10H3z',
@@ -40,6 +41,16 @@ const ICONS: Record<string, string> = {
   shield: 'M12 3l8 4v6c0 5-3.5 7.5-8 8-4.5-.5-8-3-8-8V7l8-4z',
   map: 'M9 4l-6 2v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14',
   alert: 'M12 4l9 16H3zM12 10v4M12 17h.01',
+  eye: 'M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  eyeOff: 'M3 3l18 18M10.6 10.6A3 3 0 0 0 14.5 14.5M9.9 5.2A10.8 10.8 0 0 1 12 5c6 0 10 7 10 7a18.4 18.4 0 0 1-3.1 3.8M6.1 6.2C3.6 8 2 12 2 12s4 7 10 7a10 10 0 0 0 4.1-.9',
+  calendar: 'M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1z',
+  clock: 'M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z',
+  user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0',
+  chevronLeft: 'M15 6l-6 6 6 6',
+  star: 'M12 3l2.4 5.2L20 9l-4 3.8.9 5.7L12 16l-4.9 2.5.9-5.7L4 9l5.6-.8z',
+  qr: 'M4 4h6v2H6v4H4zM14 4h6v6h-2V6h-4zM4 14h2v4h4v2H4zM18 14h2v6h-6v-2h4zM9 9h6v6H9z',
+  hash: 'M9 4l-1 16M16 4l-1 16M4 9h16M3 15h16',
+  device: 'M4 5h16v10H4zM8 19h8M12 15v4',
 };
 
 @Component({

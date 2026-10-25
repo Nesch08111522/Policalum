@@ -10,13 +10,14 @@ import {
 import { UserInfoDTO } from '../../models/user.model';
 import { AsistenciaService } from '../../services/asistencia.service';
 import { TokenService } from '../../services/token.service';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 import { fechaHoraLocal } from '../../shared/utils/fecha-local';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-listado-asistencias',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IconComponent],
   templateUrl: './listado-asistencias.component.html',
   styleUrls: ['./listado-asistencias.component.css'],
 })
@@ -255,7 +256,7 @@ export class ListadoAsistenciasComponent implements OnInit, AfterViewInit {
 
     this.asistenciaService.registrarManual(this.manualData).subscribe({
       next: (response) => {
-        this.mensajeExito = '✅ Asistencia registrada correctamente';
+        this.mensajeExito = 'Asistencia registrada correctamente';
         this.isLoading = false;
         this.cdr.detectChanges();
 

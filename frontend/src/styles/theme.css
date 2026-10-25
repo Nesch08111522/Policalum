@@ -20,7 +20,8 @@ body.modal-open { overflow: hidden; }
 
 h1, h2, h3, h4, p { margin: 0; }
 
-button, input, select, textarea { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; max-width: 100%; }
+input, select, textarea { font-size: 1rem; min-width: 0; }
 
 a { color: var(--color-primary); }
 

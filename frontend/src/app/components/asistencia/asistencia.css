@@ -49,10 +49,15 @@ transform: translateY(-2px);
 box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
 .card .card-icon {
-font-size: 28px;
-display: block;
+display: flex;
+justify-content: center;
 margin-bottom: 4px;
+color: var(--color-primary);
 }
+.card .card-icon .icon { width: 1.45rem; height: 1.45rem; }
+.card-presentes .card-icon { color: var(--color-success); }
+.card-tardanzas .card-icon { color: var(--color-warning); }
+.card-ausentes .card-icon { color: var(--color-danger); }
 .card .card-value {
 font-size: 28px;
 font-weight: 700;
@@ -331,10 +336,12 @@ padding: 6px 10px;
 }
 }
 @media (max-width: 480px) {
+.asistencia-container, .dashboard-section, .qr-section { padding: 0.85rem; }
 .dashboard-cards {
 grid-template-columns: 1fr 1fr;
 gap: 10px;
 }
+.card { padding: 12px; }
 .card .card-value {
 font-size: 20px;
 }
