@@ -103,13 +103,15 @@ public class CompraServiceImpl implements CompraService {
 
         Compra guardada = compraRepository.save(compra);
 
-        // Auditoría
         auditService.registrar("compras", guardada.getId(), AccionAudit.INSERT,
                 Map.of("numeroOrdenCompra", guardada.getNumeroOrdenCompra(),
                         "total", guardada.getTotal(),
                         "proveedorId", proveedor.getId().toString()));
 
-        log.info("Compra creada: {} - Total: {}", guardada.getNumeroOrdenCompra(), guardada.getTotal());
+        // Misma transacción: si el kardex, el stock o la cuenta por pagar fallan, la compra no queda grabada.
+        ingresar(guardada, user, null);
+
+        log.info("Compra registrada: {} - Total: {}", guardada.getNumeroOrdenCompra(), guardada.getTotal());
         return compraMapper.toResponseDto(guardada);
     }
 
@@ -205,78 +207,8 @@ public class CompraServiceImpl implements CompraService {
             throw new IllegalStateException("La compra no tiene detalles");
         }
 
-        User user = usuarioActual();
-
-        if (dto != null) {
-            if (dto.numeroFacturaProveedor() != null) {
-                compra.setNumeroFacturaProveedor(dto.numeroFacturaProveedor());
-            }
-            if (dto.observaciones() != null) {
-                compra.setObservaciones(dto.observaciones());
-            }
-        }
-
-        // Procesar cada detalle
-        for (DetalleCompra detalle : compra.getDetalles()) {
-            // 1. Cantidad real a mover en Kardex
-            BigDecimal cantidadKardex = detalle.getCantidad();
-            if (detalle.getFraccion() != null) {
-                cantidadKardex = cantidadKardex.multiply(detalle.getFraccion().getFactorDescuentoKardex());
-            }
-
-            // 2. Movimiento de Kardex (ENTRADA)
-            kardexService.registrarMovimiento(new KardexMovimientoRequestDTO(
-                    detalle.getProducto(),
-                    detalle.getAlmacen(),
-                    compra.getId(),
-                    TipoReferencia.COMPRA,
-                    TipoMovimiento.ENTRADA,
-                    cantidadKardex,
-                    BigDecimal.ZERO,
-                    user,
-                    "Entrada por compra " + compra.getNumeroOrdenCompra()
-            ));
-
-            // 3. Marcar cantidad recibida
-            detalle.setCantidadRecibida(detalle.getCantidad());
-
-            // 4. Actualizar costo promedio ponderado del producto
-            actualizarCostoPromedioPonderado(detalle, cantidadKardex);
-
-            detalleCompraRepository.save(detalle);
-        }
-
-        // 5. Crear Cuenta por Pagar automática
-        FinanzasCuentaPorPagar cxp = FinanzasCuentaPorPagar.builder()
-                .sede(compra.getSede())
-                .proveedor(compra.getProveedor())
-                .compra(compra)
-                .referenciaId(compra.getId())
-                .tipoReferencia(TipoReferenciaCxP.COMPRA)
-                .descripcion("Compra " + compra.getNumeroOrdenCompra()
-                        + " - " + compra.getProveedor().getNombreRazon())
-                .montoTotal(compra.getTotal())
-                .montoPagado(BigDecimal.ZERO)
-                .estado(EstadoCxP.PENDIENTE)
-                .fechaVencimiento(compra.getFechaVencimientoPago())
-                .build();
-        cuentaPorPagarRepository.save(cxp);
-
-        // 6. Actualizar estados
-        compra.setEstadoCompra(EstadoCompra.RECIBIDA);
-        compra.setEstadoRecepcion(EstadoRecepcion.RECIBIDO);
-        compra.setEstadoPago(EstadoPago.PENDIENTE);
-        compra.setUpdatedAt(LocalDateTime.now());
-
-        Compra guardada = compraRepository.save(compra);
-
-        auditService.registrar("compras", guardada.getId(), AccionAudit.UPDATE,
-                Map.of("accion", "RECEPCION",
-                        "numeroOrdenCompra", guardada.getNumeroOrdenCompra(),
-                        "cxpId", cxp.getId().toString()));
-
-        log.info("Compra recibida: {} - CxP generada: {}", guardada.getNumeroOrdenCompra(), cxp.getId());
-        return compraMapper.toResponseDto(guardada);
+        ingresar(compra, usuarioActual(), dto);
+        return compraMapper.toResponseDto(compra);
     }
 
     // ==================================================================
@@ -344,6 +276,72 @@ public class CompraServiceImpl implements CompraService {
     // ==================================================================
     // MÉTODOS PRIVADOS
     // ==================================================================
+
+    /**
+     * Entrada de inventario y deuda con el proveedor. Corre dentro de la transacción de quien llama:
+     * el alta nueva y la recepción de un borrador previo. El saldo de stock lo escribe el kardex.
+     */
+    private void ingresar(Compra compra, User user, RecepcionCompraRequestDTO dto) {
+        if (dto != null) {
+            if (dto.numeroFacturaProveedor() != null) {
+                compra.setNumeroFacturaProveedor(dto.numeroFacturaProveedor());
+            }
+            if (dto.observaciones() != null) {
+                compra.setObservaciones(dto.observaciones());
+            }
+        }
+
+        for (DetalleCompra detalle : compra.getDetalles()) {
+            BigDecimal cantidadKardex = detalle.getCantidad();
+            if (detalle.getFraccion() != null) {
+                cantidadKardex = cantidadKardex.multiply(detalle.getFraccion().getFactorDescuentoKardex());
+            }
+
+            BigDecimal stockPrevio = stockPrevio(detalle.getProducto().getId());
+            kardexService.registrarMovimiento(new KardexMovimientoRequestDTO(
+                    detalle.getProducto(),
+                    detalle.getAlmacen(),
+                    compra.getId(),
+                    TipoReferencia.COMPRA,
+                    TipoMovimiento.ENTRADA,
+                    cantidadKardex,
+                    BigDecimal.ZERO,
+                    user,
+                    "Entrada por compra " + compra.getNumeroOrdenCompra()
+            ));
+
+            detalle.setCantidadRecibida(detalle.getCantidad());
+            actualizarCostoPromedioPonderado(detalle, cantidadKardex, stockPrevio);
+            detalleCompraRepository.save(detalle);
+        }
+
+        FinanzasCuentaPorPagar cxp = FinanzasCuentaPorPagar.builder()
+                .sede(compra.getSede())
+                .proveedor(compra.getProveedor())
+                .compra(compra)
+                .referenciaId(compra.getId())
+                .tipoReferencia(TipoReferenciaCxP.COMPRA)
+                .descripcion("Compra " + compra.getNumeroOrdenCompra()
+                        + " - " + compra.getProveedor().getNombreRazon())
+                .montoTotal(compra.getTotal())
+                .montoPagado(BigDecimal.ZERO)
+                .estado(EstadoCxP.PENDIENTE)
+                .fechaVencimiento(compra.getFechaVencimientoPago())
+                .build();
+        cuentaPorPagarRepository.save(cxp);
+
+        compra.setEstadoCompra(EstadoCompra.RECIBIDA);
+        compra.setEstadoRecepcion(EstadoRecepcion.RECIBIDO);
+        compra.setEstadoPago(EstadoPago.PENDIENTE);
+        compra.setUpdatedAt(LocalDateTime.now());
+        compraRepository.save(compra);
+
+        auditService.registrar("compras", compra.getId(), AccionAudit.UPDATE,
+                Map.of("accion", "RECEPCION",
+                        "numeroOrdenCompra", compra.getNumeroOrdenCompra(),
+                        "cxpId", cxp.getId().toString()));
+        log.info("Compra ingresada: {} - CxP generada: {}", compra.getNumeroOrdenCompra(), cxp.getId());
+    }
 
     private Compra findCompra(UUID id) {
         return compraRepository.findWithDetailsById(id)
@@ -442,29 +440,25 @@ public class CompraServiceImpl implements CompraService {
      * Actualiza el costo promedio ponderado del producto a nivel global
      * (sumando todos los stocks del producto).
      */
-    private void actualizarCostoPromedioPonderado(DetalleCompra detalle, BigDecimal cantidadKardex) {
-        Producto producto = detalle.getProducto();
-
-        // Stock total actual del producto en todos los almacenes
-        List<Stock> stocks = stockRepository.findByProducto_Id(producto.getId());
-        BigDecimal stockTotal = stocks.stream()
-                .map(s -> s.getCantidad() != null ? s.getCantidad() : BigDecimal.ZERO)
+    private BigDecimal stockPrevio(UUID productoId) {
+        return stockRepository.findByProducto_Id(productoId).stream()
+                .map(stock -> stock.getCantidad() != null ? stock.getCantidad() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 
-        // El costo actual del producto es "precioCompra" (representa el costo unitario actual)
-        BigDecimal costoActual = producto.getPrecioCompra() != null
-                ? producto.getPrecioCompra() : BigDecimal.ZERO;
-
+    /** stockPrevio es el saldo antes de esta entrada. El kardex ya sumó la cantidad al almacén. */
+    private void actualizarCostoPromedioPonderado(DetalleCompra detalle, BigDecimal cantidadKardex, BigDecimal stockPrevio) {
+        Producto producto = detalle.getProducto();
+        BigDecimal costoActual = producto.getPrecioCompra() != null ? producto.getPrecioCompra() : BigDecimal.ZERO;
         BigDecimal costoNuevo = detalle.getValorUnitarioNeto();
 
-        // Si no hay stock previo, simplemente tomamos el nuevo costo
         BigDecimal costoPromedio;
-        if (stockTotal.compareTo(BigDecimal.ZERO) <= 0) {
+        if (stockPrevio.compareTo(BigDecimal.ZERO) <= 0) {
             costoPromedio = costoNuevo;
         } else {
-            BigDecimal valorInventarioActual = stockTotal.multiply(costoActual);
+            BigDecimal valorInventarioActual = stockPrevio.multiply(costoActual);
             BigDecimal valorCompraNueva = cantidadKardex.multiply(costoNuevo);
-            BigDecimal stockTotalNuevo = stockTotal.add(cantidadKardex);
+            BigDecimal stockTotalNuevo = stockPrevio.add(cantidadKardex);
             costoPromedio = valorInventarioActual.add(valorCompraNueva)
                     .divide(stockTotalNuevo, 2, RoundingMode.HALF_UP);
         }

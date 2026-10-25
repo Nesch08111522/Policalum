@@ -22,7 +22,10 @@ import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { ComprasApiService } from '../data-access/compras.api';
 
 function hoy(): string {
-  return new Date().toISOString().slice(0, 10);
+  const fecha = new Date();
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  return `${fecha.getFullYear()}-${mes}-${dia}`;
 }
 
 @Component({
@@ -86,7 +89,7 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.cargar();
-    this.api.GetApiV1ComprasDashboard().pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => (this.dashboard = data), error: () => (this.dashboard = null) });
+    this.refrescarDashboard();
     this.lookup.loadProveedores().pipe(takeUntil(this.destroy$)).subscribe((rows) => (this.proveedores = this.lookup.options(rows, (row) => (row as Api.ProveedorResponseDTO).nombreRazon ?? 'Proveedor')));
     this.lookup.loadSedes().pipe(takeUntil(this.destroy$)).subscribe((rows) => (this.sedes = this.lookup.options(rows, (row) => (row as Api.SedeResponseDTO).nombre ?? 'Sede')));
     this.lookup.loadProductos().pipe(takeUntil(this.destroy$)).subscribe((rows) => (this.productos = this.lookup.options(rows, (row) => `${(row as Api.ProductoResponseDTO).codigoSku ?? ''} ${(row as Api.ProductoResponseDTO).nombre ?? ''}`.trim())));
@@ -180,8 +183,21 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
     this.guardando = true;
     this.errorFormulario = null;
     const request = this.editando && this.editId ? this.api.PutApiV1ComprasId({ id: this.editId }, body) : this.api.PostApiV1Compras({}, body);
+    const editando = this.editando;
     request.pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.modal = false; this.toast.success(this.editando ? 'Compra actualizada.' : 'Compra registrada.'); this.cargar(); },
+      next: (compra) => {
+        this.guardando = false;
+        this.modal = false;
+        this.form.reset({ proveedorId: '', sedeId: '', fechaEmision: hoy(), moneda: 'PEN', numeroFacturaProveedor: '', observaciones: '' });
+        this.vaciarLineas();
+        if (editando) this.reemplazarFila(compra);
+        else this.insertarFila(compra);
+        if (!editando) this.inventario.marcarCambio();
+        this.refrescarDashboard();
+        this.toast.success(editando
+          ? 'Compra actualizada.'
+          : `Compra ${compra.numeroOrdenCompra ?? ''} registrada. El stock, el kardex y la cuenta por pagar quedaron grabados.`);
+      },
       error: (error: unknown) => { this.guardando = false; applyServerErrors(this.form, error); this.errorFormulario = problemText(error); },
     });
   }
@@ -200,7 +216,7 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
       numeroFacturaProveedor: value.numeroFacturaProveedor.trim() || undefined,
       observaciones: value.observaciones.trim() || undefined,
     }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.recibirAbierto = false; this.inventario.marcarCambio(); this.toast.success('Recepción registrada.'); this.cargar(); },
+      next: () => { this.guardando = false; this.recibirAbierto = false; this.inventario.marcarCambio(); this.toast.success('Recepción registrada. Stock, kardex y cuenta por pagar actualizados.'); this.cargar(); this.refrescarDashboard(); },
       error: (error: unknown) => { this.guardando = false; this.toast.error(problemText(error)); },
     });
   }
@@ -216,7 +232,7 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id || this.anulacion.invalid) return;
     this.guardando = true;
     this.api.PostApiV1ComprasIdAnulacion({ id: this.seleccionado.id }, { motivo: this.anulacion.controls.motivo.value.trim() }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.guardando = false; this.anularAbierto = false; this.inventario.marcarCambio(); this.toast.success('Compra anulada.'); this.cargar(); },
+      next: () => { this.guardando = false; this.anularAbierto = false; this.inventario.marcarCambio(); this.toast.success('Compra anulada.'); this.cargar(); this.refrescarDashboard(); },
       error: (error: unknown) => { this.guardando = false; this.toast.error(problemText(error)); },
     });
   }
@@ -227,7 +243,7 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1ComprasId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.toast.success('Compra eliminada.'); this.cargar(); },
+      next: () => { this.eliminando = false; this.confirmar = false; this.toast.success('Compra eliminada.'); this.cargar(); this.refrescarDashboard(); },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
   }
@@ -253,6 +269,50 @@ export class ComprasPageComponent implements OnInit, OnDestroy {
   private vaciarLineas(): void {
     this.detalles.clear();
     this.detalles.push(this.linea());
+  }
+
+  private refrescarDashboard(): void {
+    this.api.GetApiV1ComprasDashboard().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (data) => (this.dashboard = data),
+      error: () => (this.dashboard = null),
+    });
+  }
+
+  private filaDe(compra: Api.CompraResponseDTO): Api.CompraListadoDTO {
+    return {
+      id: compra.id,
+      numeroOrdenCompra: compra.numeroOrdenCompra,
+      numeroFacturaProveedor: compra.numeroFacturaProveedor,
+      proveedorNombre: compra.proveedorNombre,
+      fechaEmision: compra.fechaEmision,
+      moneda: compra.moneda,
+      total: compra.total,
+      estadoCompra: compra.estadoCompra,
+      estadoPago: compra.estadoPago,
+      createdAt: compra.createdAt,
+    };
+  }
+
+  private insertarFila(compra: Api.CompraResponseDTO): void {
+    const filtros = this.filtros.getRawValue();
+    const hayFiltro = Object.values(filtros).some((valor) => valor !== '');
+    if (hayFiltro || this.state.page !== 0) {
+      this.cargar();
+      return;
+    }
+    const fila = this.filaDe(compra);
+    this.state.rows = [fila, ...this.state.rows.filter((row) => row.id !== fila.id)].slice(0, this.state.size);
+    this.state.totalElements += 1;
+    this.state.totalPages = Math.max(1, Math.ceil(this.state.totalElements / this.state.size));
+  }
+
+  private reemplazarFila(compra: Api.CompraResponseDTO): void {
+    const fila = this.filaDe(compra);
+    const existe = this.state.rows.some((row) => row.id === fila.id);
+    this.state.rows = existe
+      ? this.state.rows.map((row) => row.id === fila.id ? fila : row)
+      : this.state.rows;
+    if (!existe) this.cargar();
   }
 }
 

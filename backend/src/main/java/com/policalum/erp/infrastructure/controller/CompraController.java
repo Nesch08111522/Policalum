@@ -45,7 +45,7 @@ public class CompraController {
 
     // ============ COMPRAS ============
 
-    @Operation(summary = "Crear compra (BORRADOR)", description = "Crea una orden de compra en BORRADOR con sus líneas (producto, fracción opcional y almacén de destino). Calcula neto, IGV y total. No mueve stock.")
+    @Operation(summary = "Registrar compra", description = "En una sola transacción crea la compra, la entrada de kardex, el stock del almacén y la cuenta por pagar. Si algo falla, no queda ninguno de esos registros. Queda en estado RECIBIDA.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Creado (header Location con la URL del recurso)"),
             @ApiResponse(responseCode = "404", description = "Proveedor, sede, producto, fracción o almacén inexistente")
