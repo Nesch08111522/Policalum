@@ -13,10 +13,7 @@ align-items: center;
 justify-content: center;
 gap: 10px;
 }
-.logo i {
-font-size: 32px;
-color: var(--color-primary);
-}
+.logo .icon { width: 1.75rem; height: 1.75rem; color: var(--color-primary); }
 .logo h1 {
 font-size: 26px;
 font-weight: 800;
@@ -220,7 +217,7 @@ align-items: center;
 gap: 10px;
 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 animation: slideDown 0.3s ease-out;
-min-width: 300px;
+min-width: min(18rem, 92vw);
 max-width: 90%;
 font-weight: 500;
 }

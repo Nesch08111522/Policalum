@@ -39,6 +39,11 @@
 @media (max-width: 760px) {
   .user-label { display: none; }
 }
+@media (max-width: 40rem) {
+  .sede-btn { width: 2.5rem; max-width: 2.5rem; padding-inline: 0; }
+  .sede-btn span, .sede-btn app-icon:last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+  .search-shell { padding-left: 0.55rem; }
+}
 @media (max-width: 1180px) {
   .theme-toggle span {
     position: absolute;

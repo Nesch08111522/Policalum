@@ -1,3 +1,18 @@
+.filtros-avisos { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; }
+.filtros-avisos button {
+  min-height: 2.15rem;
+  padding: 0 0.8rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+.filtros-avisos button.activo { background: var(--color-primary); border-color: transparent; color: var(--color-primary-contrast); }
+.filtros-avisos button.accion { margin-left: auto; }
 .aviso-card {
   display: flex;
   flex-wrap: wrap;
@@ -10,6 +25,11 @@
   background: var(--color-surface);
 }
 .aviso-card.pasada { opacity: 0.78; }
+.aviso-card p { color: var(--color-text); }
+@media (max-width: 40rem) {
+  .filtros-avisos button.accion { margin-left: 0; }
+  .aviso-card { flex-direction: column; }
+}
 .tipo { margin: 0; color: var(--color-primary); font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
 h2 { margin: 0.2rem 0; font-size: var(--text-lg); }
 .fecha { color: var(--color-text-muted); font-size: var(--text-xs); }

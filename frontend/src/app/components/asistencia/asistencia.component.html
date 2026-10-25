@@ -1,30 +1,29 @@
-<!-- src/app/components/asistencia/asistencia.component.html -->
 <div class="asistencia-container">
   <div class="page-header">
-    <h2>📋 Asistencia y Turnos</h2>
-    <p class="subtitle">👤 {{ adminName }} - {{ isAdmin ? 'Administrador' : 'Empleado' }}</p>
+    <h2 class="with-icon"><app-icon name="clipboard"></app-icon> Asistencia y turnos</h2>
+    <p class="subtitle with-icon"><app-icon name="user"></app-icon> {{ adminName }} · {{ isAdmin ? 'Administrador' : 'Empleado' }}</p>
   </div>
 
   <div class="dashboard-section">
-    <h3>📊 Resumen del Día</h3>
+    <h3 class="with-icon"><app-icon name="chart"></app-icon> Resumen del día</h3>
     <div class="dashboard-cards">
       <div class="card card-total">
-        <span class="card-icon">👥</span>
+        <span class="card-icon"><app-icon name="people"></app-icon></span>
         <span class="card-value">{{ totalEmpleados }}</span>
-        <span class="card-label">Total Empleados</span>
+        <span class="card-label">Total empleados</span>
       </div>
       <div class="card card-presentes">
-        <span class="card-icon">✅</span>
+        <span class="card-icon"><app-icon name="check"></app-icon></span>
         <span class="card-value">{{ presentesHoy }}</span>
-        <span class="card-label">Presentes Hoy</span>
+        <span class="card-label">Presentes hoy</span>
       </div>
       <div class="card card-tardanzas">
-        <span class="card-icon">⏰</span>
+        <span class="card-icon"><app-icon name="clock"></app-icon></span>
         <span class="card-value">{{ tardanzasHoy }}</span>
         <span class="card-label">Tardanzas</span>
       </div>
       <div class="card card-ausentes">
-        <span class="card-icon">❌</span>
+        <span class="card-icon"><app-icon name="x"></app-icon></span>
         <span class="card-value">{{ ausentesHoy }}</span>
         <span class="card-label">Ausentes</span>
       </div>
@@ -33,8 +32,8 @@
 
   <div class="qr-section">
     <div class="qr-header">
-      <h3>📱 QR de Asistencia</h3>
-      <p>Muestra este QR en la pantalla para que los empleados escaneen y marquen su asistencia.</p>
+      <h3 class="with-icon"><app-icon name="qr"></app-icon> QR de asistencia</h3>
+      <p>Muestra este QR para que los empleados marquen su asistencia.</p>
     </div>
     <app-qr-publico></app-qr-publico>
   </div>

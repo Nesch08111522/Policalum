@@ -50,7 +50,7 @@ export class BreadcrumbsComponent implements OnDestroy {
       label = (route.data['breadcrumb'] as string) || label;
     }
     const crumbs: Crumb[] = [];
-    if (section) crumbs.push({ label: section });
+    if (section && section !== 'Inicio') crumbs.push({ label: section });
     if (label && label !== section) crumbs.push({ label });
     this.crumbs.set(crumbs);
   }

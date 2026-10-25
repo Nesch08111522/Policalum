@@ -7,6 +7,7 @@ import { environment } from '../../../../environments/environment';
 import { Subject, takeUntil } from 'rxjs';
 import * as Api from '../../../core/api/openapi.types';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
@@ -32,7 +33,7 @@ import { CotizacionesApiService } from '../data-access/cotizaciones.api';
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-cotizaciones-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent, TabsComponent, PenPipe],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent, TabsComponent, PenPipe, IconComponent],
   templateUrl: './cotizaciones-page.component.html',
   styleUrls: ['./cotizaciones-page.component.css'],
 })

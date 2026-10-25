@@ -78,7 +78,7 @@
                 {{ etiquetaStock(producto) }}<ng-container *ngIf="almacenNombre"> · {{ almacenNombre }}</ng-container>
               </span>
             </div>
-            <button type="button" class="pin" [class.on]="esFavorito(producto.id)" (click)="alternarFavorito(producto.id)" [attr.aria-label]="esFavorito(producto.id) ? 'Quitar de favoritos' : 'Marcar favorito'">★</button>
+            <button type="button" class="pin" [class.on]="esFavorito(producto.id)" (click)="alternarFavorito(producto.id)" [attr.aria-label]="esFavorito(producto.id) ? 'Quitar de favoritos' : 'Marcar favorito'"><app-icon name="star"></app-icon></button>
           </div>
 
           <div class="cortes" *ngIf="producto.esFraccionable && fraccionesDe(producto).length">
@@ -119,7 +119,7 @@
               <p class="meta" *ngIf="servicio.descripcion">{{ servicio.descripcion }}</p>
               <p class="meta" *ngIf="!servicio.descripcion">Servicio · no mueve stock</p>
             </div>
-            <button type="button" class="pin" [class.on]="esFavorito(servicio.id)" (click)="alternarFavorito(servicio.id)" aria-label="Favorito">★</button>
+            <button type="button" class="pin" [class.on]="esFavorito(servicio.id)" (click)="alternarFavorito(servicio.id)" aria-label="Favorito"><app-icon name="star"></app-icon></button>
           </div>
           <div class="simple">
             <strong>{{ servicio.precio | pen }}</strong>

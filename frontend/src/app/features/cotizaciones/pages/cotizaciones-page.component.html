@@ -52,8 +52,8 @@
   <div *ngIf="detalle">
     <p>{{ detalle.clienteNombre || 'Sin cliente' }} · {{ detalle.estado }} · {{ detalle.total | pen }}</p>
     <div class="cluster">
-      <button type="button" class="btn btn-ghost btn-sm" (click)="descargar(detalle, 'pdf')">📄 Descargar PDF</button>
-      <button type="button" class="btn btn-ghost btn-sm" (click)="descargar(detalle, 'xlsx')">📊 Descargar Excel</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="descargar(detalle, 'pdf')"><app-icon name="file"></app-icon> Descargar PDF</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="descargar(detalle, 'xlsx')"><app-icon name="chart"></app-icon> Descargar Excel</button>
     </div>
     <table class="table table-compact"><thead><tr><th>Ítem</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr></thead>
       <tbody><tr *ngFor="let linea of detalle.lineas"><td>{{ linea.productoNombre || linea.servicioNombre }}</td><td>{{ linea.cantidad }}</td><td>{{ linea.precioUnitarioConIgv | pen }}</td><td>{{ linea.subtotal | pen }}</td></tr></tbody>
