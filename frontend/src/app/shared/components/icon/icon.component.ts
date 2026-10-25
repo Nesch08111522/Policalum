@@ -51,6 +51,7 @@ const ICONS: Record<string, string> = {
   qr: 'M4 4h6v2H6v4H4zM14 4h6v6h-2V6h-4zM4 14h2v4h4v2H4zM18 14h2v6h-6v-2h4zM9 9h6v6H9z',
   hash: 'M9 4l-1 16M16 4l-1 16M4 9h16M3 15h16',
   device: 'M4 5h16v10H4zM8 19h8M12 15v4',
+  image: 'M4 5h16v14H4zM4 15l4-4 3 3 3-4 6 6M9 9h.01',
 };
 
 @Component({
