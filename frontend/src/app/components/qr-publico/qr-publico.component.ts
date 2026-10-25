@@ -2,6 +2,7 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 import { AsistenciaService } from '../../services/asistencia.service';
 import { TokenService } from '../../services/token.service';
 
@@ -11,7 +12,7 @@ declare var QRCode: any;
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-qr-publico',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IconComponent],
   templateUrl: './qr-publico.component.html',
   styleUrls: ['./qr-publico.component.css'],
 })
@@ -154,7 +155,7 @@ export class QrPublicoComponent implements OnInit, OnDestroy, AfterViewInit {
         this.mostrandoInputManual = false;
         const nombre = response.empleadoNombreCompleto || 'Empleado';
         this.mostrarMensaje(
-          `✅ ${response.tipoMarcacion} registrada para ${nombre} a las ${new Date(response.fechaHora).toLocaleTimeString()}`,
+          `${response.tipoMarcacion} registrada para ${nombre} a las ${new Date(response.fechaHora).toLocaleTimeString()}`,
           'success',
         );
         this.cargarQR();

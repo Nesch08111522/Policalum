@@ -6,13 +6,14 @@ import { Router } from '@angular/router';
 import { ApiProblem } from '../../core/api/openapi.types';
 import { LoginResponse } from '../../models/user.model';
 import { AuthService } from '../../services/auth.service';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 import { MarcaService } from '../../shared/services/marca.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IconComponent],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css'],
 })

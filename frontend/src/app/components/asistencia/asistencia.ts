@@ -4,6 +4,7 @@ import { AfterViewInit, ChangeDetectorRef, Component, OnInit, ChangeDetectionStr
 import { FormsModule } from '@angular/forms';
 import { AsistenciaService } from '../../services/asistencia.service';
 import { TokenService } from '../../services/token.service';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 import { QrPublicoComponent } from '../qr-publico/qr-publico.component';
 import { ListadoAsistenciasComponent } from './listado-asistencias.component';
 
@@ -11,7 +12,7 @@ import { ListadoAsistenciasComponent } from './listado-asistencias.component';
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-asistencia',
   standalone: true,
-  imports: [CommonModule, FormsModule, QrPublicoComponent, ListadoAsistenciasComponent],
+  imports: [CommonModule, FormsModule, IconComponent, QrPublicoComponent, ListadoAsistenciasComponent],
   templateUrl: './asistencia.component.html',
   styleUrls: ['./asistencia.css'],
 })

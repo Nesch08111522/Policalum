@@ -1,22 +1,20 @@
-<!-- src/app/components/asistencia/listado-asistencias.component.html -->
 <div class="listado-container">
   <div class="listado-header">
-    <h3>📋 Registro de Asistencias</h3>
+    <h3 class="with-icon"><app-icon name="clipboard"></app-icon> Registro de asistencias</h3>
     <div class="header-actions">
       <span class="total-registros">{{ totalElements }} registros</span>
-      <button *ngIf="isAdmin" class="btn-primary" (click)="abrirModalManual()">
-        ➕ Registrar Manual
+      <button *ngIf="isAdmin" class="btn-primary" type="button" (click)="abrirModalManual()">
+        <app-icon name="plus"></app-icon> Registrar manual
       </button>
     </div>
   </div>
 
   <div class="filtros-container">
     <div class="filtros-grid">
-      <!-- ✅ COMBO BOX CON NOMBRES VISIBLES -->
       <div class="filtro-group" *ngIf="isAdmin">
-        <label>👤 Empleado</label>
+        <label class="with-icon"><app-icon name="user"></app-icon> Empleado</label>
         <select [(ngModel)]="filtro.empleadoId" (change)="onEmpleadoChange()">
-          <option value="">📋 Todos los empleados</option>
+          <option value="">Todos los empleados</option>
           <option *ngFor="let emp of empleados" [value]="emp.id">
             {{ emp.nombreCompleto }} ({{ emp.email }})
           </option>
@@ -24,30 +22,30 @@
       </div>
 
       <div class="filtro-group">
-        <label>📅 Desde</label>
+        <label class="with-icon"><app-icon name="calendar"></app-icon> Desde</label>
         <input type="date" [(ngModel)]="filtro.fechaInicio" (change)="aplicarFiltros()" />
       </div>
       <div class="filtro-group">
-        <label>📅 Hasta</label>
+        <label class="with-icon"><app-icon name="calendar"></app-icon> Hasta</label>
         <input type="date" [(ngModel)]="filtro.fechaFin" (change)="aplicarFiltros()" />
       </div>
       <div class="filtro-group">
-        <label>📌 Tipo</label>
+        <label class="with-icon"><app-icon name="tag"></app-icon> Tipo</label>
         <select [(ngModel)]="filtro.tipoMarcacion" (change)="aplicarFiltros()">
           <option value="">Todos</option>
           <option *ngFor="let tipo of tipos" [value]="tipo">{{ tipo }}</option>
         </select>
       </div>
       <div class="filtro-group">
-        <label>📊 Estado</label>
+        <label class="with-icon"><app-icon name="chart"></app-icon> Estado</label>
         <select [(ngModel)]="filtro.estado" (change)="aplicarFiltros()">
           <option value="">Todos</option>
           <option *ngFor="let estado of estados" [value]="estado">{{ estado }}</option>
         </select>
       </div>
       <div class="filtro-actions">
-        <button class="btn-secondary" (click)="limpiarFiltros()">🗑️ Limpiar</button>
-        <button class="btn-primary-small" (click)="aplicarFiltros()">🔍 Filtrar</button>
+        <button class="btn-secondary" type="button" (click)="limpiarFiltros()"><app-icon name="trash"></app-icon> Limpiar</button>
+        <button class="btn-primary-small" type="button" (click)="aplicarFiltros()"><app-icon name="filter"></app-icon> Filtrar</button>
       </div>
     </div>
   </div>
@@ -94,24 +92,23 @@
     </table>
 
     <div class="pagination" *ngIf="totalPages > 1">
-      <button (click)="cambiarPagina(page - 1)" [disabled]="page === 0">⬅️ Anterior</button>
+      <button type="button" (click)="cambiarPagina(page - 1)" [disabled]="page === 0"><app-icon name="chevronLeft"></app-icon> Anterior</button>
       <span>Página {{ page + 1 }} de {{ totalPages }}</span>
-      <button (click)="cambiarPagina(page + 1)" [disabled]="page === totalPages - 1">
-        Siguiente ➡️
+      <button type="button" (click)="cambiarPagina(page + 1)" [disabled]="page === totalPages - 1">
+        Siguiente <app-icon name="chevron"></app-icon>
       </button>
     </div>
   </div>
 
-  <!-- MODAL REGISTRO MANUAL -->
   <div *ngIf="mostrarModalManual && isAdmin" class="modal-overlay">
-    <div class="modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-manual">
       <div class="modal-header">
-        <h3>📝 Registrar Asistencia Manual</h3>
-        <button class="modal-close" (click)="cerrarModalManual()">✕</button>
+        <h3 id="titulo-manual" class="with-icon"><app-icon name="edit"></app-icon> Registrar asistencia manual</h3>
+        <button class="modal-close" type="button" (click)="cerrarModalManual()" aria-label="Cerrar"><app-icon name="x"></app-icon></button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label>👤 Empleado *</label>
+          <label class="with-icon"><app-icon name="user"></app-icon> Empleado *</label>
           <select
             [(ngModel)]="manualData.empleadoId"
             [class.input-error]="manualErrors['empleado']"
@@ -126,7 +123,7 @@
           }}</small>
         </div>
         <div class="form-group">
-          <label>📅 Fecha y Hora *</label>
+          <label class="with-icon"><app-icon name="calendar"></app-icon> Fecha y hora *</label>
           <input
             type="datetime-local"
             [(ngModel)]="manualData.fechaHora"
@@ -137,7 +134,7 @@
           }}</small>
         </div>
         <div class="form-group">
-          <label>📌 Tipo *</label>
+          <label class="with-icon"><app-icon name="tag"></app-icon> Tipo *</label>
           <select [(ngModel)]="manualData.tipoMarcacion" [class.input-error]="manualErrors['tipo']">
             <option value="ENTRADA">ENTRADA</option>
             <option value="SALIDA">SALIDA</option>
@@ -147,16 +144,17 @@
           <small *ngIf="manualErrors['tipo']" class="error-text">{{ manualErrors['tipo'] }}</small>
         </div>
         <div class="form-group">
-          <label>💻 Dispositivo</label>
+          <label class="with-icon"><app-icon name="device"></app-icon> Dispositivo</label>
           <input type="text" [(ngModel)]="manualData.dispositivoInfo" placeholder="Opcional" />
         </div>
         <div *ngIf="mensajeExito" class="alert-success">{{ mensajeExito }}</div>
         <div *ngIf="error" class="alert-error">{{ error }}</div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" (click)="cerrarModalManual()">Cancelar</button>
-        <button class="btn-primary" [disabled]="isLoading" (click)="registrarManual()">
-          {{ isLoading ? '⏳ Registrando...' : '✅ Registrar' }}
+        <button class="btn-secondary" type="button" (click)="cerrarModalManual()">Cancelar</button>
+        <button class="btn-primary" type="button" [disabled]="isLoading" (click)="registrarManual()">
+          <app-icon *ngIf="!isLoading" name="check"></app-icon>
+          {{ isLoading ? 'Registrando...' : 'Registrar' }}
         </button>
       </div>
     </div>
