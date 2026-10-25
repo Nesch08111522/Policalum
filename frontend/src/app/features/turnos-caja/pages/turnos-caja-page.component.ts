@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, effect, inject, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
+import { HTTP_SILENCIOSO } from '../../../core/interceptors/api-error.interceptor';
 import { environment } from '../../../../environments/environment';
 import { Subject, takeUntil } from 'rxjs';
 import * as Api from '../../../core/api/openapi.types';
@@ -62,11 +63,12 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.lookup.loadSedes().pipe(takeUntil(this.destroy$)).subscribe((rows) => {
       this.sedes = this.lookup.options(rows, (row) => (row as Api.SedeResponseDTO).nombre ?? 'Sede');
-      const elegida = this.sedeFiltro.sedeId();
+      const elegida = this.sedeFiltro.sedeId() || this.sedes[0]?.value || '';
       if (elegida && !this.apertura.controls.sedeId.value) this.apertura.controls.sedeId.setValue(elegida);
     });
     const sedeId = this.sedeFiltro.sedeId();
-    this.http.get<{ abierto?: boolean; turno?: Api.TurnoCajaResponseDTO | null }>(`${environment.apiUrl}/api/v1/turnos-caja/abierto`, { params: sedeId ? { sedeId } : {} }).pipe(takeUntil(this.destroy$)).subscribe({
+    const silencio = new HttpContext().set(HTTP_SILENCIOSO, true);
+    this.http.get<{ abierto?: boolean; turno?: Api.TurnoCajaResponseDTO | null }>(`${environment.apiUrl}/api/v1/turnos-caja/abierto`, { params: sedeId ? { sedeId } : {}, context: silencio }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (respuesta) => {
         if (respuesta?.abierto && respuesta.turno?.id) this.recordarTurno(respuesta.turno);
       },
@@ -140,7 +142,7 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
   cargarCajaChica(): void {
     const id = this.turno?.id;
     if (!id) { this.movimientos = []; return; }
-    this.http.get<CajaChicaFila[]>(`${environment.apiUrl}/api/v1/turnos-caja/${id}/caja-chica`).pipe(takeUntil(this.destroy$)).subscribe({
+    this.http.get<CajaChicaFila[]>(`${environment.apiUrl}/api/v1/turnos-caja/${id}/caja-chica`, { context: new HttpContext().set(HTTP_SILENCIOSO, true) }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (filas) => { this.movimientos = filas ?? []; },
       error: () => { this.movimientos = []; },
     });

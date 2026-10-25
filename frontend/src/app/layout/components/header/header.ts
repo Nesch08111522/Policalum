@@ -11,6 +11,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { LayoutService } from '../../../shared/services/layout.service';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { CajaGateService } from '../../../shared/services/caja-gate.service';
+import { AvatarService } from '../../../shared/services/avatar.service';
 import { SedeFiltroService } from '../../../shared/services/sede-filtro.service';
 import { ThemeService } from '../../../shared/services/theme.service';
 import { NAV_SECTIONS, NavItem } from '../../navigation';
@@ -42,6 +43,7 @@ export class HeaderComponent implements OnInit {
     private readonly tokens: TokenService,
     private readonly lookup: LookupService,
     private readonly caja: CajaGateService,
+    readonly avatar: AvatarService,
     private readonly notificaciones: NotificacionesApi,
     private readonly router: Router,
   ) {}
@@ -101,7 +103,10 @@ export class HeaderComponent implements OnInit {
   get userName(): string { return this.tokens.session()?.nombre || 'Usuario'; }
   get userEmail(): string { return this.tokens.session()?.email || ''; }
   get userRole(): string { return this.tokens.session()?.rol === 'ROLE_ADMIN' ? 'Administrador' : this.tokens.session() ? 'Multifuncional' : ''; }
-  get initials(): string { return (this.userName || 'P').slice(0, 2).toUpperCase(); }
+  get initials(): string {
+    const partes = (this.userName || 'P').trim().split(/\s+/).slice(0, 2);
+    return partes.map((parte) => parte.charAt(0).toUpperCase()).join('') || 'P';
+  }
   get esAdmin(): boolean { return this.tokens.session()?.rol === 'ROLE_ADMIN'; }
 
   ir(ruta: string): void {

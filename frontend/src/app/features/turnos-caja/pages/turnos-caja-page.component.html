@@ -1,23 +1,31 @@
-<section class="module-page">
+<section class="module-page caja-pagina">
   <app-page-header title="Caja" subtitle="Al entrar hay que abrir la caja. Los ingresos y egresos menores (transporte, suministros, oficina) ajustan el efectivo esperado del turno."></app-page-header>
   <div *ngIf="error" class="alert alert-error">{{ error }}</div>
-  <div class="stats-grid">
-    <form class="card card-body stack" [formGroup]="apertura" (ngSubmit)="abrir()">
-      <h2>Abrir turno</h2>
-      <app-form-field label="Sede" inputId="caja-sede" [required]="true"><app-select inputId="caja-sede" [options]="sedes" formControlName="sedeId" [clearable]="false"></app-select></app-form-field>
-      <app-form-field label="Monto inicial" inputId="caja-inicial" [required]="true"><input id="caja-inicial" class="input" type="number" min="0" step="0.01" formControlName="montoInicial" /></app-form-field>
-      <app-form-field label="Observaciones" inputId="caja-obs"><textarea id="caja-obs" class="textarea" formControlName="observaciones"></textarea></app-form-field>
-      <button type="submit" class="btn btn-primary" [disabled]="apertura.invalid || guardando">Abrir caja</button>
+  <div class="par-grid">
+    <form class="card caja-tarjeta" [formGroup]="apertura" (ngSubmit)="abrir()">
+      <div class="card-header"><h2>Abrir turno</h2></div>
+      <div class="card-body stack">
+        <app-form-field label="Sede" inputId="caja-sede" [required]="true"><app-select inputId="caja-sede" [options]="sedes" formControlName="sedeId" [clearable]="false"></app-select></app-form-field>
+        <app-form-field label="Monto inicial" inputId="caja-inicial" [required]="true"><input id="caja-inicial" class="input" type="number" min="0" step="0.01" formControlName="montoInicial" /></app-form-field>
+        <app-form-field label="Observaciones" inputId="caja-obs"><textarea id="caja-obs" class="textarea" formControlName="observaciones"></textarea></app-form-field>
+        <button type="submit" class="btn btn-primary" [disabled]="apertura.invalid || guardando">Abrir caja</button>
+      </div>
     </form>
-    <form class="card card-body stack" [formGroup]="cierre" (ngSubmit)="cerrar()">
-      <h2>Cerrar turno</h2>
-      <p *ngIf="turno" class="text-sm text-muted">Turno recordado: {{ turno.id }} · estado {{ turno.estado || 'ABIERTO' }} · inicial {{ turno.montoInicial | pen }}</p>
-      <app-form-field label="Identificador del turno" inputId="caja-id" [required]="true" hint="Se completa al abrir la caja. También puedes pegar un id existente."><input id="caja-id" class="input" formControlName="id" /></app-form-field>
-      <app-form-field label="Monto declarado" inputId="caja-final" [required]="true"><input id="caja-final" class="input" type="number" min="0" step="0.01" formControlName="montoFinalDeclarado" /></app-form-field>
-      <app-form-field label="Observaciones" inputId="caja-cierre-obs"><textarea id="caja-cierre-obs" class="textarea" formControlName="observaciones"></textarea></app-form-field>
-      <div class="cluster">
-        <button type="button" class="btn btn-ghost" (click)="verResumen()" [disabled]="guardando">Ver resumen</button>
-        <button type="submit" class="btn btn-danger" [disabled]="cierre.invalid || guardando">Cerrar caja</button>
+    <form class="card caja-tarjeta" [formGroup]="cierre" (ngSubmit)="cerrar()">
+      <div class="card-header">
+        <h2>Cerrar turno</h2>
+        <span class="badge badge-success" *ngIf="turno">Abierto</span>
+      </div>
+      <div class="card-body stack">
+        <p *ngIf="turno" class="turno-meta">Efectivo inicial {{ turno.montoInicial | pen }} · {{ turno.estado || 'ABIERTO' }}</p>
+        <p *ngIf="!turno" class="text-sm text-muted">Abre la caja de esta sede para recordar el turno. Si ya tienes uno, pega su identificador.</p>
+        <app-form-field label="Identificador del turno" inputId="caja-id" [required]="true" hint="Se completa al abrir la caja. También puedes pegar un id existente."><input id="caja-id" class="input turno-id" formControlName="id" placeholder="Se completa al abrir la caja" /></app-form-field>
+        <app-form-field label="Monto declarado" inputId="caja-final" [required]="true"><input id="caja-final" class="input" type="number" min="0" step="0.01" formControlName="montoFinalDeclarado" /></app-form-field>
+        <app-form-field label="Observaciones" inputId="caja-cierre-obs"><textarea id="caja-cierre-obs" class="textarea" formControlName="observaciones"></textarea></app-form-field>
+        <div class="cluster acciones">
+          <button type="button" class="btn btn-ghost" (click)="verResumen()" [disabled]="guardando">Ver resumen</button>
+          <button type="submit" class="btn btn-danger" [disabled]="cierre.invalid || guardando">Cerrar caja</button>
+        </div>
       </div>
     </form>
   </div>
@@ -46,7 +54,7 @@
   <article class="card card-body" *ngIf="resumen">
     <h2>Resumen del turno</h2>
     <p class="text-sm text-muted">El efectivo esperado ya incluye los ingresos y egresos de caja chica.</p>
-    <dl class="resumen-caja">
+    <dl class="resumen-caja resumen-grid">
       <div><dt>Monto inicial</dt><dd>{{ resumen.montoInicial | pen }}</dd></div>
       <div><dt>Ventas en efectivo</dt><dd>{{ resumen.ventasEfectivo | pen }}</dd></div>
       <div><dt>Retiros de socios</dt><dd>{{ resumen.retirosSocios | pen }}</dd></div>

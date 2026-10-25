@@ -59,7 +59,7 @@
 .foto, .vista-previa { object-fit: cover; background: var(--color-bg); }
 .foto { width: 44px; height: 44px; border-radius: 10px; }
 .imagen-bloque { display: flex; flex-direction: column; gap: 8px; }
-.file-field { position: relative; display: flex; align-items: center; min-height: 2.75rem; padding: 0 0.9rem; border: 1px dashed var(--color-border-strong); border-radius: var(--radius-md); color: #B3C1CD; cursor: pointer; }
+.file-field { position: relative; display: flex; align-items: center; min-height: 2.75rem; padding: 0 0.9rem; border: 1px dashed var(--color-border-strong); border-radius: var(--radius-md); color: var(--color-text-muted); cursor: pointer; }
 .file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .imagen-titulo { color: var(--color-text-muted); font-size: var(--text-sm); }
 .vista-previa { width: 96px; height: 96px; border-radius: var(--radius-md); border: 1px solid var(--color-border); }

@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { LoginRequest, LoginResponse } from '../models/user.model';
+import { AvatarService } from '../shared/services/avatar.service';
 import { TokenService } from './token.service';
 
 @Injectable({
@@ -16,6 +17,7 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private tokenService: TokenService,
+    private avatar: AvatarService,
   ) {}
 
   login(credentials: LoginRequest): Observable<LoginResponse> {
@@ -35,6 +37,7 @@ export class AuthService {
   }
 
   logout(): void {
+    this.avatar.limpiar();
     const token = this.tokenService.getToken();
     if (!token) {
       this.tokenService.logout();

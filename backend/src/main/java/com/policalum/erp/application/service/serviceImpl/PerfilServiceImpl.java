@@ -120,6 +120,15 @@ public class PerfilServiceImpl {
         return respuesta(user, null, null, null);
     }
 
+    /** Quita la foto de inmediato y borra el archivo. Si no había foto, la cuenta queda igual. */
+    @Transactional
+    public PerfilResponseDTO quitarFoto() {
+        User user = usuario();
+        aplicarFoto(user, "");
+        userRepository.save(user);
+        return respuesta(user, null, null, null);
+    }
+
     @Transactional(readOnly = true)
     public Resource cargarFoto() {
         User user = usuario();
