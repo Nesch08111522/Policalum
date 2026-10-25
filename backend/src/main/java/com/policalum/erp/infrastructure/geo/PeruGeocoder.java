@@ -28,7 +28,31 @@ public final class PeruGeocoder {
             Map.entry("cajamarca", new double[] {-7.1617, -78.5128}),
             Map.entry("puno", new double[] {-15.8402, -70.0219}),
             Map.entry("ayacucho", new double[] {-13.1631, -74.2246}),
-            Map.entry("huanuco", new double[] {-9.9306, -76.2422})
+            Map.entry("huanuco", new double[] {-9.9306, -76.2422}),
+            Map.entry("miraflores", new double[] {-12.1211, -77.0297}),
+            Map.entry("san isidro", new double[] {-12.0969, -77.0365}),
+            Map.entry("barranco", new double[] {-12.1439, -77.0203}),
+            Map.entry("santiago de surco", new double[] {-12.1460, -76.9910}),
+            Map.entry("surco", new double[] {-12.1460, -76.9910}),
+            Map.entry("san borja", new double[] {-12.0960, -76.9956}),
+            Map.entry("la molina", new double[] {-12.0796, -76.9163}),
+            Map.entry("surquillo", new double[] {-12.1136, -77.0120}),
+            Map.entry("san miguel", new double[] {-12.0778, -77.0936}),
+            Map.entry("los olivos", new double[] {-11.9590, -77.0708}),
+            Map.entry("san juan de lurigancho", new double[] {-11.9910, -76.9990}),
+            Map.entry("san juan de miraflores", new double[] {-12.1600, -76.9700}),
+            Map.entry("villa el salvador", new double[] {-12.2130, -76.9370}),
+            Map.entry("chorrillos", new double[] {-12.1760, -77.0170}),
+            Map.entry("ate", new double[] {-12.0260, -76.9170}),
+            Map.entry("ventanilla", new double[] {-11.8770, -77.1260}),
+            Map.entry("huaraz", new double[] {-9.5278, -77.5278}),
+            Map.entry("tarapoto", new double[] {-6.4825, -76.3730}),
+            Map.entry("tumbes", new double[] {-3.5669, -80.4515}),
+            Map.entry("huacho", new double[] {-11.1070, -77.6050}),
+            Map.entry("chincha", new double[] {-13.4170, -76.1320}),
+            Map.entry("pisco", new double[] {-13.7100, -76.2030}),
+            Map.entry("moquegua", new double[] {-17.1930, -70.9350}),
+            Map.entry("puerto maldonado", new double[] {-12.5930, -69.1890})
     );
 
     private PeruGeocoder() {}

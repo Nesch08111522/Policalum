@@ -1,18 +1,21 @@
 <section class="module-page">
-  <app-page-header title="Sedes" subtitle="Locales operativos y su avance en el mapa del Perú. La búsqueda se aplica sobre el listado cargado." actionLabel="Nueva sede" (action)="abrirCrear()"></app-page-header>
+  <app-page-header title="Sedes" subtitle="Busca la dirección o arrastra el logo hasta el local. Cada sede queda marcada con el logo de la empresa." actionLabel="Nueva sede" (action)="abrirCrear()"></app-page-header>
   <article class="card card-body sede-mapa">
-    <h2>Expansión en el Perú</h2>
-    <p class="text-sm text-muted">Cada sede activa con ciudad reconocida o con latitud y longitud aparece aquí. El mapa usa teselas libres de OpenStreetMap.</p>
-    <app-peru-mapa [puntos]="mapa"></app-peru-mapa>
-    <div class="sede-fotos" *ngIf="mapa.length">
-      <article *ngFor="let sede of mapa">
-        <img *ngIf="sede.id && fotos[sede.id]" [src]="fotos[sede.id]" [alt]="'Foto de ' + (sede.nombre || 'sede')" />
-        <div *ngIf="!sede.id || !fotos[sede.id]" class="sede-foto-vacia">Sin foto</div>
-        <strong>{{ sede.nombre }}</strong>
-        <span>{{ sede.ciudad || 'Ciudad pendiente' }}</span>
-        <span *ngIf="sede.ubicada">{{ sede.latitud | number:'1.2-4' }}, {{ sede.longitud | number:'1.2-4' }}</span>
-        <span *ngIf="!sede.ubicada">Sin ubicación en el mapa</span>
-      </article>
+    <div>
+      <h2>Sedes en el mapa</h2>
+      <p class="text-sm text-muted">El punto se coloca al buscar la ciudad o la dirección. Si hace falta, se arrastra el logo hasta la puerta. La foto se ve al pulsar la marca.</p>
+    </div>
+    <div class="sede-layout">
+      <app-peru-mapa [puntos]="puntosVista" [logo]="marca.logoSrc()"></app-peru-mapa>
+      <div class="sede-fotos" *ngIf="mapa.length">
+        <article *ngFor="let sede of mapa">
+          <img *ngIf="sede.id && fotos[sede.id]" [src]="fotos[sede.id]" [alt]="'Foto de ' + (sede.nombre || 'sede')" />
+          <div *ngIf="!sede.id || !fotos[sede.id]" class="sede-foto-vacia"><app-icon name="image"></app-icon></div>
+          <strong>{{ sede.nombre }}</strong>
+          <span>{{ sede.direccion || 'Sin dirección' }}</span>
+          <span>{{ sede.ubicada ? (sede.ciudad || 'En el mapa') : 'Sin punto en el mapa' }}</span>
+        </article>
+      </div>
     </div>
   </article>
   <app-filter-bar>
@@ -27,22 +30,38 @@
     </ng-template>
   </app-data-table>
 </section>
-<app-modal [closable]="!guardando" [open]="modal" [title]="editando ? 'Editar sede' : 'Nueva sede'" (closed)="modal = false">
-  <form class="form-grid" [formGroup]="form">
-    <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
-    <app-form-field class="span-2" label="Nombre" inputId="sede-nombre" [required]="true" [error]="errorDe('nombre')"><input id="sede-nombre" class="input" formControlName="nombre" /></app-form-field>
-    <app-form-field label="País" inputId="sede-pais"><input id="sede-pais" class="input" formControlName="pais" /></app-form-field>
-    <app-form-field label="Ciudad" inputId="sede-ciudad"><input id="sede-ciudad" class="input" formControlName="ciudad" /></app-form-field>
-    <app-form-field class="span-2" label="Dirección" inputId="sede-dir"><input id="sede-dir" class="input" formControlName="direccion" /></app-form-field>
-    <app-form-field label="Celular" inputId="sede-cel" [error]="errorDe('celularSede')"><input id="sede-cel" class="input" formControlName="celularSede" /></app-form-field>
-    <app-form-field label="Moneda" inputId="sede-moneda"><input id="sede-moneda" class="input" formControlName="moneda" maxlength="10" /></app-form-field>
-    <app-form-field label="Latitud" inputId="sede-lat" hint="Opcional. Si la dejas vacía, se usa la ciudad (Lima, Trujillo, Arequipa…)."><input id="sede-lat" class="input" formControlName="latitud" inputmode="decimal" /></app-form-field>
-    <app-form-field label="Longitud" inputId="sede-lng"><input id="sede-lng" class="input" formControlName="longitud" inputmode="decimal" /></app-form-field>
-    <app-form-field class="span-2" label="Foto de la sede" inputId="sede-foto" hint="JPG, PNG o WEBP de hasta 5 MB. Se guarda al pulsar Guardar.">
-      <input id="sede-foto" class="input" type="file" accept="image/jpeg,image/png,image/webp" (change)="elegirImagen($event)" />
-    </app-form-field>
-    <img *ngIf="vistaImagen" class="sede-previa span-2" [src]="vistaImagen" alt="Vista previa de la sede" />
-    <app-form-field label="Activa" inputId="sede-act"><input id="sede-act" class="switch" type="checkbox" formControlName="activa" /></app-form-field>
+<app-modal [closable]="!guardando" [open]="modal" size="lg" [title]="editando ? 'Editar sede' : 'Nueva sede'" (closed)="modal = false">
+  <form class="sede-editor" [formGroup]="form">
+    <div class="form-grid">
+      <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
+      <app-form-field class="span-2" label="Nombre" inputId="sede-nombre" [required]="true" [error]="errorDe('nombre')"><input id="sede-nombre" class="input" formControlName="nombre" /></app-form-field>
+      <app-form-field label="País" inputId="sede-pais"><input id="sede-pais" class="input" formControlName="pais" /></app-form-field>
+      <app-form-field label="Ciudad" inputId="sede-ciudad"><input id="sede-ciudad" class="input" formControlName="ciudad" (blur)="ubicarSiFalta()" /></app-form-field>
+      <app-form-field class="span-2" label="Dirección" inputId="sede-dir"><input id="sede-dir" class="input" formControlName="direccion" (blur)="ubicarSiFalta()" /></app-form-field>
+      <app-form-field label="Celular" inputId="sede-cel" [error]="errorDe('celularSede')"><input id="sede-cel" class="input" formControlName="celularSede" /></app-form-field>
+      <app-form-field label="Moneda" inputId="sede-moneda"><input id="sede-moneda" class="input" formControlName="moneda" maxlength="10" /></app-form-field>
+      <app-form-field label="Activa" inputId="sede-act"><input id="sede-act" class="switch" type="checkbox" formControlName="activa" /></app-form-field>
+    </div>
+    <div class="sede-lugar">
+      <div class="ubicar">
+        <label for="sede-ubicar">Buscar lugar</label>
+        <div class="ubicar-fila">
+          <input id="sede-ubicar" class="input" type="search" [formControl]="consulta" placeholder="Miraflores, Av. Larco, Trujillo" (keydown.enter)="$event.preventDefault(); ubicar()" />
+          <button type="button" class="btn btn-primary" (click)="ubicar()">Ubicar</button>
+        </div>
+        <p class="text-sm text-muted">{{ avisoMapa }}</p>
+      </div>
+      <app-peru-mapa *ngIf="modal" class="compacto" [elegir]="true" [puntos]="otrasSedes" [logo]="marca.logoSrc()" [marca]="punto" (marcaChange)="alMover($event)"></app-peru-mapa>
+      <div class="foto-caja">
+        <img *ngIf="vistaImagen" [src]="vistaImagen" alt="Foto de la sede" />
+        <div *ngIf="!vistaImagen" class="foto-vacia"><app-icon name="image"></app-icon><span>Foto del local</span></div>
+        <div>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="selectorFoto.click()">Elegir foto</button>
+          <p class="text-xs text-muted">JPG, PNG o WEBP de hasta 5 MB. Se guarda con la sede y aparece al pulsar el logo.</p>
+        </div>
+        <input #selectorFoto id="sede-foto" type="file" accept="image/jpeg,image/png,image/webp" (change)="elegirImagen($event)" />
+      </div>
+    </div>
   </form>
   <div modalFooter>
     <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
