@@ -5,6 +5,8 @@ import java.util.Map;
 
 /**
  * Gazetter local de ciudades del Perú. No llama a internet.
+ * La Libertad está detallada porque las sedes operan en esa región:
+ * cada distrito tiene su propio punto y no se apilan en Trujillo.
  * Photon o Nominatim en Docker quedan para cuando haya servidor propio.
  */
 public final class PeruGeocoder {
@@ -52,7 +54,48 @@ public final class PeruGeocoder {
             Map.entry("chincha", new double[] {-13.4170, -76.1320}),
             Map.entry("pisco", new double[] {-13.7100, -76.2030}),
             Map.entry("moquegua", new double[] {-17.1930, -70.9350}),
-            Map.entry("puerto maldonado", new double[] {-12.5930, -69.1890})
+            Map.entry("puerto maldonado", new double[] {-12.5930, -69.1890}),
+            Map.entry("el porvenir", new double[] {-8.0839, -79.0031}),
+            Map.entry("florencia de mora", new double[] {-8.0828, -79.0242}),
+            Map.entry("la esperanza", new double[] {-8.0706, -79.0464}),
+            Map.entry("huanchaco", new double[] {-8.0814, -79.1214}),
+            Map.entry("victor larco herrera", new double[] {-8.1292, -79.0472}),
+            Map.entry("victor larco", new double[] {-8.1292, -79.0472}),
+            Map.entry("moche", new double[] {-8.1714, -79.0092}),
+            Map.entry("laredo", new double[] {-8.0897, -78.9603}),
+            Map.entry("salaverry", new double[] {-8.2214, -78.9764}),
+            Map.entry("poroto", new double[] {-8.0111, -78.7669}),
+            Map.entry("simbal", new double[] {-7.9736, -78.8131}),
+            Map.entry("el milagro", new double[] {-8.0558, -79.0675}),
+            Map.entry("alto trujillo", new double[] {-8.0694, -78.9906}),
+            Map.entry("ascope", new double[] {-7.7144, -79.1078}),
+            Map.entry("chocope", new double[] {-7.7914, -79.2217}),
+            Map.entry("casa grande", new double[] {-7.7411, -79.1883}),
+            Map.entry("paijan", new double[] {-7.7336, -79.3028}),
+            Map.entry("chicama", new double[] {-7.8406, -79.1464}),
+            Map.entry("santiago de cao", new double[] {-7.9583, -79.2394}),
+            Map.entry("magdalena de cao", new double[] {-7.8806, -79.2833}),
+            Map.entry("razuri", new double[] {-7.7014, -79.4375}),
+            Map.entry("cartavio", new double[] {-7.8903, -79.2211}),
+            Map.entry("chepen", new double[] {-7.2275, -79.4286}),
+            Map.entry("pacanga", new double[] {-7.1664, -79.4831}),
+            Map.entry("pueblo nuevo", new double[] {-7.1881, -79.5169}),
+            Map.entry("pacasmayo", new double[] {-7.4006, -79.5714}),
+            Map.entry("san pedro de lloc", new double[] {-7.4286, -79.5036}),
+            Map.entry("guadalupe", new double[] {-7.2431, -79.4708}),
+            Map.entry("jequetepeque", new double[] {-7.3372, -79.5631}),
+            Map.entry("viru", new double[] {-8.4153, -78.7522}),
+            Map.entry("chao", new double[] {-8.5372, -78.6772}),
+            Map.entry("guadalupito", new double[] {-8.4319, -78.6403}),
+            Map.entry("otuzco", new double[] {-7.9022, -78.5656}),
+            Map.entry("huamachuco", new double[] {-7.8122, -78.0489}),
+            Map.entry("santiago de chuco", new double[] {-8.1458, -78.1733}),
+            Map.entry("quiruvilca", new double[] {-8.0014, -78.3092}),
+            Map.entry("cascas", new double[] {-7.4781, -78.8194}),
+            Map.entry("julcan", new double[] {-8.0428, -78.4861}),
+            Map.entry("bolivar", new double[] {-7.1531, -77.7008}),
+            Map.entry("tayabamba", new double[] {-8.2753, -77.2967}),
+            Map.entry("parcoy", new double[] {-8.0333, -77.4833})
     );
 
     private PeruGeocoder() {}

@@ -26,4 +26,15 @@ class PeruGeocoderTest {
     void buscar_textoSinCiudad_noInventaUnPunto() {
         assertNull(PeruGeocoder.buscar("Av. Los Pinos 50", null, "Almacén"));
     }
+
+    @Test
+    void buscar_dosSedesEnLaLibertad_quedanEnDistritosDistintos() {
+        double[] huanchaco = PeruGeocoder.buscar("Huanchaco", "La Libertad", "Sede costa");
+        double[] larco = PeruGeocoder.buscar("Trujillo", "Víctor Larco Herrera", "Sede centro");
+        assertNotNull(huanchaco);
+        assertNotNull(larco);
+        assertEquals(-8.0814, huanchaco[0], 0.0001);
+        assertEquals(-8.1292, larco[0], 0.0001);
+        assertEquals(-79.0472, larco[1], 0.0001);
+    }
 }
