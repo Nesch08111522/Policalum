@@ -4,7 +4,7 @@
   </app-page-header>
   <app-stat-card *ngIf="tab === 'valorizacion' && valorizacion" label="Valor total" [value]="(valorizacion.valorTotal | pen)" icon="chart"></app-stat-card>
   <app-stat-card *ngIf="tab === 'mermas' && mermas" label="Valor de mermas" [value]="(mermas.valorTotal | pen)" icon="alert"></app-stat-card>
-  <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
+  <app-tabs [tabs]="tabsVisibles" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
   <app-filter-bar>
     <app-form-field label="Producto" inputId="kx-prod"><app-select inputId="kx-prod" [options]="productos" placeholder="Todos" [formControl]="filtros.controls.productoId"></app-select></app-form-field>
     <app-form-field label="Almacén" inputId="kx-alm"><app-select inputId="kx-alm" [options]="almacenes" placeholder="Todos" [formControl]="filtros.controls.almacenId"></app-select></app-form-field>

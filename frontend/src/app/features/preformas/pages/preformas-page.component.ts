@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Routes } from '@angular/router';
+import { RouterLink, Routes } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import * as Api from '../../../core/api/openapi.types';
 import { AuthService } from '../../../services/auth.service';
@@ -30,7 +30,7 @@ import { PreformasApiService } from '../data-access/preformas.api';
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-preformas-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent, TabsComponent, StatCardComponent, PenPipe],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent, TabsComponent, StatCardComponent, PenPipe],
   templateUrl: './preformas-page.component.html',
   styleUrls: ['./preformas-page.component.css'],
 })
@@ -241,6 +241,10 @@ export class PreformasPageComponent implements OnInit, OnDestroy {
 
   confirmarVenta(): void {
     if (this.guardando) return;
+    if (!this.turnoLocal) {
+      this.toast.error('Para confirmar la preforma abre la caja de su sede.');
+      return;
+    }
     this.confirmarForm.markAllAsTouched();
     if (!this.seleccionado?.id || this.confirmarForm.invalid) return;
     const value = this.confirmarForm.getRawValue();

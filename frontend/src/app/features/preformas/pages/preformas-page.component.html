@@ -59,7 +59,8 @@
 </app-modal>
 
 <app-modal [closable]="!guardando" [open]="confirmarAbierto" title="Confirmar preforma" (closed)="confirmarAbierto = false">
-  <p class="text-sm">El servidor usa tu turno de caja abierto en la sede de la preforma.{{ turnoLocal ? ' Turno local: ' + turnoLocal + '.' : '' }}</p>
+  <p class="text-sm" *ngIf="turnoLocal">La confirmación usa el turno abierto en la sede de la preforma.</p>
+  <div *ngIf="!turnoLocal" class="alert">Para confirmar la preforma abre la caja de su sede. <a routerLink="/modules/turnos-caja">Ir a Caja</a></div>
   <form class="form-grid" [formGroup]="confirmarForm">
     <app-form-field label="Almacén" inputId="pre-c-alm" [required]="true"><app-select inputId="pre-c-alm" [options]="almacenes" placeholder="Almacén" formControlName="almacenId" [clearable]="false"></app-select></app-form-field>
     <app-form-field label="Comprobante" inputId="pre-c-tipo"><select id="pre-c-tipo" class="select" formControlName="tipoComprobante"><option value="BOLETA">Boleta</option><option value="FACTURA">Factura</option><option value="TICKET">Ticket</option></select></app-form-field>
@@ -70,7 +71,7 @@
   </form>
   <div modalFooter>
     <button type="button" class="btn btn-ghost" (click)="confirmarAbierto = false" [disabled]="guardando">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="confirmarVenta()" [disabled]="guardando">Confirmar venta</button>
+    <button type="button" class="btn btn-primary" (click)="confirmarVenta()" [disabled]="guardando || !turnoLocal">Confirmar venta</button>
   </div>
 </app-modal>
 

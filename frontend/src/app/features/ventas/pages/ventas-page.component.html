@@ -22,6 +22,7 @@
 
 <app-modal [closable]="!guardando" [open]="modal" title="Registrar venta" size="lg" (closed)="modal = false">
   <form class="form-grid" [formGroup]="form">
+    <div *ngIf="!cajaAbierta" class="alert span-2">Para registrar una venta abre la caja de esta sede. <a routerLink="/modules/turnos-caja">Ir a Caja</a></div>
     <div *ngIf="errorFormulario" class="alert alert-error span-2">{{ errorFormulario }}</div>
     <app-form-field label="Sede" inputId="ven-f-sede" [required]="true" [error]="errorDe('sedeId')"><app-select inputId="ven-f-sede" [options]="sedes" placeholder="Sede" formControlName="sedeId" [clearable]="false"></app-select></app-form-field>
     <app-form-field label="Almacén" inputId="ven-f-alm" [required]="true" [error]="errorDe('almacenId')"><app-select inputId="ven-f-alm" [options]="almacenes" placeholder="Almacén" formControlName="almacenId" [clearable]="false"></app-select></app-form-field>
@@ -55,7 +56,7 @@
   </form>
   <div modalFooter>
     <button type="button" class="btn btn-ghost" (click)="modal = false" [disabled]="guardando">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Registrar' }}</button>
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando || !cajaAbierta">{{ guardando ? 'Guardando…' : 'Registrar' }}</button>
   </div>
 </app-modal>
 

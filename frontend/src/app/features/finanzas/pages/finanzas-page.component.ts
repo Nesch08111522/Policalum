@@ -261,7 +261,8 @@ export class FinanzasPageComponent implements OnInit, OnDestroy {
     if (!this.cuentaSeleccionada?.id || this.saldo.invalid) return;
     const value = this.saldo.getRawValue();
     this.guardando = true;
-    this.api.PostApiV1FinanzasCuentasIdSaldos({ id: this.cuentaSeleccionada.id }, { saldo: Number(value.saldo), fechaCorte: value.fechaCorte || undefined, observacion: value.observacion.trim() || undefined }).pipe(takeUntil(this.destroy$)).subscribe({
+    const fechaCorte = value.fechaCorte ? `${value.fechaCorte}T00:00:00` : undefined;
+    this.api.PostApiV1FinanzasCuentasIdSaldos({ id: this.cuentaSeleccionada.id }, { saldo: Number(value.saldo), fechaCorte, observacion: value.observacion.trim() || undefined }).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => { this.guardando = false; this.modalSaldo = false; this.toast.success('Saldo registrado.'); this.cargarCuentas(); },
       error: (error: unknown) => { this.guardando = false; this.toast.error(problemText(error)); },
     });

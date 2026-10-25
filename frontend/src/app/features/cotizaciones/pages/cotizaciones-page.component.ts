@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Routes } from '@angular/router';
+import { RouterLink, Routes } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { Subject, takeUntil } from 'rxjs';
 import * as Api from '../../../core/api/openapi.types';
@@ -33,7 +33,7 @@ import { CotizacionesApiService } from '../data-access/cotizaciones.api';
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-cotizaciones-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent, TabsComponent, PenPipe, IconComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent, SelectComponent, TabsComponent, PenPipe, IconComponent],
   templateUrl: './cotizaciones-page.component.html',
   styleUrls: ['./cotizaciones-page.component.css'],
 })
@@ -220,6 +220,10 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
 
   convertirVenta(): void {
     this.convertir.markAllAsTouched();
+    if (!this.cajaAbierta) {
+      this.toast.error('Para convertir la cotización en venta abre la caja de esta sede.');
+      return;
+    }
     if (!this.seleccionado?.id || this.convertir.invalid) return;
     const value = this.convertir.getRawValue();
     this.guardando = true;
@@ -305,6 +309,7 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
   }
 
   private turno(): string { return this.caja.id(); }
+  get cajaAbierta(): boolean { return !!this.caja.id(); }
 }
 
 export const COTIZACIONES_ROUTES: Routes = [
