@@ -45,7 +45,10 @@
     </div>
     <div class="dropdown" [class.menu-open]="menuOpen">
       <button type="button" class="btn btn-ghost" (click)="menuOpen = !menuOpen" aria-haspopup="menu" [attr.aria-expanded]="menuOpen">
-        <span class="avatar">{{ initials }}</span>
+        <span class="avatar">
+          <img *ngIf="avatar.url() as foto" [src]="foto" alt="" />
+          <ng-container *ngIf="!avatar.url()">{{ initials }}</ng-container>
+        </span>
         <span class="text-sm user-label">{{ userName }} / {{ userRole }}</span>
       </button>
       <div class="dropdown-panel" *ngIf="menuOpen" role="menu">

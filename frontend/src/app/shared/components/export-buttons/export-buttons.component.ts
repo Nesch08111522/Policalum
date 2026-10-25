@@ -13,7 +13,7 @@ import { ReportService } from '../../services/report.service';
         <span class="spinner" *ngIf="generando" aria-hidden="true"></span>
         {{ generando ? 'Generando...' : 'Exportar' }}
       </button>
-      <div class="export-menu bg-[#232538] border border-white/10" *ngIf="abierto" role="menu">
+      <div class="export-menu" *ngIf="abierto" role="menu">
         <button type="button" role="menuitem" (click)="bajar('pdf')">📄 Descargar PDF</button>
         <button type="button" role="menuitem" (click)="bajar('xlsx')">📊 Descargar Excel</button>
       </div>
@@ -28,7 +28,9 @@ import { ReportService } from '../../services/report.service';
       min-width: 12rem;
       margin-top: 0.35rem;
       padding: 0.35rem;
+      border: 1px solid var(--color-border);
       border-radius: 12px;
+      background: var(--color-surface);
       box-shadow: var(--shadow-lg);
     }
     .export-menu button {
@@ -37,14 +39,12 @@ import { ReportService } from '../../services/report.service';
       text-align: left;
       border: 0;
       background: transparent;
-      color: #f4f7fb;
+      color: var(--color-text);
       border-radius: 8px;
       padding: 0.55rem 0.7rem;
       cursor: pointer;
     }
-    .export-menu button:hover { background: rgba(255,255,255,0.08); }
-    :host-context([data-theme="light"]) .export-menu { background: var(--color-surface); border-color: var(--color-border); }
-    :host-context([data-theme="light"]) .export-menu button { color: var(--color-text); }
+    .export-menu button:hover { background: var(--color-bg-subtle); }
     .spinner {
       width: 0.8rem;
       height: 0.8rem;

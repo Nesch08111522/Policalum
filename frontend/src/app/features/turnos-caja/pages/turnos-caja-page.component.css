@@ -1,5 +1,22 @@
 :host { display: block; min-width: 0; }
-.resumen-caja { display: grid; gap: 8px; margin: 12px 0 0; }
-.resumen-caja div { display: flex; justify-content: space-between; gap: 16px; }
-.resumen-caja dt { color: var(--muted, #8b93a7); }
-.resumen-caja dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+.caja-tarjeta { height: 100%; }
+.caja-tarjeta .card-body { display: flex; flex-direction: column; }
+.caja-tarjeta .card-body > .btn,
+.acciones { margin-top: auto; }
+.turno-meta { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+.turno-id { font-family: var(--font-mono); font-size: var(--text-sm); }
+
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 12px 0 0;
+}
+.resumen-grid div {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+}
+.resumen-grid dt { color: var(--color-text-muted); font-size: var(--text-xs); }
+.resumen-grid dd { margin: 4px 0 0; font-size: var(--text-lg); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }

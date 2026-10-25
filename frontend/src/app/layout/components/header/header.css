@@ -1,7 +1,7 @@
 :host { display: block; min-width: 0; max-width: 100%; }
 .search-shell { display: flex; align-items: center; gap: 0.4rem; min-width: 0; padding-left: 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius-full); background: var(--color-bg); }
 .search-shell .input { border: 0; background: transparent; box-shadow: none; min-height: 2.4rem; }
-.search-shell .icon { flex-shrink: 0; color: #B3C1CD; }
+.search-shell .icon { flex-shrink: 0; color: var(--color-text-muted); }
 .search-results { left: 0; right: auto; width: 100%; }
 .sede-btn { max-width: clamp(7rem, 16vw, 14rem); }
 .sede-btn .icon { flex-shrink: 0; }
@@ -23,7 +23,7 @@
   font-weight: 700;
 }
 .avisos-panel { min-width: min(18rem, 80vw); padding: 0.4rem; }
-.avisos-titulo { margin: 0; padding: 0.45rem 0.6rem; color: #B3C1CD; font-size: var(--text-xs); letter-spacing: 0.04em; text-transform: uppercase; }
+.avisos-titulo { margin: 0; padding: 0.45rem 0.6rem; color: var(--color-text-muted); font-size: var(--text-xs); letter-spacing: 0.04em; text-transform: uppercase; }
 .aviso { display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; }
 .aviso span { color: var(--color-text-muted); font-size: var(--text-xs); }
 .user-label { max-width: clamp(5rem, 12vw, 11rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -35,6 +35,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .user-label { display: none; }
 }
 @media (max-width: 1180px) {
   .theme-toggle span {

@@ -25,6 +25,7 @@
   --color-bg-subtle: #151726;
   --color-surface: #232538;
   --color-surface-raised: #2c2f46;
+  --color-input: #151726;
   --color-text: #f4f7fb;
   --color-text-muted: #a9b7c9;
   --color-border: rgba(255, 255, 255, 0.1);
@@ -123,14 +124,15 @@
   --color-bg: #f3f6fb;
   --color-bg-subtle: #e7eef6;
   --color-surface: #ffffff;
-  --color-surface-raised: #ffffff;
+  --color-surface-raised: #f8fafc;
+  --color-input: #ffffff;
   --color-text: #122033;
   --color-text-muted: #5c6d82;
   --color-border: #d7e1ec;
   --color-border-strong: #c2d0de;
   --color-overlay: rgba(16, 24, 38, 0.48);
-  --shadow-sm: 0 1px 2px rgba(16, 32, 51, 0.06);
-  --shadow-md: 0 10px 28px rgba(16, 32, 51, 0.08);
+  --shadow-sm: 0 1px 2px rgba(16, 32, 51, 0.05), 0 10px 24px rgba(16, 32, 51, 0.06);
+  --shadow-md: 0 12px 32px rgba(16, 32, 51, 0.1);
   --shadow-lg: 0 20px 48px rgba(16, 32, 51, 0.14);
   --shadow-xl: 0 28px 70px rgba(16, 32, 51, 0.18);
 

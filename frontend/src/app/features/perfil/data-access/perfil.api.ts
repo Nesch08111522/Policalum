@@ -1,8 +1,9 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ENDPOINT_BY_ID } from '../../../core/api/api-endpoints.generated';
 import { BackendApiService, QueryMap } from '../../../core/api/backend-api.service';
+import { HTTP_SILENCIOSO } from '../../../core/interceptors/api-error.interceptor';
 import * as Api from '../../../core/api/openapi.types';
 import { environment } from '../../../../environments/environment';
 
@@ -19,7 +20,14 @@ export class PerfilApiService {
   }
 
   verFoto(): Observable<Blob> {
-    return this.http.get(`${this.base}/api/v1/perfil/foto`, { responseType: 'blob' });
+    return this.http.get(`${this.base}/api/v1/perfil/foto`, {
+      responseType: 'blob',
+      context: new HttpContext().set(HTTP_SILENCIOSO, true),
+    });
+  }
+
+  quitarFoto(): Observable<Api.PerfilResponseDTO> {
+    return this.http.delete<Api.PerfilResponseDTO>(`${this.base}/api/v1/perfil/foto`);
   }
 
   actual(params: QueryMap = {}): Observable<Api.PerfilResponseDTO> {

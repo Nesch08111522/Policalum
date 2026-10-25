@@ -5,6 +5,7 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { AvatarService } from '../../../shared/services/avatar.service';
 import { LayoutService } from '../../../shared/services/layout.service';
 import { MarcaService } from '../../../shared/services/marca.service';
 import { NAV_SECTIONS, NavSection } from '../../navigation';
@@ -31,6 +32,7 @@ export class SidebarComponent implements OnInit {
   constructor(
     readonly layout: LayoutService,
     readonly marca: MarcaService,
+    readonly avatar: AvatarService,
     private readonly auth: AuthService,
     private readonly router: Router,
   ) {}
@@ -40,7 +42,7 @@ export class SidebarComponent implements OnInit {
     const role = user?.rol ?? '';
     this.userName = user?.nombre || user?.email || 'Usuario';
     this.userRole = role === 'ROLE_ADMIN' ? 'Administrador' : role === 'ROLE_MULTIFUNCIONAL' ? 'Multifuncional' : 'Usuario';
-    this.initials = this.userName.slice(0, 2).toUpperCase();
+    this.initials = this.userName.trim().split(/\s+/).slice(0, 2).map((parte) => parte.charAt(0).toUpperCase()).join('') || 'P';
     this.sections = NAV_SECTIONS
       .map((section) => ({
         ...section,

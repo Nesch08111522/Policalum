@@ -1,6 +1,7 @@
 package com.policalum.erp.application.service.serviceImpl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
@@ -83,6 +84,17 @@ class PerfilServiceImplTest {
 
         assertEquals("usuarios/" + id + "/foto.png", respuesta.foto());
         verify(fileStorageService).descartarVariantes("usuarios/" + id + "/foto.png");
+    }
+
+    @Test
+    void quitarFoto_borraElArchivoYDejaLaCuentaSinFoto() {
+        usuario.setFoto("usuarios/" + id + "/foto.png");
+        when(userRepository.save(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        var respuesta = service.quitarFoto();
+
+        assertNull(respuesta.foto());
+        verify(fileStorageService).eliminar("usuarios/" + id + "/foto.png");
     }
 
     @Test

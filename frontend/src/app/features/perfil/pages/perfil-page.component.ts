@@ -10,6 +10,7 @@ import { FormFieldComponent } from '../../../shared/components/form-field/form-f
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { SelectOption } from '../../../shared/models/ui.models';
+import { AvatarService } from '../../../shared/services/avatar.service';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemText } from '../../../shared/utils/feedback';
@@ -61,6 +62,7 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
     private readonly lookup: LookupService,
     private readonly tokens: TokenService,
     private readonly toast: ToastService,
+    private readonly avatar: AvatarService,
   ) {}
 
   ngOnInit(): void {
@@ -184,6 +186,7 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
       this.toast.error('La foto debe ser JPG, PNG o WEBP de hasta 2 MB.');
       return;
     }
+    this.soltarVista();
     this.archivoFoto = archivo;
     this.fotoQuitada = false;
     const lector = new FileReader();
@@ -192,9 +195,29 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
   }
 
   quitarFoto(): void {
+    this.soltarVista();
     this.vistaFoto = '';
     this.archivoFoto = null;
     this.fotoQuitada = true;
+    if (!this.perfil?.foto) {
+      this.avatar.limpiar();
+      this.cd.markForCheck();
+      return;
+    }
+    this.api.quitarFoto().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (perfil) => {
+        this.fotoQuitada = false;
+        this.perfil = { ...perfil, foto: undefined };
+        this.avatar.limpiar();
+        this.toast.success('Foto eliminada.');
+        this.cd.markForCheck();
+      },
+      error: (error: unknown) => {
+        this.fotoQuitada = false;
+        this.toast.error(problemText(error));
+        this.cargar();
+      },
+    });
   }
 
   cancelar(): void {
@@ -220,8 +243,10 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
   }
 
   private mostrarFoto(foto: string | undefined): void {
+    this.soltarVista();
     if (!foto) {
       this.vistaFoto = '';
+      this.avatar.limpiar();
       return;
     }
     if (foto.startsWith('data:image/') || /^https?:\/\//i.test(foto)) {
@@ -229,9 +254,21 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
       return;
     }
     this.api.verFoto().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (blob) => { this.vistaFoto = URL.createObjectURL(blob); this.cd.markForCheck(); },
-      error: () => { this.vistaFoto = ''; this.cd.markForCheck(); },
+      next: (blob) => {
+        this.vistaFoto = URL.createObjectURL(blob);
+        this.avatar.poner(blob);
+        this.cd.markForCheck();
+      },
+      error: () => {
+        this.vistaFoto = '';
+        this.avatar.limpiar();
+        this.cd.markForCheck();
+      },
     });
+  }
+
+  private soltarVista(): void {
+    if (this.vistaFoto.startsWith('blob:')) URL.revokeObjectURL(this.vistaFoto);
   }
 
   private pintar(perfil: Api.PerfilResponseDTO): void {

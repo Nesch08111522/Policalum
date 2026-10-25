@@ -30,7 +30,10 @@
     </section>
   </nav>
   <footer class="sidebar-user">
-    <span class="avatar" [title]="userName">{{ initials }}</span>
+    <span class="avatar" [title]="userName">
+      <img *ngIf="avatar.url() as foto" [src]="foto" alt="" />
+      <ng-container *ngIf="!avatar.url()">{{ initials }}</ng-container>
+    </span>
     <span class="nav-label sidebar-user-meta">
       <strong>{{ userName }}</strong>
       <span>{{ userRole }}</span>

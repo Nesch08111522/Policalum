@@ -6,4 +6,4 @@
 .marca-logo { width: clamp(3.5rem, 8vw, 4.5rem); height: clamp(3.5rem, 8vw, 4.5rem); object-fit: contain; flex-shrink: 0; border-radius: var(--radius-md); background: var(--color-bg); border: 1px solid var(--color-border); }
 .file-field { position: relative; display: flex; flex-direction: column; gap: 0.35rem; cursor: pointer; }
 .file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-.file-name { display: flex; align-items: center; min-height: 2.75rem; padding: 0 0.9rem; border: 1px dashed var(--color-border); border-radius: var(--radius-md); color: #B3C1CD; background: var(--color-bg); }
+.file-name { display: flex; align-items: center; min-height: 2.75rem; padding: 0 0.9rem; border: 1px dashed var(--color-border); border-radius: var(--radius-md); color: var(--color-text-muted); background: var(--color-bg); }

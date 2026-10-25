@@ -33,6 +33,13 @@
 .factor, .sesiones { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .estado { padding: 24px; text-align: center; }
 
+@media (min-width: 860px) and (max-width: 1199px) {
+  .perfil-grid { grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr); }
+  .seguridad { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+}
+@media (max-width: 720px) {
+  .seguridad { display: flex; }
+}
 @media (min-width: 1200px) {
-  .perfil-grid { grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr) minmax(14rem, 18rem); }
+  .perfil-grid { grid-template-columns: minmax(16rem, 20rem) minmax(0, 1.4fr) minmax(16rem, 20rem); }
 }

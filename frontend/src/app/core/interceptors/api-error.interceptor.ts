@@ -1,4 +1,4 @@
-import { HttpBackend, HttpClient, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpBackend, HttpClient, HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable, TimeoutError, throwError, timeout } from 'rxjs';
 import { catchError, finalize, map, shareReplay, switchMap, tap } from 'rxjs/operators';
@@ -7,6 +7,9 @@ import { LoginResponse } from '../../models/user.model';
 import { TokenService } from '../../services/token.service';
 import { ToastService } from '../../shared/services/toast.service';
 import { ApiProblem } from '../api/openapi.types';
+
+/** El llamador ya muestra el fallo, o la ausencia del recurso es un estado válido (foto, sondeo). */
+export const HTTP_SILENCIOSO = new HttpContextToken<boolean>(() => false);
 
 const REQUEST_TIMEOUT_MS = 20000;
 const EXPORT_TIMEOUT_MS = 60000;
@@ -145,7 +148,7 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
         cerrarSesion(tokenService);
         return throwError(() => problem);
       }
-      if (!request.url.includes('/auth/login')) avisar(toast, problem);
+      if (!request.context.get(HTTP_SILENCIOSO) && !request.url.includes('/auth/login')) avisar(toast, problem);
       return throwError(() => problem);
     }),
   );
