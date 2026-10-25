@@ -5,8 +5,10 @@ import com.policalum.erp.application.dto.response.SedeResponseDTO;
 import com.policalum.erp.application.mapper.SedeMapper;
 import com.policalum.erp.application.service.SedeService;
 import com.policalum.erp.domain.model.Sede;
+import com.policalum.erp.exception.ResourceNotFoundException;
 import com.policalum.erp.infrastructure.repository.SedeRepository;
 import jakarta.transaction.Transactional;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -50,7 +52,7 @@ public class SedeServiceImpl implements SedeService {
     @Override
     public SedeResponseDTO buscarPorId(UUID id) {
         Sede sede = sedeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Sede no encontrada con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada con ID: " + id));
         return sedeMapper.toResponseDto(sede);
     }
 
@@ -58,7 +60,7 @@ public class SedeServiceImpl implements SedeService {
     @Transactional
     public SedeResponseDTO actualizarSede(UUID id, SedeRequestDTO request) {
         Sede sedeExistente = sedeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("No se puede actualizar. Sede no encontrada con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("No se puede actualizar. Sede no encontrada con ID: " + id));
 
         // Actualización in-place usando el Mapper con @MappingTarget
         sedeMapper.updateEntityFromDto(request, sedeExistente);
@@ -69,10 +71,17 @@ public class SedeServiceImpl implements SedeService {
 
     @Override
     @Transactional
-    public void eliminarSede(UUID id) {
-        if (!sedeRepository.existsById(id)) {
-            throw new RuntimeException("No se puede eliminar. Sede no encontrada con ID: " + id);
+    public SedeResponseDTO eliminarSede(UUID id) {
+        Sede sede = sedeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("No se puede eliminar. Sede no encontrada con ID: " + id));
+        if (sedeRepository.tieneHistorial(id)) {
+            if (Boolean.FALSE.equals(sede.getActiva())) {
+                throw new ValidationException("La sede tiene historial y permanece inactiva");
+            }
+            sede.setActiva(false);
+            return sedeMapper.toResponseDto(sedeRepository.save(sede));
         }
-        sedeRepository.deleteById(id);
+        sedeRepository.delete(sede);
+        return null;
     }
 }

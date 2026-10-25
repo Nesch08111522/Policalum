@@ -18,5 +18,6 @@ public interface SedeService {
 
     SedeResponseDTO actualizarSede(UUID id, SedeRequestDTO request);
 
-    void eliminarSede(UUID id);
+    /** Null si se borró porque no tenía historial. El DTO inactivo si se conservó. */
+    SedeResponseDTO eliminarSede(UUID id);
 }

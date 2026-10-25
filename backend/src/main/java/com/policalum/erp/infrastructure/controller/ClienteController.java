@@ -90,16 +90,18 @@ public class ClienteController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCliente(@PathVariable UUID id) {
+    public ResponseEntity<ClienteResponseDTO> deleteCliente(@PathVariable UUID id) {
         log.info("DELETE /api/v1/clientes/{} - Eliminando cliente", id);
 
         if (id == null) {
             throw new IllegalArgumentException("El ID del cliente no puede ser nulo");
         }
 
-        clienteService.delete(id);
-        log.info("Cliente eliminado exitosamente: {}", id);
-        return ResponseEntity.noContent().build();
+        ClienteResponseDTO respuesta = clienteService.delete(id);
+        if (respuesta == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(respuesta);
     }
 
     // ============ SEARCH & FILTER ============

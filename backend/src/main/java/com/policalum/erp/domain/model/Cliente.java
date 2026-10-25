@@ -46,6 +46,10 @@ Cliente {
     @Column(length = 255)
     private String direccion;
 
+    /** Null se trata como activo. La baja con historial deja el registro en false. */
+    @Column(columnDefinition = "boolean default true")
+    private Boolean activo = true;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -53,6 +57,7 @@ Cliente {
     void prePersist(){
         // FIX deuda técnica: @Builder (y MapStruct, que usa el builder) ignora los inicializadores de campo
         if (this.tipoDocumento == null) this.tipoDocumento = "DNI";
+        if (this.activo == null) this.activo = true;
         this.createdAt = LocalDateTime.now();
     }
 }

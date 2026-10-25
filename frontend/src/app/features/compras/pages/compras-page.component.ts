@@ -19,13 +19,11 @@ import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { ignoreStale, PageState } from '../../../shared/utils/page-state';
+import { fechaLocal } from '../../../shared/utils/fecha-local';
 import { ComprasApiService } from '../data-access/compras.api';
 
 function hoy(): string {
-  const fecha = new Date();
-  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-  const dia = String(fecha.getDate()).padStart(2, '0');
-  return `${fecha.getFullYear()}-${mes}-${dia}`;
+  return fechaLocal();
 }
 
 @Component({

@@ -24,6 +24,15 @@ export function problemStatus(error: unknown): number | null {
   return isProblem(error) && typeof error.status === 'number' ? error.status : null;
 }
 
+/** La baja con historial responde el registro inactivo. Sin historial responde vacío. */
+export function mensajeBaja(respuesta: unknown, eliminado: string, inactivo: string): string {
+  if (respuesta && typeof respuesta === 'object') {
+    const fila = respuesta as { activo?: boolean; activa?: boolean };
+    if (fila.activo === false || fila.activa === false) return inactivo;
+  }
+  return eliminado;
+}
+
 export function applyServerErrors(form: FormGroup, error: unknown): void {
   if (!isProblem(error) || !error.fieldErrors) return;
   for (const [field, message] of Object.entries(error.fieldErrors)) {

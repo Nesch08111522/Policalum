@@ -12,7 +12,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { ColumnDef } from '../../../shared/models/ui.models';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
-import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
+import { applyServerErrors, fieldError, mensajeBaja, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { documentoCliente } from '../../../shared/utils/validators';
 import * as Api from '../../../core/api/openapi.types';
@@ -35,6 +35,7 @@ export class ClientesPageComponent implements OnInit, OnDestroy {
     { key: 'numeroDocumento', label: 'Documento' },
     { key: 'celular', label: 'Celular' },
     { key: 'email', label: 'Correo' },
+    { key: 'activo', label: 'Activo', kind: 'bool' },
     { key: 'createdAt', label: 'Registro', kind: 'date', sortable: true },
   ];
   readonly filtros = this.fb.nonNullable.group({ searchTerm: [''], tipoDocumento: [''] });
@@ -160,11 +161,11 @@ export class ClientesPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1ClientesId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => {
+      next: (respuesta) => {
         this.eliminando = false;
         this.confirmar = false;
         this.lookup.invalidate('clientes');
-        this.toast.success('Cliente eliminado.');
+        this.toast.success(mensajeBaja(respuesta, 'Cliente eliminado.', 'El cliente quedó inactivo porque tiene historial.'));
         this.cargar();
       },
       error: (error: unknown) => {

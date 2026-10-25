@@ -125,6 +125,30 @@ class ProveedorServiceImplTest {
     }
 
     @Test
+    void delete_conHistorial_desactivaYNoBorra() {
+        Proveedor p = existente();
+        p.setActivo(true);
+        when(proveedorRepository.tieneHistorial(id)).thenReturn(true);
+
+        service.delete(id);
+
+        assertFalse(p.getActivo());
+        verify(proveedorRepository).save(p);
+        verify(proveedorRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_inactivoConHistorial_rechaza() {
+        Proveedor p = existente();
+        p.setActivo(false);
+        when(proveedorRepository.tieneHistorial(id)).thenReturn(true);
+
+        assertThrows(ValidationException.class, () -> service.delete(id));
+        verify(proveedorRepository, never()).save(any());
+        verify(proveedorRepository, never()).delete(any());
+    }
+
+    @Test
     void search_terminoVacioUsaFindAllYTerminoSeRecorta() {
         Pageable pg = PageRequest.of(0, 10);
         when(proveedorRepository.findAll(pg)).thenReturn(Page.empty());

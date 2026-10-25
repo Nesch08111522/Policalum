@@ -18,8 +18,9 @@ import { FinanzasApiService } from '../../finanzas/data-access/finanzas.api';
 import { ReportesApiService } from '../../reportes/data-access/reportes.api';
 import { StockApiService } from '../../stock/data-access/stock.api';
 import { VentasApiService } from '../../ventas/data-access/ventas.api';
+import { fechaLocal } from '../../../shared/utils/fecha-local';
 
-function iso(fecha: Date): string { return fecha.toISOString().slice(0, 10); }
+function iso(fecha: Date): string { return fechaLocal(fecha); }
 
 interface FraccionPanel { nombre: string; etiqueta: string; ancho: number; }
 

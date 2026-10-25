@@ -17,13 +17,8 @@ import { PenPipe } from '../../../shared/pipes/format.pipes';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { problemStatus, problemText } from '../../../shared/utils/feedback';
 import { PageState } from '../../../shared/utils/page-state';
+import { fechaLocal, haceDias } from '../../../shared/utils/fecha-local';
 import { ReportesApiService } from '../data-access/reportes.api';
-
-function haceDias(dias: number): string {
-  const fecha = new Date();
-  fecha.setDate(fecha.getDate() - dias);
-  return fecha.toISOString().slice(0, 10);
-}
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Default,
@@ -47,7 +42,7 @@ export class ReportesPageComponent implements OnInit, OnDestroy {
   readonly ventas = new PageState<Api.VentaReporteDTO>();
   readonly filtros = this.fb.nonNullable.group({
     desde: [haceDias(30)],
-    hasta: [new Date().toISOString().slice(0, 10)],
+    hasta: [fechaLocal()],
     sedeId: [''],
     canal: [''],
     estado: [''],
@@ -114,7 +109,7 @@ export class ReportesPageComponent implements OnInit, OnDestroy {
   cambiarTab(id: string): void { this.tab = id; this.cargar(); }
   filtrar(): void { this.ventas.page = 0; this.cargar(); }
   limpiar(): void {
-    this.filtros.reset({ desde: haceDias(30), hasta: new Date().toISOString().slice(0, 10), sedeId: '', canal: '', estado: '', agrupacion: 'DIA' });
+    this.filtros.reset({ desde: haceDias(30), hasta: fechaLocal(), sedeId: '', canal: '', estado: '', agrupacion: 'DIA' });
     this.filtrar();
   }
 

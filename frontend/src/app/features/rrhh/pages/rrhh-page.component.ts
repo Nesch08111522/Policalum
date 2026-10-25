@@ -18,6 +18,7 @@ import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { PageState } from '../../../shared/utils/page-state';
+import { periodoLocal } from '../../../shared/utils/fecha-local';
 import { RrhhApiService } from '../data-access/rrhh.api';
 
 @Component({
@@ -211,8 +212,8 @@ export class RrhhPageComponent implements OnInit, OnDestroy {
     this.legajoForm.reset({ empleadoId: '', tipoContrato: 'PLANILLA', fechaIngreso: '', sueldoBase: 0, sistemaPension: 'ONP', porcentajeComision: 0, tasaPension: 0, activo: true });
     this.asistenciaForm.reset({ empleadoId: '', tipoMarcacion: 'ENTRADA', fechaHora: '', dispositivoInfo: 'manual' });
     this.turnoForm.reset({ id: '', userId: '', nombreTurno: '', horaInicio: '08:00', horaFin: '17:00', diasSemana: 'LUNES,MARTES,MIERCOLES,JUEVES,VIERNES', toleranciaMinutos: 10, sedeId: '', activo: true });
-    this.nominaForm.reset({ periodo: new Date().toISOString().slice(0, 7), sedeId: '' });
-    this.comisionForm.reset({ periodo: new Date().toISOString().slice(0, 7), sedeId: '' });
+    this.nominaForm.reset({ periodo: periodoLocal(), sedeId: '' });
+    this.comisionForm.reset({ periodo: periodoLocal(), sedeId: '' });
     this.modal = true;
   }
 

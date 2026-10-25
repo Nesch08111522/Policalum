@@ -110,6 +110,28 @@ class AlmacenServiceImplTest {
     }
 
     @Test
+    void delete_conHistorial_desactivaYNoBorra() {
+        principal.setActivo(true);
+        when(almacenRepository.tieneHistorial(principal.getId())).thenReturn(true);
+
+        service.delete(principal.getId());
+
+        assertFalse(principal.getActivo());
+        verify(almacenRepository).save(principal);
+        verify(almacenRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_inactivoConHistorial_rechaza() {
+        principal.setActivo(false);
+        when(almacenRepository.tieneHistorial(principal.getId())).thenReturn(true);
+
+        assertThrows(ValidationException.class, () -> service.delete(principal.getId()));
+        verify(almacenRepository, never()).save(any());
+        verify(almacenRepository, never()).delete(any());
+    }
+
+    @Test
     void getDashboardStatistics_cuentaActivos() {
         when(almacenRepository.count()).thenReturn(3L);
         when(almacenRepository.countByActivo(true)).thenReturn(2L);

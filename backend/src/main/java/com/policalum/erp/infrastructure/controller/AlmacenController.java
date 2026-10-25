@@ -67,9 +67,12 @@ public class AlmacenController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        almacenService.delete(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<AlmacenResponseDTO> delete(@PathVariable UUID id) {
+        AlmacenResponseDTO respuesta = almacenService.delete(id);
+        if (respuesta == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(respuesta);
     }
 
     @GetMapping("/validar-nombre")

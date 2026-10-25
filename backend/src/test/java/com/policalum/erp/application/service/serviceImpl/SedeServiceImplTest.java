@@ -7,7 +7,9 @@ import static org.mockito.Mockito.*;
 import com.policalum.erp.application.dto.request.SedeRequestDTO;
 import com.policalum.erp.application.mapper.SedeMapper;
 import com.policalum.erp.domain.model.Sede;
+import com.policalum.erp.exception.ResourceNotFoundException;
 import com.policalum.erp.infrastructure.repository.SedeRepository;
+import jakarta.validation.ValidationException;
 import java.util.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -79,7 +81,7 @@ class SedeServiceImplTest {
     void actualizarSede_inexistente_lanzaSinGuardar() {
         when(sedeRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> service.actualizarSede(id, request()));
+        assertThrows(ResourceNotFoundException.class, () -> service.actualizarSede(id, request()));
         verify(sedeRepository, never()).save(any());
     }
 
@@ -87,20 +89,50 @@ class SedeServiceImplTest {
     void buscarPorId_inexistente_lanza() {
         when(sedeRepository.findById(id)).thenReturn(Optional.empty());
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> service.buscarPorId(id));
+        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> service.buscarPorId(id));
         assertTrue(ex.getMessage().contains(id.toString()));
     }
 
     @Test
-    void eliminarSede_existenteYNoExistente() {
-        when(sedeRepository.existsById(id)).thenReturn(true);
-        service.eliminarSede(id);
-        verify(sedeRepository).deleteById(id);
+    void eliminarSede_sinHistorial_borra() {
+        Sede sede = Sede.builder().id(id).activa(true).build();
+        when(sedeRepository.findById(id)).thenReturn(Optional.of(sede));
 
-        UUID otra = UUID.randomUUID();
-        when(sedeRepository.existsById(otra)).thenReturn(false);
-        assertThrows(RuntimeException.class, () -> service.eliminarSede(otra));
-        verify(sedeRepository, never()).deleteById(otra);
+        assertNull(service.eliminarSede(id));
+
+        verify(sedeRepository).delete(sede);
+    }
+
+    @Test
+    void eliminarSede_conHistorial_desactiva() {
+        Sede sede = Sede.builder().id(id).activa(true).build();
+        when(sedeRepository.findById(id)).thenReturn(Optional.of(sede));
+        when(sedeRepository.tieneHistorial(id)).thenReturn(true);
+
+        service.eliminarSede(id);
+
+        assertFalse(sede.getActiva());
+        verify(sedeRepository).save(sede);
+        verify(sedeRepository, never()).delete(any());
+    }
+
+    @Test
+    void eliminarSede_inactivaConHistorial_rechaza() {
+        Sede sede = Sede.builder().id(id).activa(false).build();
+        when(sedeRepository.findById(id)).thenReturn(Optional.of(sede));
+        when(sedeRepository.tieneHistorial(id)).thenReturn(true);
+
+        assertThrows(ValidationException.class, () -> service.eliminarSede(id));
+        verify(sedeRepository, never()).save(any());
+        verify(sedeRepository, never()).delete(any());
+    }
+
+    @Test
+    void eliminarSede_inexistente_lanzaNotFound() {
+        when(sedeRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> service.eliminarSede(id));
+        verify(sedeRepository, never()).delete(any());
     }
 
     @Test

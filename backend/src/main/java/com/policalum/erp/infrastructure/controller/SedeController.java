@@ -61,8 +61,11 @@ public class SedeController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> eliminarSede(@PathVariable UUID id) {
-        sedeService.eliminarSede(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<SedeResponseDTO> eliminarSede(@PathVariable UUID id) {
+        SedeResponseDTO respuesta = sedeService.eliminarSede(id);
+        if (respuesta == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(respuesta);
     }
 }

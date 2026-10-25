@@ -336,6 +336,7 @@ export interface ClienteResponseDTO {
   nombre?: string;
   numeroDocumento?: string;
   tipoDocumento?: "DNI" | "RUC" | "CE" | "PASAPORTE";
+  activo?: boolean;
 }
 
 export interface ClientesFrecuentesDTO {

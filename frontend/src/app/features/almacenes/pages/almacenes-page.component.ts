@@ -14,7 +14,7 @@ import { SelectComponent } from '../../../shared/components/select/select.compon
 import { ColumnDef, SelectOption } from '../../../shared/models/ui.models';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
-import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
+import { applyServerErrors, fieldError, mensajeBaja, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { AlmacenesApiService } from '../data-access/almacenes.api';
 
@@ -99,7 +99,7 @@ export class AlmacenesPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1AlmacenesId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.toast.success('Almacén eliminado.'); this.lookup.invalidate('almacenes'); this.cargar(); },
+      next: (respuesta) => { this.eliminando = false; this.confirmar = false; this.toast.success(mensajeBaja(respuesta, 'Almacén eliminado.', 'El almacén quedó inactivo porque tiene historial.')); this.lookup.invalidate('almacenes'); this.cargar(); },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
   }

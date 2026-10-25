@@ -63,9 +63,12 @@ public class ProveedorController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        proveedorService.delete(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ProveedorResponseDTO> delete(@PathVariable UUID id) {
+        ProveedorResponseDTO respuesta = proveedorService.delete(id);
+        if (respuesta == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(respuesta);
     }
 
     @GetMapping

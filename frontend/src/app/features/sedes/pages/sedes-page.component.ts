@@ -14,7 +14,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { ColumnDef } from '../../../shared/models/ui.models';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
-import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
+import { applyServerErrors, fieldError, mensajeBaja, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { SedesApiService } from '../data-access/sedes.api';
 
@@ -113,7 +113,7 @@ export class SedesPageComponent implements OnInit, OnDestroy {
     if (!this.seleccionado?.id) return;
     this.eliminando = true;
     this.api.DeleteApiV1SedesId({ id: this.seleccionado.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.eliminando = false; this.confirmar = false; this.lookup.invalidate('sedes'); this.toast.success('Sede eliminada.'); this.cargar(); },
+      next: (respuesta) => { this.eliminando = false; this.confirmar = false; this.lookup.invalidate('sedes'); this.toast.success(mensajeBaja(respuesta, 'Sede eliminada.', 'La sede quedó inactiva porque tiene historial.')); this.cargar(); },
       error: (error: unknown) => { this.eliminando = false; this.confirmar = false; this.toast.error(problemText(error)); },
     });
   }

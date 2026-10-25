@@ -44,6 +44,9 @@ public class ClienteServiceImpl implements ClienteService {
         validateClientCreation(requestDTO);
 
         Cliente cliente = clienteMapper.toEntity(requestDTO);
+        if (cliente.getActivo() == null) {
+            cliente.setActivo(true);
+        }
         cliente = clienteRepository.save(cliente);
 
         log.info("Cliente creado exitosamente con ID: {}", cliente.getId());
@@ -83,19 +86,22 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     @Override
-    public void delete(UUID id) {
+    public ClienteResponseDTO delete(UUID id) {
         log.info("Eliminando cliente con ID: {}", id);
 
         Cliente cliente = findClienteById(id);
-
-        // Validación de negocio: No eliminar si tiene ventas asociadas
-        // if (!cliente.getVentas().isEmpty()) {
-        // throw new ValidationException("No se puede eliminar el cliente porque tiene
-        // ventas asociadas");
-        // }
+        if (clienteRepository.tieneHistorial(id)) {
+            if (Boolean.FALSE.equals(cliente.getActivo())) {
+                throw new ValidationException("El cliente tiene historial de ventas y permanece inactivo");
+            }
+            cliente.setActivo(false);
+            log.info("Cliente desactivado para conservar el historial: {}", id);
+            return clienteMapper.toResponseDto(clienteRepository.save(cliente));
+        }
 
         clienteRepository.delete(cliente);
-        log.info("Cliente eliminado exitosamente: {}", id);
+        log.info("Cliente eliminado porque no tenía historial: {}", id);
+        return null;
     }
 
     @Override

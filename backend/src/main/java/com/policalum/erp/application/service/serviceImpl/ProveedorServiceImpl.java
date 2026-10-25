@@ -65,8 +65,18 @@ public class ProveedorServiceImpl implements ProveedorService {
     }
 
     @Override
-    public void delete(UUID id) {
-        proveedorRepository.delete(findEntityById(id));
+    public ProveedorResponseDTO delete(UUID id) {
+        Proveedor proveedor = findEntityById(id);
+        if (proveedorRepository.tieneHistorial(id)) {
+            if (Boolean.FALSE.equals(proveedor.getActivo())) {
+                throw new ValidationException("El proveedor tiene historial de compras y permanece inactivo");
+            }
+            proveedor.setActivo(false);
+            log.info("Proveedor desactivado para conservar el historial: {}", id);
+            return proveedorMapper.toResponseDto(proveedorRepository.save(proveedor));
+        }
+        proveedorRepository.delete(proveedor);
+        return null;
     }
 
     @Override

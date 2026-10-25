@@ -20,7 +20,8 @@ public interface ProveedorService {
 
     ProveedorResponseDTO findByDocumento(String tipoDocumento, String numeroDocumento);
 
-    void delete(UUID id);
+    /** Null si se borró porque no tenía historial. El DTO inactivo si se conservó. */
+    ProveedorResponseDTO delete(UUID id);
 
     Page<ProveedorResponseDTO> search(String searchTerm, Pageable pageable);
 

@@ -181,6 +181,30 @@ class ClienteServiceImplTest {
     }
 
     @Test
+    void delete_conHistorial_desactivaYNoBorra() {
+        Cliente c = existente("1", null);
+        c.setActivo(true);
+        when(clienteRepository.tieneHistorial(id)).thenReturn(true);
+
+        service.delete(id);
+
+        assertFalse(c.getActivo());
+        verify(clienteRepository).save(c);
+        verify(clienteRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_inactivoConHistorial_rechaza() {
+        Cliente c = existente("1", null);
+        c.setActivo(false);
+        when(clienteRepository.tieneHistorial(id)).thenReturn(true);
+
+        assertThrows(ValidationException.class, () -> service.delete(id));
+        verify(clienteRepository, never()).delete(any());
+        verify(clienteRepository, never()).save(any());
+    }
+
+    @Test
     void search_terminoEnBlanco_devuelveTodos() {
         Pageable p = PageRequest.of(0, 10);
         when(clienteRepository.findAll(p)).thenReturn(Page.empty());

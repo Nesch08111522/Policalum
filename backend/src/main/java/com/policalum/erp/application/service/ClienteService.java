@@ -17,7 +17,8 @@ public interface ClienteService {
     ClienteResponseDTO update(UUID id, ClienteRequestDTO requestDTO);
     ClienteResponseDTO findById(UUID id);
     ClienteResponseDTO findByNumeroDocumento(String numeroDocumento);
-    void delete(UUID id);
+    /** Null si se borró porque no tenía historial. El DTO inactivo si se conservó. */
+    ClienteResponseDTO delete(UUID id);
 
     // ============ SEARCH & FILTER ============
     Page<ClienteResponseDTO> search(String searchTerm, Pageable pageable);

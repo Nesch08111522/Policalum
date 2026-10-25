@@ -13,5 +13,6 @@ public record ClienteResponseDTO(
         String email,
         String celular,
         String direccion,
-        LocalDateTime createdAt) {
+        LocalDateTime createdAt,
+        Boolean activo) {
 }

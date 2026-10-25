@@ -37,4 +37,17 @@ public interface ProveedorRepository extends JpaRepository<Proveedor, UUID> {
     List<Object[]> countGroupByTipoDocumento();
 
     long countByActivo(Boolean activo);
+
+    /**
+     * El proveedor figura en compras, productos o cuentas por pagar.
+     * En ese caso no se borra: se desactiva para conservar el historial.
+     */
+    @Query("""
+            SELECT CASE WHEN
+                EXISTS (SELECT 1 FROM Compra c WHERE c.proveedor.id = :id)
+                OR EXISTS (SELECT 1 FROM Producto p WHERE p.proveedor.id = :id)
+                OR EXISTS (SELECT 1 FROM FinanzasCuentaPorPagar x WHERE x.proveedor.id = :id)
+            THEN TRUE ELSE FALSE END
+            """)
+    boolean tieneHistorial(@Param("id") UUID id);
 }

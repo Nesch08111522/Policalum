@@ -18,13 +18,8 @@ import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { problemStatus, problemText } from '../../../shared/utils/feedback';
 import { ignoreStale, PageState } from '../../../shared/utils/page-state';
+import { fechaLocal, haceDias } from '../../../shared/utils/fecha-local';
 import { AuditoriaApiService } from '../data-access/auditoria.api';
-
-function haceDias(dias: number): string {
-  const fecha = new Date();
-  fecha.setDate(fecha.getDate() - dias);
-  return fecha.toISOString().slice(0, 10);
-}
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Default,
@@ -44,7 +39,7 @@ export class AuditoriaPageComponent implements OnInit, OnDestroy {
     { key: 'userNombre', label: 'Usuario' },
     { key: 'registroId', label: 'Registro' },
   ];
-  readonly filtros = this.fb.nonNullable.group({ tabla: [''], accion: [''], userId: [''], desde: [haceDias(7)], hasta: [new Date().toISOString().slice(0, 10)] });
+  readonly filtros = this.fb.nonNullable.group({ tabla: [''], accion: [''], userId: [''], desde: [haceDias(7)], hasta: [fechaLocal()] });
   usuarios: SelectOption[] = [];
   dashboard: Api.AuditoriaDashboardDTO | null = null;
   puntos: ChartPoint[] = [];
@@ -84,7 +79,7 @@ export class AuditoriaPageComponent implements OnInit, OnDestroy {
   }
 
   filtrar(): void { this.state.page = 0; this.cargar(); this.cargarDashboard(); }
-  limpiar(): void { this.filtros.reset({ tabla: '', accion: '', userId: '', desde: haceDias(7), hasta: new Date().toISOString().slice(0, 10) }); this.filtrar(); }
+  limpiar(): void { this.filtros.reset({ tabla: '', accion: '', userId: '', desde: haceDias(7), hasta: fechaLocal() }); this.filtrar(); }
   cambiarPagina(page: number): void { this.state.page = page; this.cargar(); }
   cambiarTamano(size: number): void { this.state.size = size; this.state.page = 0; this.cargar(); }
   ordenar(event: { key: string; direction: 'asc' | 'desc' }): void { this.state.sort = `${event.key},${event.direction}`; this.cargar(); }

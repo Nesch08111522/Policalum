@@ -22,7 +22,8 @@ public interface AlmacenService {
 
     List<AlmacenResponseDTO> findBySede(UUID sedeId);
 
-    void delete(UUID id);
+    /** Null si se borró porque no tenía historial. El DTO inactivo si se conservó. */
+    AlmacenResponseDTO delete(UUID id);
 
     boolean isNombreDisponible(UUID sedeId, String nombre, UUID excludeId);
 

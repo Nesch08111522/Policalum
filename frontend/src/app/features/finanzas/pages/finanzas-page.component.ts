@@ -22,13 +22,8 @@ import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { PageState } from '../../../shared/utils/page-state';
+import { fechaLocal, haceDias } from '../../../shared/utils/fecha-local';
 import { FinanzasApiService } from '../data-access/finanzas.api';
-
-function haceDias(dias: number): string {
-  const fecha = new Date();
-  fecha.setDate(fecha.getDate() - dias);
-  return fecha.toISOString().slice(0, 10);
-}
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Default,
@@ -64,7 +59,7 @@ export class FinanzasPageComponent implements OnInit, OnDestroy {
     { key: 'sedeNombre', label: 'Sede' },
     { key: 'montoRetirado', label: 'Monto', kind: 'money', align: 'end' },
   ];
-  readonly periodo = this.fb.nonNullable.group({ sedeId: [''], desde: [haceDias(30)], hasta: [new Date().toISOString().slice(0, 10)] });
+  readonly periodo = this.fb.nonNullable.group({ sedeId: [''], desde: [haceDias(30)], hasta: [fechaLocal()] });
   readonly filtrosRetiro = this.fb.nonNullable.group({ sedeId: [''], estado: [''], origen: [''], desde: [''], hasta: [''] });
   readonly cuenta = this.fb.nonNullable.group({
     id: [''],

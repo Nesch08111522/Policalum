@@ -10,6 +10,7 @@ import {
 import { UserInfoDTO } from '../../models/user.model';
 import { AsistenciaService } from '../../services/asistencia.service';
 import { TokenService } from '../../services/token.service';
+import { fechaHoraLocal } from '../../shared/utils/fecha-local';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Default,
@@ -197,7 +198,7 @@ export class ListadoAsistenciasComponent implements OnInit, AfterViewInit {
     this.mostrarModalManual = true;
     this.manualData = {
       empleadoId: '',
-      fechaHora: new Date().toISOString().slice(0, 16),
+      fechaHora: fechaHoraLocal(),
       tipoMarcacion: 'ENTRADA',
       dispositivoInfo: 'Registro Manual por Admin',
     };

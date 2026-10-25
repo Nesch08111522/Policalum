@@ -73,8 +73,17 @@ public class AlmacenServiceImpl implements AlmacenService {
     }
 
     @Override
-    public void delete(UUID id) {
-        almacenRepository.delete(findEntityById(id));
+    public AlmacenResponseDTO delete(UUID id) {
+        Almacen almacen = findEntityById(id);
+        if (almacenRepository.tieneHistorial(id)) {
+            if (Boolean.FALSE.equals(almacen.getActivo())) {
+                throw new ValidationException("El almacén tiene historial de inventario y permanece inactivo");
+            }
+            almacen.setActivo(false);
+            return almacenMapper.toResponseDto(almacenRepository.save(almacen));
+        }
+        almacenRepository.delete(almacen);
+        return null;
     }
 
     @Override

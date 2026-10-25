@@ -169,4 +169,19 @@ public interface ClienteRepository extends JpaRepository<Cliente, UUID> {
     List<Cliente> findClientesConComprasDesde(
             @Param("fechaDesde") LocalDateTime fechaDesde
     );
+
+    /**
+     * El cliente figura en ventas, cotizaciones, preformas, devoluciones o reembolsos.
+     * En ese caso no se borra: se desactiva para conservar el historial.
+     */
+    @Query("""
+            SELECT CASE WHEN
+                EXISTS (SELECT 1 FROM Venta v WHERE v.cliente.id = :id)
+                OR EXISTS (SELECT 1 FROM Cotizacion c WHERE c.cliente.id = :id)
+                OR EXISTS (SELECT 1 FROM PreformaVenta p WHERE p.cliente.id = :id)
+                OR EXISTS (SELECT 1 FROM Devolucion d WHERE d.cliente.id = :id)
+                OR EXISTS (SELECT 1 FROM Reembolso r WHERE r.cliente.id = :id)
+            THEN TRUE ELSE FALSE END
+            """)
+    boolean tieneHistorial(@Param("id") UUID id);
 }
