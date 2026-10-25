@@ -1,15 +1,21 @@
 <section class="pos">
-  <header class="pos-title">
+  <header class="pos-head">
     <div>
+      <p class="kicker">Ventas</p>
       <h1>Punto de venta</h1>
-      <p>Registra productos, fracciones y servicios con salida automática de inventario.</p>
+      <p>Elige la medida del producto. Cada botón muestra su precio y cuánto stock descuenta del almacén.</p>
     </div>
+    <ol class="pasos">
+      <li [class.hecho]="sedeId && almacenId"><span>1</span> Sede y almacén</li>
+      <li [class.hecho]="carrito.length"><span>2</span> Medida del producto</li>
+      <li><span>3</span> Comprobante y cobro</li>
+    </ol>
   </header>
 
   <p class="banner ok" *ngIf="mensaje">{{ mensaje }}</p>
-  <p class="banner bad" *ngIf="error">{{ error }}</p>
+  <p class="banner bad" *ngIf="error" role="alert">{{ error }}</p>
 
-  <div class="filtros">
+  <div class="contexto">
     <label>Sede
       <select [ngModel]="sedeId" (ngModelChange)="seleccionarSede($event)">
         <option value="">Seleccione sede</option>
@@ -24,7 +30,7 @@
     </label>
     <label>Cliente
       <select [(ngModel)]="clienteId">
-        <option value="">Cliente ocasional / RUC/DNI</option>
+        <option value="">Cliente ocasional</option>
         <option *ngFor="let cliente of clientes" [value]="cliente.id">{{ cliente.nombre }}<ng-container *ngIf="cliente.numeroDocumento"> · {{ cliente.numeroDocumento }}</ng-container></option>
       </select>
     </label>
@@ -35,116 +41,181 @@
     </div>
   </div>
 
-  <label class="busqueda">
-    <app-icon name="search"></app-icon>
-    <input #buscador type="search" [ngModel]="busqueda" (ngModelChange)="busqueda = $event; buscar()" placeholder="Buscar producto, fracción o servicio (F2)…" />
-  </label>
-
-  <div class="tablero">
+  <div class="cuerpo">
     <section class="catalogo">
-      <div class="tabs" role="tablist">
-        <button type="button" [class.activo]="catalogo === 'productos'" (click)="catalogo = 'productos'"><app-icon name="box"></app-icon> Productos</button>
-        <button type="button" [class.activo]="catalogo === 'servicios'" (click)="catalogo = 'servicios'"><app-icon name="wrench"></app-icon> Servicios</button>
-        <button type="button" [class.activo]="catalogo === 'favoritos'" (click)="catalogo = 'favoritos'"><app-icon name="check"></app-icon> Favoritos</button>
-      </div>
-
-      <div class="cards" *ngIf="catalogo !== 'servicios'">
-        <article class="card" *ngFor="let producto of productosVisibles; trackBy: trackProducto">
-          <button type="button" class="pin" [class.on]="esFavorito(producto.id)" (click)="alternarFavorito(producto.id)" [attr.aria-label]="esFavorito(producto.id) ? 'Quitar de favoritos' : 'Marcar favorito'">★</button>
-          <button type="button" class="card-main" (click)="agregarProducto(producto)">
-            <span class="media">{{ inicial(producto.nombre) }}</span>
-            <span class="card-copy">
-              <strong>{{ producto.nombre }}</strong>
-              <small>Stock: {{ stockDe(producto) }}</small>
-              <span class="fracciones" *ngIf="fraccionesDe(producto).length">
-                <span class="fraccion-label">Fracciones:</span>
-                <span class="fraccion" *ngFor="let fraccion of fraccionesDe(producto); trackBy: trackFraccion" (click)="$event.stopPropagation(); agregarProducto(producto, fraccion)">{{ fraccion.nombreFraccion }}</span>
-              </span>
-              <span class="precio">Precio: {{ precioDe(producto) | pen }}</span>
-              <small *ngIf="mermaDe(producto) as merma">Merma: {{ merma }}</small>
-            </span>
-          </button>
-        </article>
-        <p class="vacio" *ngIf="!productosVisibles.length">No hay productos para esta búsqueda.</p>
-      </div>
-
-      <div class="cards" *ngIf="catalogo !== 'productos'">
-        <article class="card" *ngFor="let servicio of serviciosVisibles; trackBy: trackServicio">
-          <button type="button" class="pin" [class.on]="esFavorito(servicio.id)" (click)="alternarFavorito(servicio.id)" aria-label="Favorito">★</button>
-          <button type="button" class="card-main" (click)="agregarServicio(servicio)">
-            <span class="media servicio">{{ inicial(servicio.nombre) }}</span>
-            <span class="card-copy">
-              <strong>{{ servicio.nombre }}</strong>
-              <small *ngIf="servicio.descripcion">{{ servicio.descripcion }}</small>
-              <span class="precio">Precio: {{ servicio.precio | pen }}</span>
-            </span>
-          </button>
-        </article>
-        <p class="vacio" *ngIf="!serviciosVisibles.length">No hay servicios para esta búsqueda.</p>
-      </div>
-    </section>
-
-    <section class="venta">
-      <header>
-        <h2>Venta actual</h2>
-        <p>Agrega artículos del catálogo.</p>
-      </header>
-      <div class="tabla" *ngIf="carrito.length; else sinLineas">
-        <div class="fila head"><span>Descripción</span><span>Cant.</span><span>Precio unit.</span><span>Descto.</span><span>Total</span><span></span></div>
-        <div class="fila" *ngFor="let linea of carrito; let i = index; trackBy: trackLinea">
-          <span>{{ linea.nombre }}</span>
-          <span class="stepper">
-            <button type="button" (click)="ajustar(i, -1)" aria-label="Disminuir">−</button>
-            <input type="number" min="0.0001" step="1" [ngModel]="linea.cantidad" (ngModelChange)="fijarCantidad(i, $event)">
-            <button type="button" (click)="ajustar(i, 1)" aria-label="Aumentar">+</button>
-          </span>
-          <span>{{ linea.precio | pen }}</span>
-          <span>—</span>
-          <span>{{ importe(linea).total | pen }}</span>
-          <button type="button" class="quitar" (click)="quitar(i)" aria-label="Quitar línea">×</button>
-        </div>
-      </div>
-      <ng-template #sinLineas><p class="vacio">Agrega artículos del catálogo.</p></ng-template>
-      <footer class="totales">
-        <div><span>Subtotal</span><strong>{{ subtotal | pen }}</strong></div>
-        <div><span>IGV (18%)</span><strong>{{ igv | pen }}</strong></div>
-        <div class="gran-total"><span>Total:</span><strong>{{ total | pen }}</strong></div>
-      </footer>
-    </section>
-
-    <aside class="cobro">
-      <header class="comprobante-marca">
-        <img [src]="marca.logoSrc()" [alt]="marca.nombre()" (error)="marca.usarRespaldo()" />
-        <strong>{{ marca.nombre() }}</strong>
-      </header>
-      <h2>Seleccionar tipo de comprobante</h2>
-      <div class="opciones">
-        <button type="button" [attr.aria-pressed]="comprobante === 'BOLETA'" (click)="comprobante = 'BOLETA'">Boleta</button>
-        <button type="button" [attr.aria-pressed]="comprobante === 'FACTURA'" (click)="comprobante = 'FACTURA'">Factura</button>
-      </div>
-      <p class="sunat-chip">
-        <span>{{ rucEmpresa20 ? 'RUC 20 de la SUNAT' : (rucEmpresa ? 'RUC ' + rucEmpresa : 'RUC 20·········') }}</span>
-        <strong>SUNAT</strong>
-      </p>
-      <p class="nota" *ngIf="comprobante === 'FACTURA' && clienteSeleccionado?.tipoDocumento !== 'RUC'">La factura conviene con un cliente RUC. La emisión externa espera la API.</p>
-      <button type="button" class="nota-venta" [attr.aria-pressed]="comprobante === 'TICKET'" (click)="comprobante = 'TICKET'">Nota de venta</button>
-
-      <h2>Métodos de pago</h2>
-      <div class="pagos">
-        <button type="button" *ngFor="let pago of metodos" [attr.aria-pressed]="metodo === pago.id" (click)="metodo = pago.id">
-          <app-icon [name]="pago.icon"></app-icon>
-          {{ pago.label }}
-        </button>
-      </div>
-      <label class="referencia" *ngIf="metodo !== 'EFECTIVO'">Referencia
-        <input type="text" maxlength="80" [(ngModel)]="referencia" placeholder="Nro. de operación">
+      <label class="busqueda">
+        <app-icon name="search"></app-icon>
+        <input #buscador type="search" [(ngModel)]="busqueda" placeholder="Buscar por nombre, código o medida (F2)" />
       </label>
 
-      <button type="button" class="emitir" [disabled]="guardando || !turno || !carrito.length" (click)="cobrar()">Cobrar y emitir (F10)</button>
-      <div class="guardar">
-        <button type="button" (click)="guardarPreforma()" [disabled]="guardando || !carrito.length">Guardar preforma</button>
-        <button type="button" (click)="guardarCotizacion()" [disabled]="guardando || !carrito.length">Guardar cotización</button>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" [attr.aria-selected]="catalogo === 'productos'" [class.activo]="catalogo === 'productos'" (click)="catalogo = 'productos'"><app-icon name="box"></app-icon> Productos <em>{{ conteoProductos }}</em></button>
+        <button type="button" role="tab" [attr.aria-selected]="catalogo === 'servicios'" [class.activo]="catalogo === 'servicios'" (click)="catalogo = 'servicios'"><app-icon name="wrench"></app-icon> Servicios <em>{{ conteoServicios }}</em></button>
+        <button type="button" role="tab" [attr.aria-selected]="catalogo === 'favoritos'" [class.activo]="catalogo === 'favoritos'" (click)="catalogo = 'favoritos'"><app-icon name="check"></app-icon> Favoritos <em>{{ conteoFavoritos }}</em></button>
+      </div>
+
+      <p class="guia" *ngIf="catalogo !== 'servicios'">Pulsa la medida que vas a vender. La plancha completa y los recortes tienen precio distinto y descuentan una parte del stock.</p>
+      <p class="guia" *ngIf="catalogo === 'servicios'">Los servicios no mueven inventario. Pulsa Agregar para pasarlos al ticket.</p>
+
+      <p class="vacio" *ngIf="catalogoCargando">Cargando el catálogo…</p>
+
+      <div class="fichas" *ngIf="catalogo !== 'servicios' && !catalogoCargando">
+        <article class="ficha" *ngFor="let producto of productosVisibles; trackBy: trackProducto">
+          <div class="ficha-top">
+            <span class="media">
+              <img *ngIf="vistaDe(producto) as src" [src]="src" [alt]="producto.nombre" (error)="marcarImagenRota(producto.id)" />
+              <span *ngIf="!vistaDe(producto)">{{ inicial(producto.nombre) }}</span>
+            </span>
+            <div class="ficha-copy">
+              <h2>{{ producto.nombre }}</h2>
+              <p class="meta">
+                <span *ngIf="producto.codigoSku">{{ producto.codigoSku }}</span>
+                <span *ngIf="producto.codigoSku"> · </span>
+                <span>{{ producto.unidad || 'UNID' }}</span>
+                <span *ngIf="producto.esFraccionable"> · {{ fraccionesDe(producto).length }} medidas</span>
+              </p>
+              <span class="stock-pill" [class.ok]="claseStock(producto) === 'ok'" [class.vacio]="claseStock(producto) === 'vacio'" [class.espera]="claseStock(producto) === 'espera'">
+                {{ etiquetaStock(producto) }}<ng-container *ngIf="almacenNombre"> · {{ almacenNombre }}</ng-container>
+              </span>
+            </div>
+            <button type="button" class="pin" [class.on]="esFavorito(producto.id)" (click)="alternarFavorito(producto.id)" [attr.aria-label]="esFavorito(producto.id) ? 'Quitar de favoritos' : 'Marcar favorito'">★</button>
+          </div>
+
+          <div class="cortes" *ngIf="producto.esFraccionable && fraccionesDe(producto).length">
+            <button
+              type="button"
+              class="corte"
+              *ngFor="let fraccion of fraccionesDe(producto); trackBy: trackFraccion"
+              [class.en-ticket]="cantidadEnTicket(producto.id, fraccion.id)"
+              [disabled]="!corteDisponible(producto, fraccion)"
+              [attr.title]="tituloCorte(producto, fraccion)"
+              (click)="agregarProducto(producto, fraccion)">
+              <span class="corte-nombre">{{ fraccion.nombreFraccion }}<em *ngIf="cantidadEnTicket(producto.id, fraccion.id) as llevados"> × {{ llevados }}</em></span>
+              <strong>{{ fraccion.precioVenta | pen }}</strong>
+              <small>{{ textoCorte(producto, fraccion) }}</small>
+            </button>
+          </div>
+          <p class="bloqueo" *ngIf="producto.esFraccionable && !fraccionesDe(producto).length">Este producto no tiene medidas activas.</p>
+
+          <div class="simple" *ngIf="!producto.esFraccionable">
+            <strong>{{ producto.precioVentaBase | pen }}</strong>
+            <button type="button" class="agregar" [disabled]="!corteDisponible(producto)" [attr.title]="tituloProducto(producto)" (click)="agregarProducto(producto)">
+              Agregar al ticket
+              <em *ngIf="cantidadEnTicket(producto.id) as llevados">× {{ llevados }}</em>
+            </button>
+          </div>
+          <p class="bloqueo" *ngIf="avisoProducto(producto) as aviso">{{ aviso }}</p>
+        </article>
+        <p class="vacio" *ngIf="catalogo === 'productos' && !productosVisibles.length">Ningún producto coincide con la búsqueda.</p>
+        <p class="vacio" *ngIf="catalogo === 'favoritos' && !productosVisibles.length && !serviciosVisibles.length">Todavía no marcaste favoritos. Usa la estrella para guardarlos en esta pestaña.</p>
+      </div>
+
+      <div class="fichas" *ngIf="catalogo !== 'productos' && !catalogoCargando">
+        <article class="ficha" *ngFor="let servicio of serviciosVisibles; trackBy: trackServicio">
+          <div class="ficha-top">
+            <span class="media servicio">{{ inicial(servicio.nombre) }}</span>
+            <div class="ficha-copy">
+              <h2>{{ servicio.nombre }}</h2>
+              <p class="meta" *ngIf="servicio.descripcion">{{ servicio.descripcion }}</p>
+              <p class="meta" *ngIf="!servicio.descripcion">Servicio · no mueve stock</p>
+            </div>
+            <button type="button" class="pin" [class.on]="esFavorito(servicio.id)" (click)="alternarFavorito(servicio.id)" aria-label="Favorito">★</button>
+          </div>
+          <div class="simple">
+            <strong>{{ servicio.precio | pen }}</strong>
+            <button type="button" class="agregar" (click)="agregarServicio(servicio)">
+              Agregar al ticket
+              <em *ngIf="cantidadServicio(servicio.id) as llevados">× {{ llevados }}</em>
+            </button>
+          </div>
+        </article>
+        <p class="vacio" *ngIf="catalogo === 'servicios' && !serviciosVisibles.length">Ningún servicio coincide con la búsqueda.</p>
+      </div>
+    </section>
+
+    <aside class="ticket" id="ticket">
+      <div class="ticket-bloque">
+        <header class="ticket-head">
+          <div>
+            <h2>Ticket</h2>
+            <p>{{ textoTicket }}</p>
+          </div>
+          <strong>{{ total | pen }}</strong>
+        </header>
+
+        <div *ngIf="carrito.length; else sinLineas">
+          <article class="linea" *ngFor="let linea of carrito; let i = index; trackBy: trackLinea" [class.resaltada]="resaltada === trackLinea(i, linea)">
+            <div>
+              <strong>{{ linea.nombre }}</strong>
+              <p>{{ linea.detalle || 'Unidad completa' }} · {{ linea.precio | pen }} c/u</p>
+              <p *ngIf="linea.tipo === 'PRODUCTO'">{{ consumoTexto(linea) }}</p>
+            </div>
+            <div class="linea-acciones">
+              <span class="stepper">
+                <button type="button" (click)="ajustar(i, -1)" aria-label="Disminuir">−</button>
+                <input type="number" min="0.0001" step="1" [ngModel]="linea.cantidad" (ngModelChange)="fijarCantidad(i, $event)" [attr.aria-label]="'Cantidad de ' + linea.nombre">
+                <button type="button" (click)="ajustar(i, 1)" aria-label="Aumentar">+</button>
+              </span>
+              <strong>{{ importe(linea).total | pen }}</strong>
+              <button type="button" class="quitar" (click)="quitar(i)">Quitar</button>
+            </div>
+          </article>
+        </div>
+        <ng-template #sinLineas>
+          <div class="ticket-vacio">
+            <strong>El ticket está vacío</strong>
+            <ol>
+              <li>Confirma la sede y el almacén.</li>
+              <li>Pulsa la medida del producto, con su precio.</li>
+              <li>Elige el comprobante y cobra.</li>
+            </ol>
+          </div>
+        </ng-template>
+
+        <footer class="totales">
+          <div><span>Subtotal</span><strong>{{ subtotal | pen }}</strong></div>
+          <div><span>IGV (18%)</span><strong>{{ igv | pen }}</strong></div>
+          <div class="gran-total"><span>Total</span><strong>{{ total | pen }}</strong></div>
+          <p>Precios con IGV incluido.</p>
+        </footer>
+      </div>
+
+      <div class="ticket-bloque cobro">
+        <header class="comprobante-marca">
+          <img [src]="marca.logoSrc()" [alt]="marca.nombre()" (error)="marca.usarRespaldo()" />
+          <strong>{{ marca.nombre() }}</strong>
+        </header>
+        <h2>Comprobante</h2>
+        <div class="opciones">
+          <button type="button" [attr.aria-pressed]="comprobante === 'BOLETA'" (click)="comprobante = 'BOLETA'">Boleta</button>
+          <button type="button" [attr.aria-pressed]="comprobante === 'FACTURA'" (click)="comprobante = 'FACTURA'">Factura</button>
+          <button type="button" [attr.aria-pressed]="comprobante === 'TICKET'" (click)="comprobante = 'TICKET'">Nota de venta</button>
+        </div>
+        <p class="sunat-chip">
+          <span>{{ rucEmpresa20 ? 'RUC 20 de la SUNAT' : (rucEmpresa ? 'RUC ' + rucEmpresa : 'RUC pendiente') }}</span>
+          <strong>SUNAT</strong>
+        </p>
+        <p class="nota" *ngIf="comprobante === 'FACTURA' && clienteSeleccionado?.tipoDocumento !== 'RUC'">La factura conviene con un cliente que tenga RUC.</p>
+
+        <h2>Pago</h2>
+        <div class="pagos">
+          <button type="button" *ngFor="let pago of metodos" [attr.aria-pressed]="metodo === pago.id" (click)="metodo = pago.id">
+            <app-icon [name]="pago.icon"></app-icon>
+            {{ pago.label }}
+          </button>
+        </div>
+        <label class="referencia" *ngIf="metodo !== 'EFECTIVO'">Referencia
+          <input type="text" maxlength="80" [(ngModel)]="referencia" placeholder="Nro. de operación">
+        </label>
+
+        <button type="button" class="emitir" [disabled]="guardando || !turno || !carrito.length" (click)="cobrar()">Cobrar y emitir</button>
+        <div class="guardar">
+          <button type="button" (click)="guardarPreforma()" [disabled]="guardando || !carrito.length">Guardar preforma</button>
+          <button type="button" (click)="guardarCotizacion()" [disabled]="guardando || !carrito.length">Guardar cotización</button>
+        </div>
       </div>
     </aside>
   </div>
+
+  <a class="ticket-mini" href="#ticket">Ver ticket · {{ textoTicket }} · {{ total | pen }}</a>
 </section>
