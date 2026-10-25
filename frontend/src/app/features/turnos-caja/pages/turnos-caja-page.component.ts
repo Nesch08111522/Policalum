@@ -12,6 +12,7 @@ import { SelectComponent } from '../../../shared/components/select/select.compon
 import { SelectOption } from '../../../shared/models/ui.models';
 import { PenPipe } from '../../../shared/pipes/format.pipes';
 import { CajaSessionService } from '../../../shared/services/caja-session.service';
+import { SedeFiltroService } from '../../../shared/services/sede-filtro.service';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { problemText } from '../../../shared/utils/feedback';
@@ -52,15 +53,20 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
   error: string | null = null;
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: TurnosCajaApiService, private readonly lookup: LookupService, private readonly toast: ToastService, private readonly http: HttpClient) {
+  constructor(private readonly api: TurnosCajaApiService, private readonly lookup: LookupService, private readonly toast: ToastService, private readonly http: HttpClient, private readonly sedeFiltro: SedeFiltroService) {
     effect(() => {
       const actividad = this.caja.actividad();
       untracked(() => { if (actividad && this.cierre.controls.id.value) this.verResumen(); });
     });
   }
   ngOnInit(): void {
-    this.lookup.loadSedes().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.sedes = this.lookup.options(rows, (row) => (row as Api.SedeResponseDTO).nombre ?? 'Sede'); });
-    this.http.get<{ abierto?: boolean; turno?: Api.TurnoCajaResponseDTO | null }>(`${environment.apiUrl}/api/v1/turnos-caja/abierto`).pipe(takeUntil(this.destroy$)).subscribe({
+    this.lookup.loadSedes().pipe(takeUntil(this.destroy$)).subscribe((rows) => {
+      this.sedes = this.lookup.options(rows, (row) => (row as Api.SedeResponseDTO).nombre ?? 'Sede');
+      const elegida = this.sedeFiltro.sedeId();
+      if (elegida && !this.apertura.controls.sedeId.value) this.apertura.controls.sedeId.setValue(elegida);
+    });
+    const sedeId = this.sedeFiltro.sedeId();
+    this.http.get<{ abierto?: boolean; turno?: Api.TurnoCajaResponseDTO | null }>(`${environment.apiUrl}/api/v1/turnos-caja/abierto`, { params: sedeId ? { sedeId } : {} }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (respuesta) => {
         if (respuesta?.abierto && respuesta.turno?.id) this.recordarTurno(respuesta.turno);
       },

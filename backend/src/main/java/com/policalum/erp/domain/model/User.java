@@ -60,9 +60,11 @@ public class User {
     @Column(name = "foto", columnDefinition = "text")
     private String foto;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "ultimo_ip", length = 45)
     private String ultimoIp;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "sesion_version")
     private Integer sesionVersion = 0;
  

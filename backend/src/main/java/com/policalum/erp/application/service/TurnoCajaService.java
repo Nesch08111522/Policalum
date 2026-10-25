@@ -11,5 +11,5 @@ public interface TurnoCajaService {
     TurnoCajaResponseDTO abrir(AperturaCajaRequestDTO request);
     ResumenCierreCajaDTO cerrar(UUID turnoId, CierreCajaRequestDTO request);
     ResumenCierreCajaDTO resumen(UUID turnoId);
-    TurnoAbiertoResponseDTO turnoAbierto();
+    TurnoAbiertoResponseDTO turnoAbierto(UUID sedeId);
 }

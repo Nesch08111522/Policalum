@@ -1,5 +1,5 @@
 <section class="module-page">
-  <app-page-header title="Auditoría" subtitle="Eventos del sistema. La descarga del archivo de logs no está conectada: el cliente espera JSON."></app-page-header>
+  <app-page-header title="Auditoría" subtitle="Eventos del sistema. El detalle se lee por campo, sin volcar el registro crudo."></app-page-header>
   <div class="stats-grid" *ngIf="dashboard">
     <app-stat-card label="Eventos" [value]="dashboard.totalEventos ?? 0" icon="search"></app-stat-card>
     <app-stat-card label="Del sistema" [value]="dashboard.eventosDelSistema ?? 0" icon="shield"></app-stat-card>
@@ -20,5 +20,8 @@
 </section>
 <app-modal [open]="abierto" title="Detalle del evento" size="lg" (closed)="abierto = false">
   <p *ngIf="detalle">{{ detalle.accion }} en {{ detalle.tabla }} por {{ detalle.userNombre || detalle.userEmail || 'sistema' }}</p>
-  <pre class="card card-body">{{ detalleJson }}</pre>
+  <dl class="detalle-evento" *ngIf="detalleFilas.length">
+    <div *ngFor="let fila of detalleFilas"><dt>{{ fila.clave }}</dt><dd>{{ fila.valor }}</dd></div>
+  </dl>
+  <p *ngIf="!detalleFilas.length" class="text-muted">Este evento no tiene datos adicionales.</p>
 </app-modal>

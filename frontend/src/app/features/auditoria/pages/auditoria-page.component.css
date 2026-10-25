@@ -1,1 +1,5 @@
 :host { display: block; min-width: 0; }
+.detalle-evento { display: grid; gap: 8px; margin: 12px 0 0; }
+.detalle-evento div { display: grid; gap: 2px; }
+.detalle-evento dt { color: var(--muted, #8b93a7); font-size: 0.85rem; }
+.detalle-evento dd { margin: 0; }

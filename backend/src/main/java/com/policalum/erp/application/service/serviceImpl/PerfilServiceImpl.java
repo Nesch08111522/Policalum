@@ -3,6 +3,7 @@ package com.policalum.erp.application.service.serviceImpl;
 import com.policalum.erp.application.dto.request.PerfilActualizarRequestDTO;
 import com.policalum.erp.application.dto.request.PerfilContrasenaRequestDTO;
 import com.policalum.erp.application.dto.response.PerfilResponseDTO;
+import com.policalum.erp.application.service.AuthService;
 import com.policalum.erp.application.service.FileStorageService;
 import com.policalum.erp.application.service.TotpService;
 import com.policalum.erp.domain.enums.SistemaPension;
@@ -15,6 +16,7 @@ import com.policalum.erp.infrastructure.repository.RrhhLegajoDigitalRepository;
 import com.policalum.erp.infrastructure.repository.SedeRepository;
 import com.policalum.erp.infrastructure.repository.UserRepository;
 import com.policalum.erp.infrastructure.security.JwtUtil;
+import com.policalum.erp.infrastructure.security.SesionUsuarioCache;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Locale;
@@ -39,10 +41,13 @@ public class PerfilServiceImpl {
     private final JwtUtil jwtUtil;
     private final TotpService totpService;
     private final FileStorageService fileStorageService;
+    private final AuthService authService;
+    private final SesionUsuarioCache sesionUsuarioCache;
 
     public PerfilServiceImpl(UserRepository userRepository, SedeRepository sedeRepository,
                              RrhhLegajoDigitalRepository legajoRepository, PasswordEncoder passwordEncoder,
-                             JwtUtil jwtUtil, TotpService totpService, FileStorageService fileStorageService) {
+                             JwtUtil jwtUtil, TotpService totpService, FileStorageService fileStorageService,
+                             AuthService authService, SesionUsuarioCache sesionUsuarioCache) {
         this.userRepository = userRepository;
         this.sedeRepository = sedeRepository;
         this.legajoRepository = legajoRepository;
@@ -50,6 +55,8 @@ public class PerfilServiceImpl {
         this.jwtUtil = jwtUtil;
         this.totpService = totpService;
         this.fileStorageService = fileStorageService;
+        this.authService = authService;
+        this.sesionUsuarioCache = sesionUsuarioCache;
     }
 
     @Transactional(readOnly = true)
@@ -135,6 +142,7 @@ public class PerfilServiceImpl {
         user.setPasswordHash(passwordEncoder.encode(request.nueva()));
         user.setSesionVersion(version(user) + 1);
         userRepository.save(user);
+        sesionUsuarioCache.invalidar(user.getEmail());
         return respuesta(user, jwtUtil.generateToken(user), null, null);
     }
 
@@ -158,6 +166,7 @@ public class PerfilServiceImpl {
         User user = usuario();
         user.setSesionVersion(version(user) + 1);
         userRepository.save(user);
+        sesionUsuarioCache.invalidar(user.getEmail());
         return respuesta(user, jwtUtil.generateToken(user), null, null);
     }
 
@@ -234,7 +243,8 @@ public class PerfilServiceImpl {
                 legajo != null && legajo.getSistemaPension() != null ? legajo.getSistemaPension().name() : null,
                 token,
                 secreto,
-                url
+                url,
+                token == null ? null : authService.reemplazarRefresh(user)
         );
     }
 

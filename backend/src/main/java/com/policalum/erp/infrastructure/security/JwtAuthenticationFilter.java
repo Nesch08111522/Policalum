@@ -1,7 +1,6 @@
 package com.policalum.erp.infrastructure.security;
 
-import com.policalum.erp.domain.model.User;
-import com.policalum.erp.infrastructure.repository.UserRepository;
+import com.policalum.erp.infrastructure.security.SesionUsuarioCache.Estado;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,7 +20,8 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;  // ← Inyectar UserRepository
+    private final SesionUsuarioCache sesionUsuarioCache;
+    private final TokenDenylist tokenDenylist;
 
     @Override
     protected void doFilterInternal(
@@ -36,14 +36,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
 
             if (jwtUtil.validateToken(token)) {
+                if (tokenDenylist.revocado(token)) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Usuario inactivo o sesión cerrada");
+                    return;
+                }
                 String email = jwtUtil.getEmailFromToken(token);
                 String rol = jwtUtil.getRolFromToken(token);
 
-                User user = userRepository.findByEmail(email).orElse(null);
+                Estado sesion = sesionUsuarioCache.consultar(email);
 
                 int sesionToken = jwtUtil.getSesionVersion(token);
-                int sesionUsuario = user == null || user.getSesionVersion() == null ? 0 : user.getSesionVersion();
-                if (user == null || !user.getActivo() || sesionToken != sesionUsuario) {
+                if (!sesion.existe() || !sesion.activo() || sesionToken != sesion.version()) {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.getWriter().write("Usuario inactivo o sesión cerrada");
                     return;

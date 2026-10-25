@@ -26,7 +26,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class TurnoCajaController {
     private final TurnoCajaService turnoService;
     private final CajaChicaServiceImpl cajaChicaService;
-    @GetMapping("/abierto") public ResponseEntity<TurnoAbiertoResponseDTO> abierto() { return ResponseEntity.ok(turnoService.turnoAbierto()); }
+    @GetMapping("/abierto") public ResponseEntity<TurnoAbiertoResponseDTO> abierto(@RequestParam(required = false) UUID sedeId) { return ResponseEntity.ok(turnoService.turnoAbierto(sedeId)); }
     @GetMapping("/{id}/caja-chica") public ResponseEntity<List<CajaChicaResponseDTO>> listarCajaChica(@PathVariable UUID id) { return ResponseEntity.ok(cajaChicaService.listar(id)); }
     @PostMapping("/{id}/caja-chica") public ResponseEntity<CajaChicaResponseDTO> registrarCajaChica(@PathVariable UUID id, @Valid @RequestBody CajaChicaRequestDTO request) { return ResponseEntity.ok(cajaChicaService.registrar(id, request)); }
     @PostMapping

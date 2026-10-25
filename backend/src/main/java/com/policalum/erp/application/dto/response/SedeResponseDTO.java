@@ -12,5 +12,8 @@ public record SedeResponseDTO(
         String celularSede,
         String moneda,
         Boolean activa,
-        LocalDateTime createdAt) {
+        LocalDateTime createdAt,
+        Double latitud,
+        Double longitud,
+        String imagen) {
 }

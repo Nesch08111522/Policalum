@@ -8,6 +8,7 @@ import com.policalum.erp.domain.model.User;
 import com.policalum.erp.infrastructure.repository.RefreshTokenRepository;
 import com.policalum.erp.infrastructure.repository.UserRepository;
 import com.policalum.erp.infrastructure.security.JwtUtil;
+import com.policalum.erp.infrastructure.security.TokenDenylist;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final TokenDenylist tokenDenylist;
 
     @Value("${jwt.refresh-expiration:1209600000}")
     private long refreshExpiration;
@@ -73,11 +75,22 @@ public class AuthService {
         return respuesta(user);
     }
 
+    /** Revoca solo el refresh de este navegador y su access token. Las demás sesiones siguen. */
     @Transactional
-    public void cerrarSesion() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getName() == null) return;
-        userRepository.findByEmailAndActivoTrue(auth.getName()).ifPresent(user -> refreshTokenRepository.revocarDe(user.getId()));
+    public void cerrarSesion(String refreshToken, String accessToken) {
+        tokenDenylist.revocar(accessToken);
+        if (refreshToken == null || refreshToken.isBlank()) return;
+        refreshTokenRepository.findByTokenHash(hash(refreshToken)).ifPresent(guardado -> {
+            guardado.setRevocado(true);
+            refreshTokenRepository.save(guardado);
+        });
+    }
+
+    /** Tras cerrar las otras sesiones, este navegador recibe un refresh nuevo. */
+    @Transactional
+    public String reemplazarRefresh(User user) {
+        refreshTokenRepository.revocarDe(user.getId());
+        return emitirRefresh(user);
     }
 
     private LoginResponseDTO respuesta(User user) {

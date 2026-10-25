@@ -1,1 +1,5 @@
 :host { display: block; min-width: 0; }
+.resumen-caja { display: grid; gap: 8px; margin: 12px 0 0; }
+.resumen-caja div { display: flex; justify-content: space-between; gap: 16px; }
+.resumen-caja dt { color: var(--muted, #8b93a7); }
+.resumen-caja dd { margin: 0; font-variant-numeric: tabular-nums; }

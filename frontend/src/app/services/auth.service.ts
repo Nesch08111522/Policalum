@@ -40,7 +40,7 @@ export class AuthService {
       this.tokenService.logout();
       return;
     }
-    this.http.post(`${this.apiUrl}/logout`, {}).subscribe({
+    this.http.post(`${this.apiUrl}/logout`, { refreshToken: this.tokenService.getRefresh() }).subscribe({
       next: () => this.tokenService.logout(),
       error: () => this.tokenService.logout(),
     });

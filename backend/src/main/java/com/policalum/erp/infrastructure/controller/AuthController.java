@@ -5,6 +5,7 @@ package com.policalum.erp.infrastructure.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.policalum.erp.application.dto.request.LoginRequestDTO;
+import com.policalum.erp.application.dto.request.LogoutRequestDTO;
 import com.policalum.erp.application.dto.request.RefreshRequestDTO;
 import com.policalum.erp.application.dto.response.LoginResponseDTO;
 import com.policalum.erp.application.service.AuthService;
@@ -37,8 +38,10 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout() {
-        authService.cerrarSesion();
+    public ResponseEntity<Void> logout(@RequestBody(required = false) LogoutRequestDTO request, HttpServletRequest http) {
+        String header = http.getHeader("Authorization");
+        String access = header != null && header.startsWith("Bearer ") ? header.substring(7) : null;
+        authService.cerrarSesion(request == null ? null : request.refreshToken(), access);
         return ResponseEntity.noContent().build();
     }
 

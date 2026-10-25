@@ -20,6 +20,9 @@ public interface SedeMapper {
     @Mapping(source = "celularSede", target = "celularSede")
     @Mapping(source = "moneda", target = "moneda")
     @Mapping(source = "activa", target = "activa")
+    @Mapping(source = "latitud", target = "latitud")
+    @Mapping(source = "longitud", target = "longitud")
+    @Mapping(target = "imagen", ignore = true)
     Sede toEntity(SedeRequestDTO sedeRequestDTO);
 
     @Mapping(source = "nombre", target = "nombre")
@@ -29,5 +32,8 @@ public interface SedeMapper {
     @Mapping(source = "celularSede", target = "celularSede")
     @Mapping(source = "moneda", target = "moneda")
     @Mapping(source = "activa", target = "activa")
+    @Mapping(source = "latitud", target = "latitud")
+    @Mapping(source = "longitud", target = "longitud")
+    @Mapping(target = "imagen", ignore = true)
     void updateEntityFromDto(SedeRequestDTO dto, @MappingTarget Sede entity);
 }

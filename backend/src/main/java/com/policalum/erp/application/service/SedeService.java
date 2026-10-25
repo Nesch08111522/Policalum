@@ -1,9 +1,12 @@
 package com.policalum.erp.application.service;
 import com.policalum.erp.application.dto.request.SedeRequestDTO;
+import com.policalum.erp.application.dto.response.SedeMapaDTO;
 import com.policalum.erp.application.dto.response.SedeResponseDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface SedeService {
@@ -20,4 +23,8 @@ public interface SedeService {
 
     /** Null si se borró porque no tenía historial. El DTO inactivo si se conservó. */
     SedeResponseDTO eliminarSede(UUID id);
+
+    List<SedeMapaDTO> mapa();
+
+    SedeResponseDTO guardarImagen(UUID id, MultipartFile archivo);
 }

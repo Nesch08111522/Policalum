@@ -44,7 +44,7 @@ export class AuditoriaPageComponent implements OnInit, OnDestroy {
   dashboard: Api.AuditoriaDashboardDTO | null = null;
   puntos: ChartPoint[] = [];
   detalle: Api.LogAuditoriaResponseDTO | null = null;
-  detalleJson = '';
+  detalleFilas: { clave: string; valor: string }[] = [];
   abierto = false;
   private readonly destroy$ = new Subject<void>();
 
@@ -88,10 +88,30 @@ export class AuditoriaPageComponent implements OnInit, OnDestroy {
     const item = row as Api.LogAuditoriaResponseDTO;
     if (!item.id) return;
     this.api.GetApiV1AuditoriaLogsId({ id: item.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (data) => { this.detalle = data; this.detalleJson = JSON.stringify(data.datosJson ?? {}, null, 2); this.abierto = true; },
+      next: (data) => { this.detalle = data; this.detalleFilas = filasLegibles(data.datosJson); this.abierto = true; },
       error: (error: unknown) => this.toast.error(problemText(error)),
     });
   }
+}
+
+function filasLegibles(datos: unknown): { clave: string; valor: string }[] {
+  let valor = datos;
+  if (typeof valor === 'string') {
+    const texto = valor.trim();
+    if (!texto) return [];
+    try { valor = JSON.parse(texto) as unknown; } catch { return [{ clave: 'Detalle', valor: texto }]; }
+  }
+  if (valor == null) return [];
+  if (typeof valor !== 'object') return [{ clave: 'Detalle', valor: String(valor) }];
+  if (Array.isArray(valor)) return valor.map((item, indice) => ({ clave: `Elemento ${indice + 1}`, valor: textoPlano(item) }));
+  return Object.entries(valor as Record<string, unknown>).map(([clave, item]) => ({ clave, valor: textoPlano(item) }));
+}
+
+function textoPlano(item: unknown): string {
+  if (item == null || item === '') return '—';
+  if (typeof item !== 'object') return String(item);
+  if (Array.isArray(item)) return item.map((parte) => textoPlano(parte)).join(', ');
+  return Object.entries(item as Record<string, unknown>).map(([clave, parte]) => `${clave}: ${textoPlano(parte)}`).join(' · ');
 }
 
 export const AUDITORIA_ROUTES: Routes = [{

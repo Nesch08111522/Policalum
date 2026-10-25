@@ -75,8 +75,10 @@ public class TurnoCajaServiceImpl implements TurnoCajaService {
 
     @Override
     @Transactional(readOnly = true)
-    public TurnoAbiertoResponseDTO turnoAbierto() {
-        return turnoRepository.abiertosDe(usuarioActual().getId()).stream().findFirst()
+    public TurnoAbiertoResponseDTO turnoAbierto(UUID sedeId) {
+        return turnoRepository.abiertosDe(usuarioActual().getId()).stream()
+                .filter(turno -> sedeId == null || (turno.getSede() != null && sedeId.equals(turno.getSede().getId())))
+                .findFirst()
                 .map(turno -> new TurnoAbiertoResponseDTO(true, mapper.toResponseDto(turno)))
                 .orElseGet(() -> new TurnoAbiertoResponseDTO(false, null));
     }

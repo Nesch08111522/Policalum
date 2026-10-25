@@ -39,6 +39,15 @@ public class Sede {
     @Column(nullable = false)
     private Boolean activa = true;
 
+    /** Grados decimales. El geocodificador local los completa si la ciudad es conocida. */
+    private Double latitud;
+
+    private Double longitud;
+
+    /** Ruta relativa en el almacén de archivos o una URL. */
+    @Column(length = 500)
+    private String imagen;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

@@ -10,6 +10,7 @@ import { TokenService } from '../../../services/token.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { LayoutService } from '../../../shared/services/layout.service';
 import { LookupService } from '../../../shared/services/lookup.service';
+import { CajaGateService } from '../../../shared/services/caja-gate.service';
 import { SedeFiltroService } from '../../../shared/services/sede-filtro.service';
 import { ThemeService } from '../../../shared/services/theme.service';
 import { NAV_SECTIONS, NavItem } from '../../navigation';
@@ -40,6 +41,7 @@ export class HeaderComponent implements OnInit {
     private readonly auth: AuthService,
     private readonly tokens: TokenService,
     private readonly lookup: LookupService,
+    private readonly caja: CajaGateService,
     private readonly notificaciones: NotificacionesApi,
     private readonly router: Router,
   ) {}
@@ -70,6 +72,7 @@ export class HeaderComponent implements OnInit {
   elegirSede(id: string, nombre: string): void {
     this.sedeFiltro.elegir(id, nombre);
     this.sedesAbiertas = false;
+    this.caja.revisar();
   }
 
   onQuery(event: Event): void {

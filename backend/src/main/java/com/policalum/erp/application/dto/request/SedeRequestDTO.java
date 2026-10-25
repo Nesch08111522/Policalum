@@ -1,5 +1,7 @@
 package com.policalum.erp.application.dto.request;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -17,5 +19,11 @@ public record SedeRequestDTO(
 
         @Size(max = 10, message = "La moneda no puede exceder 10 caracteres") String moneda,
 
-        Boolean activa) {
+        Boolean activa,
+
+        @DecimalMin(value = "-90.0", message = "La latitud no es válida") @DecimalMax(value = "90.0", message = "La latitud no es válida") Double latitud,
+
+        @DecimalMin(value = "-180.0", message = "La longitud no es válida") @DecimalMax(value = "180.0", message = "La longitud no es válida") Double longitud,
+
+        @Size(max = 500, message = "La imagen no puede exceder 500 caracteres") String imagen) {
 }

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.policalum.erp.application.dto.request.PerfilActualizarRequestDTO;
+import com.policalum.erp.application.service.AuthService;
 import com.policalum.erp.application.service.FileStorageService;
 import com.policalum.erp.application.service.TotpService;
 import com.policalum.erp.domain.enums.RolNombre;
@@ -19,6 +20,7 @@ import com.policalum.erp.infrastructure.repository.RrhhLegajoDigitalRepository;
 import com.policalum.erp.infrastructure.repository.SedeRepository;
 import com.policalum.erp.infrastructure.repository.UserRepository;
 import com.policalum.erp.infrastructure.security.JwtUtil;
+import com.policalum.erp.infrastructure.security.SesionUsuarioCache;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -43,6 +45,8 @@ class PerfilServiceImplTest {
     @Mock JwtUtil jwtUtil;
     @Mock TotpService totpService;
     @Mock FileStorageService fileStorageService;
+    @Mock AuthService authService;
+    @Mock SesionUsuarioCache sesionUsuarioCache;
 
     PerfilServiceImpl service;
     User usuario;
@@ -50,7 +54,7 @@ class PerfilServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        service = new PerfilServiceImpl(userRepository, sedeRepository, legajoRepository, passwordEncoder, jwtUtil, totpService, fileStorageService);
+        service = new PerfilServiceImpl(userRepository, sedeRepository, legajoRepository, passwordEncoder, jwtUtil, totpService, fileStorageService, authService, sesionUsuarioCache);
         usuario = User.builder().id(id).nombre("Ana").apellido("Perez").nombreUsuario("ana").email("ana@policalum.com")
                 .activo(true).rol(Rol.builder().nombre(RolNombre.ROLE_ADMIN).build())
                 .sede(Sede.builder().id(UUID.randomUUID()).nombre("Principal").build()).build();

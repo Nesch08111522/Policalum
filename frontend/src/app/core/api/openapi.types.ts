@@ -1300,6 +1300,7 @@ export interface PerfilResponseDTO {
   sistemaPension?: string;
   sueldoBase?: number;
   tipoContrato?: string;
+  refreshToken?: string;
   token?: string;
   totpEnabled?: boolean;
   totpSecreto?: string;
@@ -2435,6 +2436,9 @@ export interface SedeRequestDTO {
   celularSede?: string;
   ciudad?: string;
   direccion?: string;
+  imagen?: string;
+  latitud?: number;
+  longitud?: number;
   moneda?: string;
   nombre: string;
   pais?: string;
@@ -2447,6 +2451,9 @@ export interface SedeResponseDTO {
   createdAt?: string;
   direccion?: string;
   id?: string;
+  imagen?: string;
+  latitud?: number;
+  longitud?: number;
   moneda?: string;
   nombre?: string;
   pais?: string;

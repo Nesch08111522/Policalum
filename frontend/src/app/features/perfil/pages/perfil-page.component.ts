@@ -259,6 +259,7 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
 
   private aplicarSesion(perfil: Api.PerfilResponseDTO): void {
     if (perfil.token) this.tokens.setToken(perfil.token);
+    if (perfil.refreshToken) this.tokens.setRefresh(perfil.refreshToken);
     const actual = this.tokens.getUser();
     if (!actual) return;
     this.tokens.setUser({

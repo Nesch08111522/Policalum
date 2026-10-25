@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import com.policalum.erp.application.dto.request.SedeRequestDTO;
 import com.policalum.erp.application.mapper.SedeMapper;
+import com.policalum.erp.application.service.FileStorageService;
 import com.policalum.erp.domain.model.Sede;
 import com.policalum.erp.exception.ResourceNotFoundException;
 import com.policalum.erp.infrastructure.repository.SedeRepository;
@@ -23,6 +24,7 @@ class SedeServiceImplTest {
 
     @Mock SedeRepository sedeRepository;
     @Mock SedeMapper sedeMapper;
+    @Mock FileStorageService fileStorageService;
     @InjectMocks SedeServiceImpl service;
 
     UUID id = UUID.randomUUID();
@@ -33,7 +35,7 @@ class SedeServiceImplTest {
     }
 
     private SedeRequestDTO request() {
-        return new SedeRequestDTO("Trujillo Centro", null, "Trujillo", "Jr. Pizarro 1", "944111222", null, null);
+        return new SedeRequestDTO("Trujillo Centro", null, "Trujillo", "Jr. Pizarro 1", "944111222", null, null, null, null, null);
     }
 
     @Test

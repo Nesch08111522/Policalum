@@ -31,5 +31,6 @@ public record PerfilResponseDTO(
         String sistemaPension,
         String token,
         String totpSecreto,
-        String totpUrl
+        String totpUrl,
+        String refreshToken
 ) {}
