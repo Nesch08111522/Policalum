@@ -1,5 +1,7 @@
 <section class="module-page">
-  <app-page-header title="Ventas" subtitle="Comprobantes emitidos. El mostrador rápido sigue en el punto de venta." actionLabel="Registrar venta" (action)="abrirCrear()"></app-page-header>
+  <app-page-header title="Ventas" subtitle="Comprobantes emitidos. El mostrador rápido sigue en el punto de venta." actionLabel="Registrar venta" (action)="abrirCrear()">
+    <app-export-buttons modulo="ventas"></app-export-buttons>
+  </app-page-header>
   <p class="mb-3"><a routerLink="/ventas/pos" class="btn btn-ghost btn-sm">Abrir punto de venta</a></p>
   <app-filter-bar>
     <app-form-field label="Sede" inputId="ven-sede"><app-select inputId="ven-sede" [options]="sedes" placeholder="Todas" [formControl]="filtros.controls.sedeId"></app-select></app-form-field>

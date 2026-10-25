@@ -103,6 +103,25 @@
       </div>
     </article>
 
+    <article class="tile tile-analitica">
+      <div class="analitica-grid">
+        <div>
+          <header class="tile-head"><h2>Productos más vendidos</h2><span class="text-xs">Top 5</span></header>
+          <ol class="ranking">
+            <li *ngFor="let item of estrella"><span>{{ item.nombre }}</span><strong>{{ item.cantidadNeta ?? item.cantidadVendida ?? 0 }}</strong><small>{{ (item.ingresoNeto ?? 0) | pen }}</small></li>
+          </ol>
+          <p *ngIf="!estrella.length" class="text-muted">Sin ventas de productos en el periodo.</p>
+        </div>
+        <div>
+          <header class="tile-head"><h2>Rendimiento por vendedor</h2><span class="text-xs">Últimos 30 días</span></header>
+          <ol class="ranking">
+            <li *ngFor="let vendedor of vendedores"><span>{{ vendedor.vendedor }}</span><strong>{{ vendedor.ventas }}</strong><small>{{ (vendedor.total ?? 0) | pen }}</small></li>
+          </ol>
+          <p *ngIf="!vendedores.length" class="text-muted">Sin ventas por usuario en el periodo.</p>
+        </div>
+      </div>
+    </article>
+
     <app-facturacion-sunat class="tile-sunat" [sedeId]="sedeId"></app-facturacion-sunat>
   </div>
 </section>

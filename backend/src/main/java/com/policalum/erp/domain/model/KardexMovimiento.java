@@ -62,6 +62,14 @@ public class KardexMovimiento {
     @Column(name = "stock_resultante", nullable = false, precision = 12, scale = 4)
     private BigDecimal stockResultante;
 
+    /** Costo promedio ponderado del producto en el momento del movimiento. */
+    @Column(name = "costo_unitario", precision = 12, scale = 4)
+    private BigDecimal costoUnitario;
+
+    /** Precio de venta base del producto en el momento del movimiento. */
+    @Column(name = "precio_venta", precision = 12, scale = 2)
+    private BigDecimal precioVenta;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

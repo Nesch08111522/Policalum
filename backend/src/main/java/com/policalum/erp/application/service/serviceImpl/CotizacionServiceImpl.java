@@ -128,6 +128,18 @@ public class CotizacionServiceImpl implements CotizacionService {
     }
 
     @Override
+    public CotizacionResponseDTO marcarNoComprada(UUID id) {
+        Cotizacion cotizacion = obtener(id);
+        exigirEstado(cotizacion, EstadoCotizacion.EMITIDA, "marcar como no comprada");
+        exigirCreadorOAdmin(cotizacion);
+        cotizacion.setEstado(EstadoCotizacion.NO_COMPRADO);
+        cotizacion.setObservaciones((cotizacion.getObservaciones() == null ? "" : cotizacion.getObservaciones() + "\n") + "El cliente no compró. El stock no se movió.");
+        auditService.registrar("cotizaciones", id, AccionAudit.UPDATE, Map.of("operacion", "no_comprado"));
+        log.info("Cotización {} NO_COMPRADO", id);
+        return response(cotizacion);
+    }
+
+    @Override
     public VentaProcesadaResponseDTO convertir(UUID id, ConvertirCotizacionRequestDTO request) {
         Cotizacion cotizacion = obtener(id);
         exigirEstado(cotizacion, EstadoCotizacion.ACEPTADA, "convertir");

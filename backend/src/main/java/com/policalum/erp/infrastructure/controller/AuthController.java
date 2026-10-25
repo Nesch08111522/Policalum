@@ -5,6 +5,7 @@ package com.policalum.erp.infrastructure.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.policalum.erp.application.dto.request.LoginRequestDTO;
+import com.policalum.erp.application.dto.request.RefreshRequestDTO;
 import com.policalum.erp.application.dto.response.LoginResponseDTO;
 import com.policalum.erp.application.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +29,17 @@ public class AuthController {
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request, HttpServletRequest http) {
         LoginResponseDTO response = authService.login(request, ipDe(http));
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponseDTO> refresh(@Valid @RequestBody RefreshRequestDTO request) {
+        return ResponseEntity.ok(authService.refrescar(request.refreshToken()));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        authService.cerrarSesion();
+        return ResponseEntity.noContent().build();
     }
 
     static String ipDe(HttpServletRequest request) {

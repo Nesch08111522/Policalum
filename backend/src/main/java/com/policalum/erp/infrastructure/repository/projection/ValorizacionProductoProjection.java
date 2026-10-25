@@ -10,6 +10,7 @@ public interface ValorizacionProductoProjection {
     String getCodigoSku();
     String getUnidad();
     BigDecimal getCostoUnitario();
+    BigDecimal getPrecioVenta();
     BigDecimal getCantidad();
     Long getAlmacenes();
 }

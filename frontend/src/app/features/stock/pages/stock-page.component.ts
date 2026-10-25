@@ -1,13 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, effect, inject, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Routes } from '@angular/router';
+import { ActivatedRoute, Routes } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import * as Api from '../../../core/api/openapi.types';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ExportButtonsComponent } from '../../../shared/components/export-buttons/export-buttons.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { StatCardComponent } from '../../../shared/components/stat-card/stat-card.component';
@@ -25,7 +26,7 @@ import { StockApiService } from '../data-access/stock.api';
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-stock-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, FilterBarComponent, DataTableComponent, ModalComponent, FormFieldComponent, SelectComponent, StatCardComponent, TabsComponent, PenPipe],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, ExportButtonsComponent, FilterBarComponent, DataTableComponent, ModalComponent, FormFieldComponent, SelectComponent, StatCardComponent, TabsComponent, PenPipe],
   templateUrl: './stock-page.component.html',
   styleUrls: ['./stock-page.component.css'],
 })
@@ -58,7 +59,7 @@ export class StockPageComponent implements OnInit, OnDestroy {
   private omitirRevision = 0;
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: StockApiService, private readonly lookup: LookupService, private readonly inventario: InventarioSyncService, private readonly toast: ToastService) {
+  constructor(private readonly api: StockApiService, private readonly lookup: LookupService, private readonly inventario: InventarioSyncService, private readonly toast: ToastService, private readonly route: ActivatedRoute) {
     effect(() => {
       const revision = this.inventario.revision();
       untracked(() => {
@@ -69,6 +70,8 @@ export class StockPageComponent implements OnInit, OnDestroy {
     });
   }
   ngOnInit(): void {
+    const tab = this.route.snapshot.queryParamMap.get('tab');
+    if (tab === 'bajo' || tab === 'ajustes' || tab === 'transferencias' || tab === 'consolidado') this.tab = tab;
     this.cargar();
     this.lookup.loadProductos().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.productos = this.lookup.options(rows, (row) => (row as Api.ProductoResponseDTO).nombre ?? 'Producto'); });
     this.lookup.loadAlmacenes().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.almacenes = this.lookup.options(rows, (row) => (row as Api.AlmacenResponseDTO).nombre ?? 'Almacén'); });

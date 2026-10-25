@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { BreadcrumbsComponent } from '../shared/components/breadcrumbs/breadcrumbs.component';
+import { CajaGateService } from '../shared/services/caja-gate.service';
 import { LayoutService } from '../shared/services/layout.service';
 import { FooterComponent } from './components/footer/footer';
 import { HeaderComponent } from './components/header/header';
@@ -27,6 +28,10 @@ import { SidebarComponent } from './components/sidebar/sidebar';
     </div>
   `,
 })
-export class AuthenticatedLayoutComponent {
-  constructor(readonly layout: LayoutService) {}
+export class AuthenticatedLayoutComponent implements OnInit {
+  constructor(readonly layout: LayoutService, private readonly caja: CajaGateService) {}
+
+  ngOnInit(): void {
+    this.caja.vigilar();
+  }
 }

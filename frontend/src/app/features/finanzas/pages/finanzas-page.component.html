@@ -1,5 +1,7 @@
 <section class="module-page">
-  <app-page-header [title]="tab === 'cuentas' ? 'Cuentas financieras' : tab === 'retiros' ? 'Retiros de socios' : 'Finanzas'" [subtitle]="'KPIs, patrimonio, cuentas y retiros.'" [actionLabel]="tab === 'cuentas' ? 'Nueva cuenta' : tab === 'retiros' ? 'Registrar retiro' : ''" (action)="tab === 'cuentas' ? abrirCuenta() : abrirRetiro()"></app-page-header>
+  <app-page-header [title]="tab === 'cuentas' ? 'Cuentas financieras' : tab === 'retiros' ? 'Retiros de socios' : tab === 'gastos' ? 'Gastos empresariales' : 'Finanzas'" [subtitle]="'La utilidad resta nómina y gastos de local: alquiler, agua, luz y personal.'" [actionLabel]="tab === 'cuentas' ? 'Nueva cuenta' : tab === 'retiros' ? 'Registrar retiro' : tab === 'gastos' ? 'Registrar gasto' : ''" (action)="accionCabecera()">
+    <app-export-buttons modulo="gastos" [filtros]="textoFiltros"></app-export-buttons>
+  </app-page-header>
   <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
 
   <ng-container *ngIf="tab === 'resumen'">
@@ -18,12 +20,25 @@
       <app-stat-card label="Patrimonio" [value]="(patrimonio?.patrimonioNeto ?? 0) | pen" icon="building"></app-stat-card>
       <app-stat-card label="Inventario" [value]="(patrimonio?.inventarioValorizado ?? 0) | pen" icon="box"></app-stat-card>
       <app-stat-card label="Disponible" [value]="(patrimonio?.disponible ?? 0) | pen" icon="cash"></app-stat-card>
+      <app-stat-card label="Gastos empresariales" [value]="(utilidad?.gastosEmpresariales ?? 0) | pen" icon="building"></app-stat-card>
     </div>
     <article class="card card-body">
       <h2>Utilidad mensual</h2>
       <app-bar-chart [points]="puntos" label="Utilidad neta por mes"></app-bar-chart>
-      <p class="text-sm">Utilidad operativa {{ (utilidad?.utilidadOperativa ?? 0) | pen }} · Margen {{ utilidad?.margenNetoPorcentaje ?? 0 }}%</p>
+      <p class="text-sm">Bruta {{ (utilidad?.utilidadBruta ?? 0) | pen }} · Nómina {{ (utilidad?.gastosOperativos ?? 0) | pen }} · Local y personal {{ (utilidad?.gastosEmpresariales ?? 0) | pen }} · Operativa {{ (utilidad?.utilidadOperativa ?? 0) | pen }} · Margen {{ utilidad?.margenNetoPorcentaje ?? 0 }}%</p>
     </article>
+  </ng-container>
+
+  <ng-container *ngIf="tab === 'gastos'">
+    <app-filter-bar>
+      <app-form-field label="Sede" inputId="gas-sede"><app-select inputId="gas-sede" [options]="sedes" placeholder="Consolidado" [formControl]="periodo.controls.sedeId"></app-select></app-form-field>
+      <app-form-field label="Desde" inputId="gas-desde"><input id="gas-desde" class="input" type="date" [formControl]="periodo.controls.desde" /></app-form-field>
+      <app-form-field label="Hasta" inputId="gas-hasta"><input id="gas-hasta" class="input" type="date" [formControl]="periodo.controls.hasta" /></app-form-field>
+      <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="cargarGastos()">Filtrar</button></div>
+    </app-filter-bar>
+    <app-data-table [columns]="columnasGastos" [rows]="gastos.rows" [loading]="gastos.loading" [error]="gastos.error" [status]="gastos.status" [page]="gastos.page" [size]="gastos.size" [totalElements]="gastos.totalElements" [totalPages]="gastos.totalPages" emptyTitle="No hay gastos" emptyMessage="Registra alquiler, agua, luz, personal u otro gasto del periodo." emptyAction="Registrar gasto" (pageChange)="cambiarPaginaGastos($event)" (sizeChange)="cambiarTamanoGastos($event)" (retry)="cargarGastos()" (empty)="abrirGasto()">
+      <ng-template #rowActions let-row><button type="button" class="btn btn-danger btn-sm" (click)="anularGasto(row)">Anular</button></ng-template>
+    </app-data-table>
   </ng-container>
 
   <app-data-table *ngIf="tab === 'cuentas'" [columns]="columnasCuentas" [rows]="cuentasState.rows" [loading]="cuentasState.loading" [error]="cuentasState.error" [status]="cuentasState.status" [totalElements]="cuentasState.totalElements" [totalPages]="cuentasState.totalPages" emptyTitle="No hay cuentas" emptyMessage="Registra efectivo, bancos o billeteras." emptyAction="Nueva cuenta" (retry)="cargarCuentas()" (empty)="abrirCuenta()">
@@ -85,3 +100,14 @@
   <div modalFooter><button type="button" class="btn btn-ghost" (click)="modalAnular = false">Cancelar</button><button type="button" class="btn btn-danger" (click)="anularRetiro()" [disabled]="anularForm.invalid || guardando">Anular</button></div>
 </app-modal>
 <app-confirm-dialog [open]="confirmar" title="Eliminar cuenta" message="La cuenta dejará de estar disponible para nuevos movimientos." confirmLabel="Eliminar" [loading]="guardando" (confirm)="eliminarCuenta()" (cancel)="confirmar = false"></app-confirm-dialog>
+
+<app-modal [open]="modalGasto" title="Gasto empresarial" (closed)="modalGasto = false">
+  <form class="form-grid" [formGroup]="gastoForm">
+    <app-form-field label="Tipo" inputId="gas-tipo" [required]="true"><select id="gas-tipo" class="select" formControlName="tipo"><option value="ALQUILER">Alquiler de local</option><option value="AGUA">Agua</option><option value="LUZ">Luz</option><option value="PERSONAL">Personal</option><option value="OTRO">Otro</option></select></app-form-field>
+    <app-form-field label="Monto" inputId="gas-mon" [required]="true"><input id="gas-mon" class="input" type="number" min="0.01" step="0.01" formControlName="monto" /></app-form-field>
+    <app-form-field label="Fecha" inputId="gas-fecha" [required]="true"><input id="gas-fecha" class="input" type="date" formControlName="fecha" /></app-form-field>
+    <app-form-field label="Sede" inputId="gas-f-sede"><app-select inputId="gas-f-sede" [options]="sedes" placeholder="Opcional" formControlName="sedeId"></app-select></app-form-field>
+    <app-form-field class="span-2" label="Descripción" inputId="gas-desc"><input id="gas-desc" class="input" formControlName="descripcion" /></app-form-field>
+  </form>
+  <div modalFooter><button type="button" class="btn btn-ghost" (click)="modalGasto = false">Cancelar</button><button type="button" class="btn btn-primary" (click)="guardarGasto()" [disabled]="gastoForm.invalid || guardando">Registrar</button></div>
+</app-modal>

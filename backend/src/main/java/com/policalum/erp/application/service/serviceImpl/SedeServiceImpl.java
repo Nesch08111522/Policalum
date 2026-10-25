@@ -44,6 +44,7 @@ public class SedeServiceImpl implements SedeService {
     }
 
     @Override
+    @org.springframework.cache.annotation.Cacheable(value = "sedes", key = "#activa + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<SedeResponseDTO> listarPorEstado(Boolean activa, Pageable pageable) {
         return sedeRepository.findByActiva(activa, pageable)
                 .map(sedeMapper::toResponseDto);

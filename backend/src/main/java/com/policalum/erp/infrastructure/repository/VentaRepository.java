@@ -20,6 +20,14 @@ import org.springframework.data.repository.query.Param;
 
 public interface VentaRepository extends JpaRepository<Venta, UUID> {
 
+    @Query("SELECT u.nombre, u.apellido, COUNT(v), COALESCE(SUM(v.total), 0) " +
+            "FROM Venta v JOIN v.user u WHERE v.estado = com.policalum.erp.domain.enums.EstadoVenta.COMPLETADA " +
+            "AND v.createdAt >= :desde AND v.createdAt < :hasta " +
+            "GROUP BY u.id, u.nombre, u.apellido ORDER BY SUM(v.total) DESC")
+    java.util.List<Object[]> rendimientoVendedores(@Param("desde") java.time.LocalDateTime desde,
+                                                    @Param("hasta") java.time.LocalDateTime hasta,
+                                                    org.springframework.data.domain.Pageable pageable);
+
     /** Módulo 17: FOR UPDATE para que devoluciones/anulación concurrentes no se pisen. */
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("select v from Venta v where v.id = :id")

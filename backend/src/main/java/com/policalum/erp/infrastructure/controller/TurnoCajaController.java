@@ -3,8 +3,13 @@ package com.policalum.erp.infrastructure.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.policalum.erp.application.dto.request.AperturaCajaRequestDTO;
 import com.policalum.erp.application.dto.request.CierreCajaRequestDTO;
+import com.policalum.erp.application.dto.request.CajaChicaRequestDTO;
+import com.policalum.erp.application.dto.response.CajaChicaResponseDTO;
 import com.policalum.erp.application.dto.response.ResumenCierreCajaDTO;
+import com.policalum.erp.application.dto.response.TurnoAbiertoResponseDTO;
 import com.policalum.erp.application.dto.response.TurnoCajaResponseDTO;
+import com.policalum.erp.application.service.serviceImpl.CajaChicaServiceImpl;
+import java.util.List;
 import com.policalum.erp.application.service.TurnoCajaService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -20,6 +25,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RequiredArgsConstructor
 public class TurnoCajaController {
     private final TurnoCajaService turnoService;
+    private final CajaChicaServiceImpl cajaChicaService;
+    @GetMapping("/abierto") public ResponseEntity<TurnoAbiertoResponseDTO> abierto() { return ResponseEntity.ok(turnoService.turnoAbierto()); }
+    @GetMapping("/{id}/caja-chica") public ResponseEntity<List<CajaChicaResponseDTO>> listarCajaChica(@PathVariable UUID id) { return ResponseEntity.ok(cajaChicaService.listar(id)); }
+    @PostMapping("/{id}/caja-chica") public ResponseEntity<CajaChicaResponseDTO> registrarCajaChica(@PathVariable UUID id, @Valid @RequestBody CajaChicaRequestDTO request) { return ResponseEntity.ok(cajaChicaService.registrar(id, request)); }
     @PostMapping
     public ResponseEntity<TurnoCajaResponseDTO> abrir(@Valid @RequestBody AperturaCajaRequestDTO request) {
         TurnoCajaResponseDTO turno = turnoService.abrir(request);

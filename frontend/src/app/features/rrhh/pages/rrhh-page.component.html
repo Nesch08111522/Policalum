@@ -1,5 +1,7 @@
 <section class="module-page">
-  <app-page-header title="Recursos humanos" subtitle="Legajos, asistencia, turnos, nómina y comisiones." [actionLabel]="accionLabel()" (action)="abrirCrear()"></app-page-header>
+  <app-page-header title="Recursos humanos" subtitle="Legajos, asistencia, turnos, nómina y comisiones." [actionLabel]="accionLabel()" (action)="abrirCrear()">
+    <app-export-buttons modulo="rrhh"></app-export-buttons>
+  </app-page-header>
   <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
   <div class="stats-grid" *ngIf="tab === 'asistencias' && asistenciaDash">
     <app-stat-card label="Presentes" [value]="asistenciaDash.presentesHoy ?? 0" icon="check"></app-stat-card>

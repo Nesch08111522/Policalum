@@ -35,6 +35,7 @@ class UtilidadNetaServiceImplTest {
     @Mock UserRepository userRepository;
     @Mock DevolucionRepository devolucionRepository;
     @Mock KardexRepository kardexRepository;
+    @Mock GastoEmpresarialRepository gastoRepository;
     @InjectMocks UtilidadNetaServiceImpl service;
 
     private static final String EMAIL = "admin@policalum.com";

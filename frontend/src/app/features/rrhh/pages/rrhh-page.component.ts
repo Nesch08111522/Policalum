@@ -8,6 +8,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ExportButtonsComponent } from '../../../shared/components/export-buttons/export-buttons.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { StatCardComponent } from '../../../shared/components/stat-card/stat-card.component';
@@ -25,7 +26,7 @@ import { RrhhApiService } from '../data-access/rrhh.api';
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-rrhh-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, TabsComponent, FilterBarComponent, DataTableComponent, ModalComponent, FormFieldComponent, SelectComponent, StatCardComponent, ConfirmDialogComponent],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, ExportButtonsComponent, TabsComponent, FilterBarComponent, DataTableComponent, ModalComponent, FormFieldComponent, SelectComponent, StatCardComponent, ConfirmDialogComponent],
   templateUrl: './rrhh-page.component.html',
   styleUrls: ['./rrhh-page.component.css'],
 })

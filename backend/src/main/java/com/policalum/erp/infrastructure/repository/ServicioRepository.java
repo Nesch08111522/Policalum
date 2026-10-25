@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 @Repository
 public interface ServicioRepository extends JpaRepository<Servicio, UUID> {
+    java.util.Optional<Servicio> findByNombreIgnoreCase(String nombre);
     /**
      * Valida si existe un servicio con el mismo nombre para evitar duplicados.
      */

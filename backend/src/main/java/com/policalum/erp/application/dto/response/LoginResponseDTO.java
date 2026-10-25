@@ -8,5 +8,6 @@ public record LoginResponseDTO(
         String nombre,
         String email,
         String rol,
-        boolean totpConfigurado
+        boolean totpConfigurado,
+        String refreshToken
 ) {}

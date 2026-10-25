@@ -1,0 +1,25 @@
+<section class="module-page">
+  <app-page-header title="Notificaciones" subtitle="Alertas de stock mínimo y crítico. Las pasadas siguen visibles y se borran de forma permanente a los 30 días."></app-page-header>
+  <div class="cluster">
+    <button type="button" class="btn btn-ghost btn-sm" [class.btn-primary]="filtro === 'todas'" (click)="filtro = 'todas'">Todas</button>
+    <button type="button" class="btn btn-ghost btn-sm" [class.btn-primary]="filtro === 'nuevas'" (click)="filtro = 'nuevas'">Nuevas</button>
+    <button type="button" class="btn btn-ghost btn-sm" [class.btn-primary]="filtro === 'pasadas'" (click)="filtro = 'pasadas'">Pasadas</button>
+    <button type="button" class="btn btn-ghost btn-sm" (click)="leerTodas()">Marcar leídas</button>
+  </div>
+  <p *ngIf="cargando" class="text-muted">Cargando notificaciones…</p>
+  <p *ngIf="!cargando && !visibles.length" class="text-muted">No hay notificaciones en esta vista.</p>
+  <article class="aviso-card" *ngFor="let aviso of visibles" [class.pasada]="aviso.eliminada || aviso.leida">
+    <div>
+      <p class="tipo">{{ aviso.tipo === 'STOCK_CRITICO' ? 'Stock crítico' : 'Stock mínimo' }} <span *ngIf="aviso.eliminada">· pasada</span><span *ngIf="aviso.leida && !aviso.eliminada">· leída</span></p>
+      <h2>{{ aviso.titulo }}</h2>
+      <p>{{ aviso.detalle }}</p>
+      <p class="fecha" *ngIf="aviso.createdAt">{{ aviso.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+    </div>
+    <div class="cluster">
+      <button type="button" class="btn btn-primary btn-sm" (click)="abrir(aviso)">Ir al problema</button>
+      <button type="button" class="btn btn-ghost btn-sm" *ngIf="!aviso.leida" (click)="leida(aviso)">Marcar leída</button>
+      <button type="button" class="btn btn-ghost btn-sm" *ngIf="!aviso.eliminada" (click)="archivar(aviso)">Borrar</button>
+    </div>
+  </article>
+  <p class="text-sm text-muted">También puedes volver al <a routerLink="/inicio">panel</a>.</p>
+</section>

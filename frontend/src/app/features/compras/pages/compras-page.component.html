@@ -1,5 +1,7 @@
 <section class="module-page">
-  <app-page-header title="Compras" subtitle="Al registrar una compra entran juntos el stock del almacén, el kardex y la cuenta por pagar." actionLabel="Nueva compra" (action)="abrirCrear()"></app-page-header>
+  <app-page-header title="Compras" subtitle="Al registrar una compra entran juntos el stock del almacén, el kardex y la cuenta por pagar." actionLabel="Nueva compra" (action)="abrirCrear()">
+    <app-export-buttons modulo="compras"></app-export-buttons>
+  </app-page-header>
   <div class="stats-grid" *ngIf="dashboard">
     <app-stat-card label="Registradas" [value]="dash('totalCompras')" icon="truck"></app-stat-card>
     <app-stat-card label="Borradores" [value]="dash('comprasBorrador')" icon="file"></app-stat-card>

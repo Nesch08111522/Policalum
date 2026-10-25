@@ -31,6 +31,7 @@ class TurnoCajaServiceImplTest {
     @Mock SedeRepository sedeRepository;
     @Mock UserRepository userRepository;
     @Mock PagoVentaRepository pagoRepository;
+    @Mock MovimientoCajaChicaRepository cajaChicaRepository;
     @Mock TurnoCajaMapper mapper;
     @InjectMocks TurnoCajaServiceImpl service;
 

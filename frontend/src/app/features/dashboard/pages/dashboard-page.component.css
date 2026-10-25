@@ -10,6 +10,7 @@
   grid-template-areas:
     "utilidad inventario ventas"
     "rendimiento kardex atajos"
+    "analitica analitica analitica"
     "sunat sunat sunat";
   gap: 12px;
 }
@@ -17,7 +18,12 @@
 .tile-rendimiento { grid-area: rendimiento; }
 .tile-kardex { grid-area: kardex; }
 .tile-atajos { grid-area: atajos; }
+.tile-analitica { grid-area: analitica; }
 .tile-sunat { grid-area: sunat; }
+.analitica-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ranking { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.ranking li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; }
+.ranking small { color: var(--color-text-muted); }
 .panel-grid > .tile:nth-child(2) { grid-area: inventario; }
 .panel-grid > .tile:nth-child(3) { grid-area: ventas; }
 
@@ -93,6 +99,7 @@
       "inventario ventas"
       "rendimiento kardex"
       "atajos atajos"
+      "analitica analitica"
       "sunat sunat";
   }
 }
@@ -100,7 +107,7 @@
   .panel-grid {
     grid-template-columns: 1fr;
     grid-template-areas:
-      "utilidad" "inventario" "ventas" "rendimiento" "kardex" "atajos" "sunat";
+      "utilidad" "inventario" "ventas" "rendimiento" "kardex" "atajos" "analitica" "sunat";
   }
-  .mini-grid, .rendimiento, .atajos { grid-template-columns: 1fr; }
+  .mini-grid, .rendimiento, .atajos, .analitica-grid { grid-template-columns: 1fr; }
 }

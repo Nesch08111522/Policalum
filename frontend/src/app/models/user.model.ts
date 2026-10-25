@@ -23,6 +23,7 @@ export interface LoginResponse {
   email: string;
   rol: UserRole;
   totpConfigurado: boolean;
+  refreshToken?: string;
 }
 
 // ✅ AGREGAR ESTO

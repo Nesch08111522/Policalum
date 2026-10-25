@@ -11,6 +11,7 @@ import java.util.UUID;
  * ventasNetasReales  = ventasNetas - devolucionesNetas
  * utilidadBruta      = ventasNetasReales - comprasNetas
  * gastosOperativos   = nóminas PAGADAS del periodo
+ * gastosEmpresariales = alquiler, agua, luz, personal y otros del periodo
  * utilidadOperativa  = utilidadBruta - gastosOperativos
  * utilidadNetaReal   = utilidadOperativa
  * margenNeto         = utilidadNetaReal / ventasNetasReales
@@ -48,5 +49,7 @@ public record UtilidadNetaResponseDTO(
         BigDecimal retirosSocios,
         BigDecimal saldoTrasRetiros,
 
-        BigDecimal valorMermas
+        BigDecimal valorMermas,
+        BigDecimal gastosEmpresariales,
+        long cantidadGastosEmpresariales
 ) { }

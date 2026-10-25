@@ -30,6 +30,9 @@ public interface KardexConsultaMapper {
     @Mapping(target = "stockAnterior", expression = "java(stockAnterior(entity))")
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "userNombre", expression = "java(nombreCompleto(entity.getUser()))")
+    @Mapping(target = "costoUnitario", expression = "java(costoDe(entity))")
+    @Mapping(target = "precioVenta", expression = "java(ventaDe(entity))")
+    @Mapping(target = "margenUnitario", expression = "java(margenDe(entity))")
     KardexMovimientoDetalleDTO toDetalleDto(KardexMovimiento entity);
 
     @Mapping(target = "movimientoId", source = "id")
@@ -50,6 +53,20 @@ public interface KardexConsultaMapper {
     @Mapping(target = "cantidad", expression = "java(cero(p.getCantidad()))")
     @Mapping(target = "bajoMinimo", expression = "java(bajoMinimo(p))")
     SaldoKardexDTO toSaldoDto(SaldoProductoAlmacenProjection p);
+
+    default BigDecimal costoDe(KardexMovimiento k) {
+        if (k.getCostoUnitario() != null) return k.getCostoUnitario();
+        return k.getProducto() == null ? BigDecimal.ZERO : cero(k.getProducto().getPrecioCompra());
+    }
+
+    default BigDecimal ventaDe(KardexMovimiento k) {
+        if (k.getPrecioVenta() != null) return k.getPrecioVenta();
+        return k.getProducto() == null ? BigDecimal.ZERO : cero(k.getProducto().getPrecioVentaBase());
+    }
+
+    default BigDecimal margenDe(KardexMovimiento k) {
+        return ventaDe(k).subtract(costoDe(k)).setScale(2, RoundingMode.HALF_UP);
+    }
 
     default BigDecimal stockAnterior(KardexMovimiento k) {
         if (k.getStockResultante() == null || k.getCantidadMovida() == null) return null;

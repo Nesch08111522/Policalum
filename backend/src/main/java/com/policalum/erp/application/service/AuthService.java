@@ -3,17 +3,24 @@ package com.policalum.erp.application.service;
 
 import com.policalum.erp.application.dto.request.LoginRequestDTO;
 import com.policalum.erp.application.dto.response.LoginResponseDTO;
+import com.policalum.erp.domain.model.RefreshToken;
 import com.policalum.erp.domain.model.User;
+import com.policalum.erp.infrastructure.repository.RefreshTokenRepository;
 import com.policalum.erp.infrastructure.repository.UserRepository;
 import com.policalum.erp.infrastructure.security.JwtUtil;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.LocalDateTime;
+import java.util.HexFormat;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +29,12 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final RefreshTokenRepository refreshTokenRepository;
 
-    // ✅ MÉTODO LOGIN
+    @Value("${jwt.refresh-expiration:1209600000}")
+    private long refreshExpiration;
+
+    @Transactional
     public LoginResponseDTO login(LoginRequestDTO request, String ip) {
         // 1. Buscar usuario por email
         User user = userRepository.findByEmail(request.email())
@@ -41,18 +52,68 @@ public class AuthService {
         if (ip != null && !ip.isBlank()) user.setUltimoIp(ip.length() > 45 ? ip.substring(0, 45) : ip);
         userRepository.save(user);
 
-        // 4. Generar token JWT
-        String token = jwtUtil.generateToken(user);
+        return respuesta(user);
+    }
 
-        // 5. Retornar respuesta exitosa
+    @Transactional
+    public LoginResponseDTO refrescar(String refreshToken) {
+        RefreshToken guardado = refreshTokenRepository.findByTokenHash(hash(refreshToken))
+                .orElseThrow(() -> new BadCredentialsException("La sesión ya no es válida. Vuelve a iniciar sesión."));
+        if (guardado.isRevocado() || guardado.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new BadCredentialsException("La sesión expiró. Vuelve a iniciar sesión.");
+        }
+        User user = userRepository.findById(guardado.getUserId())
+                .orElseThrow(() -> new BadCredentialsException("La sesión ya no es válida. Vuelve a iniciar sesión."));
+        int version = user.getSesionVersion() == null ? 0 : user.getSesionVersion();
+        if (!user.getActivo() || version != guardado.getSesionVersion()) {
+            guardado.setRevocado(true);
+            throw new AccessDeniedException("La sesión fue cerrada. Vuelve a iniciar sesión.");
+        }
+        guardado.setRevocado(true);
+        return respuesta(user);
+    }
+
+    @Transactional
+    public void cerrarSesion() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) return;
+        userRepository.findByEmailAndActivoTrue(auth.getName()).ifPresent(user -> refreshTokenRepository.revocarDe(user.getId()));
+    }
+
+    private LoginResponseDTO respuesta(User user) {
+        String token = jwtUtil.generateToken(user);
+        String refresh = emitirRefresh(user);
         return new LoginResponseDTO(
                 token,
                 user.getId(),
                 user.getNombre() + " " + user.getApellido(),
                 user.getEmail(),
                 user.getRol().getNombre().name(),
-                user.getTotpEnabled() != null && user.getTotpEnabled()
+                user.getTotpEnabled() != null && user.getTotpEnabled(),
+                refresh
         );
+    }
+
+    private String emitirRefresh(User user) {
+        String raw = UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "");
+        RefreshToken token = RefreshToken.builder()
+                .userId(user.getId())
+                .tokenHash(hash(raw))
+                .sesionVersion(user.getSesionVersion() == null ? 0 : user.getSesionVersion())
+                .expiresAt(LocalDateTime.now().plusSeconds(Math.max(refreshExpiration, 1000) / 1000))
+                .revocado(false)
+                .build();
+        refreshTokenRepository.save(token);
+        return raw;
+    }
+
+    private static String hash(String raw) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(raw.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (Exception e) {
+            throw new IllegalStateException("No se pudo proteger el token de refresco", e);
+        }
     }
 
     // ✅ Método para validar si un usuario está activo

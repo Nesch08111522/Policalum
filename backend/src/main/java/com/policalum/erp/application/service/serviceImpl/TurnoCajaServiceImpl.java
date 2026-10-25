@@ -3,15 +3,18 @@ package com.policalum.erp.application.service.serviceImpl;
 import com.policalum.erp.application.dto.request.AperturaCajaRequestDTO;
 import com.policalum.erp.application.dto.request.CierreCajaRequestDTO;
 import com.policalum.erp.application.dto.response.ResumenCierreCajaDTO;
+import com.policalum.erp.application.dto.response.TurnoAbiertoResponseDTO;
 import com.policalum.erp.application.dto.response.TurnoCajaResponseDTO;
 import com.policalum.erp.application.mapper.TurnoCajaMapper;
 import com.policalum.erp.application.service.TurnoCajaService;
 import com.policalum.erp.domain.enums.EstadoTurno;
 import com.policalum.erp.domain.enums.MetodoPago;
+import com.policalum.erp.domain.enums.TipoCajaChica;
 import com.policalum.erp.domain.model.Sede;
 import com.policalum.erp.domain.model.TurnoCaja;
 import com.policalum.erp.domain.model.User;
 import com.policalum.erp.exception.ResourceNotFoundException;
+import com.policalum.erp.infrastructure.repository.MovimientoCajaChicaRepository;
 import com.policalum.erp.infrastructure.repository.PagoVentaRepository;
 import com.policalum.erp.infrastructure.repository.SedeRepository;
 import com.policalum.erp.infrastructure.repository.TurnoCajaRepository;
@@ -33,6 +36,7 @@ public class TurnoCajaServiceImpl implements TurnoCajaService {
     private final SedeRepository sedeRepository;
     private final UserRepository userRepository;
     private final PagoVentaRepository pagoRepository;
+    private final MovimientoCajaChicaRepository cajaChicaRepository;
     private final TurnoCajaMapper mapper;
 
     @Override @Transactional
@@ -69,12 +73,22 @@ public class TurnoCajaServiceImpl implements TurnoCajaService {
         return construirResumen(turno, turno.getMontoFinalDeclarado());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public TurnoAbiertoResponseDTO turnoAbierto() {
+        return turnoRepository.abiertosDe(usuarioActual().getId()).stream().findFirst()
+                .map(turno -> new TurnoAbiertoResponseDTO(true, mapper.toResponseDto(turno)))
+                .orElseGet(() -> new TurnoAbiertoResponseDTO(false, null));
+    }
+
     private ResumenCierreCajaDTO construirResumen(TurnoCaja turno, BigDecimal declarado) {
         BigDecimal efectivo = pagoRepository.sumMontoByTurnoAndMetodo(turno.getId(), MetodoPago.EFECTIVO);
         if (efectivo == null) efectivo = BigDecimal.ZERO;
         BigDecimal retiros = turno.getTotalRetirosSociosSeguro();
         BigDecimal reembolsos = turno.getTotalReembolsosSeguro();
-        BigDecimal esperado = turno.getMontoInicial().add(efectivo).subtract(retiros).subtract(reembolsos);
+        BigDecimal ingresosChica = cero(cajaChicaRepository.sumar(turno.getId(), TipoCajaChica.INGRESO));
+        BigDecimal egresosChica = cero(cajaChicaRepository.sumar(turno.getId(), TipoCajaChica.EGRESO));
+        BigDecimal esperado = turno.getMontoInicial().add(efectivo).add(ingresosChica).subtract(retiros).subtract(reembolsos).subtract(egresosChica);
 
         if (esperado.signum() < 0) {
             log.warn("Turno {} cerrado con efectivo esperado NEGATIVO: S/ {}. " +
@@ -93,6 +107,10 @@ public class TurnoCajaServiceImpl implements TurnoCajaService {
         if (!turno.getUser().getId().equals(usuarioActual().getId())) throw new IllegalStateException("Solo el responsable puede cerrar el turno");
         return turno;
     }
+    private static BigDecimal cero(BigDecimal valor) {
+        return valor == null ? BigDecimal.ZERO : valor;
+    }
+
     private User usuarioActual() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmailAndActivoTrue(email).orElseThrow(() -> new IllegalStateException("Usuario autenticado no válido"));

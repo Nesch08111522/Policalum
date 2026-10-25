@@ -15,7 +15,10 @@ export interface NavSection {
 const admin = ['ROLE_ADMIN'];
 
 export const NAV_SECTIONS: NavSection[] = [
-  { id: 'inicio', label: 'Inicio', items: [{ id: 'dashboard', label: 'Panel', path: '/inicio', icon: 'home' }] },
+  { id: 'inicio', label: 'Inicio', items: [
+    { id: 'dashboard', label: 'Panel', path: '/inicio', icon: 'home' },
+    { id: 'notificaciones', label: 'Notificaciones', path: '/modules/notificaciones', icon: 'bell' },
+  ] },
   {
     id: 'ventas',
     label: 'Ventas',

@@ -11,6 +11,7 @@ import com.policalum.erp.application.dto.response.CotizacionListadoDTO;
 import com.policalum.erp.application.dto.response.CotizacionResponseDTO;
 import com.policalum.erp.application.dto.response.VentaProcesadaResponseDTO;
 import com.policalum.erp.application.service.CotizacionService;
+import com.policalum.erp.application.service.serviceImpl.CotizacionDocumentoService;
 import com.policalum.erp.domain.enums.EstadoCotizacion;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -26,6 +27,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @Tag(name = "Cotizaciones")
@@ -34,6 +36,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RequiredArgsConstructor
 public class CotizacionController {
     private final CotizacionService cotizacionService;
+    private final CotizacionDocumentoService cotizacionDocumento;
 
     /** Creates an issued quotation with server-calculated amounts. */
     @Operation(summary = "Crear cotización", description = "Emite una cotización (EMITIDA) con montos calculados en el servidor. Sin fecha de vigencia se usa la de Configuración > ventas (15 días por defecto).")
@@ -93,6 +96,8 @@ public class CotizacionController {
             @ApiResponse(responseCode = "409", description = "Estado inválido")
     })
     @PostMapping("/{id}/rechazar") @PreAuthorize("hasAnyRole('ADMIN', 'MULTIFUNCIONAL')") public ResponseEntity<CotizacionResponseDTO> rechazar(@PathVariable UUID id, @Valid @RequestBody RechazarCotizacionRequestDTO request) { return ResponseEntity.ok(cotizacionService.rechazar(id, request)); }
+    @PostMapping("/{id}/no-comprada") @PreAuthorize("hasAnyRole('ADMIN', 'MULTIFUNCIONAL')") public ResponseEntity<CotizacionResponseDTO> noComprada(@PathVariable UUID id) { return ResponseEntity.ok(cotizacionService.marcarNoComprada(id)); }
+    @GetMapping("/{id}/documento") public ResponseEntity<byte[]> documento(@PathVariable UUID id, @RequestParam(defaultValue = "pdf") String formato) { return cotizacionDocumento.descargar(id, formato); }
     /** Converts an accepted quotation to the protected POS flow. */
     @Operation(summary = "Convertir en venta", description = "ACEPTADA → CONVERTIDA: registra la venta con el turno de caja abierto del usuario (mismas reglas que POST /ventas).")
     @ApiResponses({

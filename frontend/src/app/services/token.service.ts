@@ -5,6 +5,7 @@ import { User, UserRole } from '../models/user.model';
 @Injectable({ providedIn: 'root' })
 export class TokenService {
   private readonly tokenKey = 'auth_token';
+  private readonly refreshKey = 'auth_refresh';
   private readonly userKey = 'user_data';
   readonly session = signal<User | null>(null);
 
@@ -18,6 +19,15 @@ export class TokenService {
 
   getToken(): string | null {
     return typeof localStorage === 'undefined' ? null : localStorage.getItem(this.tokenKey);
+  }
+
+  setRefresh(token: string | undefined): void {
+    if (!token || typeof localStorage === 'undefined') return;
+    localStorage.setItem(this.refreshKey, token);
+  }
+
+  getRefresh(): string | null {
+    return typeof localStorage === 'undefined' ? null : localStorage.getItem(this.refreshKey);
   }
 
   setUser(user: User): void {
@@ -65,6 +75,7 @@ export class TokenService {
   clearStorage(): void {
     if (typeof localStorage === 'undefined') return;
     localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.refreshKey);
     localStorage.removeItem(this.userKey);
     this.session.set(null);
   }

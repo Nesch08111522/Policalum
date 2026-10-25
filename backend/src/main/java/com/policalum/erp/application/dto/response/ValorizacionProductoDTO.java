@@ -13,4 +13,6 @@ public record ValorizacionProductoDTO(
         BigDecimal costoUnitario,
         BigDecimal valorTotal,
         BigDecimal porcentajeDelTotal,
-        long almacenes) { }
+        long almacenes,
+        BigDecimal precioVenta,
+        BigDecimal gananciaEstimada) { }

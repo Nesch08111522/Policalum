@@ -1,5 +1,7 @@
 <section class="module-page">
-  <app-page-header title="Stock" subtitle="Existencias, ajustes firmados y transferencias entre almacenes."></app-page-header>
+  <app-page-header title="Stock" subtitle="Existencias, ajustes firmados y transferencias entre almacenes.">
+    <app-export-buttons modulo="stock"></app-export-buttons>
+  </app-page-header>
   <div class="stats-grid" *ngIf="dashboard">
     <app-stat-card label="Valor de inventario" [value]="(dashboard.valorInventario | pen)" icon="box"></app-stat-card>
     <app-stat-card label="Bajo mínimo" [value]="dashboard.alertasBajoMinimo ?? 0" icon="alert"></app-stat-card>

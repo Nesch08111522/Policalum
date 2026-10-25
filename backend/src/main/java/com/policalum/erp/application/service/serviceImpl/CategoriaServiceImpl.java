@@ -32,6 +32,7 @@ public class CategoriaServiceImpl implements CategoriaService {
     private final CategoriaMapper categoriaMapper;
 
     @Override
+    @org.springframework.cache.annotation.CacheEvict(value = "categorias", allEntries = true)
     public CategoriaResponseDTO create(CategoriaRequestDTO requestDTO) {
         validateSlugAvailability(requestDTO.slug(), null);
         Categoria categoria = categoriaMapper.toEntity(requestDTO);
@@ -69,6 +70,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 
     @Override
     @Transactional(readOnly = true)
+    @org.springframework.cache.annotation.Cacheable("categorias")
     public List<CategoriaResponseDTO> findRoots() {
         return categoriaRepository.findByParentIsNullOrderByNombreAsc().stream()
                 .map(categoriaMapper::toResponseDto)

@@ -29,4 +29,7 @@ public record KardexMovimientoDetalleDTO(
         BigDecimal stockResultante,
         UUID userId,
         String userNombre,
-        String observacion) { }
+        String observacion,
+        BigDecimal costoUnitario,
+        BigDecimal precioVenta,
+        BigDecimal margenUnitario) { }
