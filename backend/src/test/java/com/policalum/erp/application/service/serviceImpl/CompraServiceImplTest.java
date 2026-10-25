@@ -120,8 +120,9 @@ class CompraServiceImplTest {
 
     private Compra compraGuardada() {
         ArgumentCaptor<Compra> captor = ArgumentCaptor.forClass(Compra.class);
-        verify(compraRepository).save(captor.capture());
-        return captor.getValue();
+        verify(compraRepository, atLeastOnce()).save(captor.capture());
+        List<Compra> guardadas = captor.getAllValues();
+        return guardadas.get(guardadas.size() - 1);
     }
 
     // ---------------------------------------------------------------- crear
@@ -137,15 +138,34 @@ class CompraServiceImplTest {
         assertEquals(new BigDecimal("1000.00"), c.getSubtotalNeto());
         assertEquals(new BigDecimal("180.00"), c.getTotalIgv());
         assertEquals(new BigDecimal("1180.00"), c.getTotal());
-        assertEquals(EstadoCompra.BORRADOR, c.getEstadoCompra());
-        assertEquals(EstadoRecepcion.PENDIENTE, c.getEstadoRecepcion());
+        assertEquals(EstadoCompra.RECIBIDA, c.getEstadoCompra());
+        assertEquals(EstadoRecepcion.RECIBIDO, c.getEstadoRecepcion());
+        assertEquals(EstadoPago.PENDIENTE, c.getEstadoPago());
         assertEquals(Moneda.PEN, c.getMoneda());
         assertSame(admin, c.getUser());
         DetalleCompra d = c.getDetalles().get(0);
         assertEquals(new BigDecimal("100.0000"), d.getValorUnitarioNeto());
         assertEquals(new BigDecimal("18.00"), d.getPorcentajeIgv());
-        assertEquals(BigDecimal.ZERO, d.getCantidadRecibida());
+        assertEquals(new BigDecimal("10"), d.getCantidadRecibida());
         assertSame(c, d.getCompra());
+
+        ArgumentCaptor<KardexMovimientoRequestDTO> kardex = ArgumentCaptor.forClass(KardexMovimientoRequestDTO.class);
+        verify(kardexService).registrarMovimiento(kardex.capture());
+        assertEquals(TipoMovimiento.ENTRADA, kardex.getValue().tipoMovimiento());
+        assertEquals(TipoReferencia.COMPRA, kardex.getValue().tipoReferencia());
+        assertEquals(new BigDecimal("10"), kardex.getValue().cantidadMovida());
+        assertEquals(c.getId(), kardex.getValue().referenciaId());
+        assertSame(producto, kardex.getValue().producto());
+        assertSame(almacen, kardex.getValue().almacen());
+
+        ArgumentCaptor<FinanzasCuentaPorPagar> cxp = ArgumentCaptor.forClass(FinanzasCuentaPorPagar.class);
+        verify(cuentaPorPagarRepository).save(cxp.capture());
+        assertEquals(new BigDecimal("1180.00"), cxp.getValue().getMontoTotal());
+        assertEquals(BigDecimal.ZERO, cxp.getValue().getMontoPagado());
+        assertEquals(EstadoCxP.PENDIENTE, cxp.getValue().getEstado());
+        assertSame(c, cxp.getValue().getCompra());
+        assertSame(proveedor, cxp.getValue().getProveedor());
+        assertSame(sede, cxp.getValue().getSede());
         verify(auditService).registrar(eq("compras"), eq(c.getId()), eq(AccionAudit.INSERT), anyMap());
     }
 
@@ -231,6 +251,19 @@ class CompraServiceImplTest {
         DetalleCompraCommandDTO l = new DetalleCompraCommandDTO(producto.getId(), fraccionId, almacen.getId(), BigDecimal.ONE, new BigDecimal("50.00"));
 
         assertThrows(ValidationException.class, () -> service.crear(request(HOY, l)));
+    }
+
+    @Test
+    void crear_errorEnKardex_noDejaCuentaPorPagarNiMarcaRecibida() {
+        when(compraRepository.findMaxCorrelativoByYear(anyInt())).thenReturn(null);
+        when(kardexService.registrarMovimiento(any())).thenThrow(new IllegalStateException("stock bloqueado"));
+
+        assertThrows(IllegalStateException.class, () -> service.crear(request(HOY, linea("118.00", "1"))));
+
+        verify(cuentaPorPagarRepository, never()).save(any());
+        ArgumentCaptor<Compra> captor = ArgumentCaptor.forClass(Compra.class);
+        verify(compraRepository).save(captor.capture());
+        assertEquals(EstadoCompra.BORRADOR, captor.getValue().getEstadoCompra());
     }
 
     @Test
