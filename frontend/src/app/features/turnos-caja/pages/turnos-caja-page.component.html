@@ -1,5 +1,5 @@
 <section class="module-page caja-pagina">
-  <app-page-header title="Caja" subtitle="Al entrar hay que abrir la caja. Los ingresos y egresos menores (transporte, suministros, oficina) ajustan el efectivo esperado del turno."></app-page-header>
+  <app-page-header title="Caja" subtitle="Abre la caja para vender, cobrar una cotización o confirmar una preforma. El resto del sistema se usa con la caja cerrada."></app-page-header>
   <div *ngIf="error" class="alert alert-error">{{ error }}</div>
   <div class="par-grid">
     <form class="card caja-tarjeta" [formGroup]="apertura" (ngSubmit)="abrir()">
@@ -50,6 +50,28 @@
       </tbody>
     </table>
     <p *ngIf="!movimientos.length" class="text-muted">Este turno todavía no tiene movimientos de caja chica.</p>
+  </article>
+  <article class="card card-body">
+    <h2>Turnos recientes</h2>
+    <p *ngIf="historialError" class="alert alert-error">{{ historialError }}</p>
+    <div class="table-scroll" *ngIf="historial.length">
+      <table class="table table-compact">
+        <thead><tr><th>Apertura</th><th>Cajero</th><th>Sede</th><th>Estado</th><th>Inicial</th><th>Efectivo</th><th>Esperado</th><th>Resultado</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let fila of historial">
+            <td>{{ fila.apertura | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ fila.cajero || '—' }}</td>
+            <td>{{ fila.sede || '—' }}</td>
+            <td>{{ fila.estado || '—' }}</td>
+            <td>{{ fila.montoInicial | pen }}</td>
+            <td>{{ fila.ventasEfectivo | pen }}</td>
+            <td>{{ fila.esperado | pen }}</td>
+            <td>{{ fila.resultado || '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p *ngIf="!historial.length && !historialError" class="text-muted">Todavía no hay turnos en los últimos meses.</p>
   </article>
   <article class="card card-body" *ngIf="resumen">
     <h2>Resumen del turno</h2>

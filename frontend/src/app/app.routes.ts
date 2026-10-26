@@ -19,7 +19,7 @@ export const routes: Routes = [
     component: AuthenticatedLayoutComponent,
     canActivate: [AuthGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'inicio' },
+      { path: '', pathMatch: 'full', redirectTo: 'modules/turnos-caja' },
       { path: 'admin', pathMatch: 'full', redirectTo: 'inicio' },
       { path: 'empleado', pathMatch: 'full', redirectTo: 'inicio' },
       { path: 'dashboard', pathMatch: 'full', redirectTo: 'inicio' },

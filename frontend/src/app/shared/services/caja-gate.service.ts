@@ -13,10 +13,12 @@ interface TurnoAbierto {
   turno?: Api.TurnoCajaResponseDTO | null;
 }
 
-/** Exige un turno abierto de la sede elegida. Sin sede, basta cualquier turno del usuario. */
+/**
+ * Recuerda el turno abierto de la sede elegida para vender, convertir una cotización
+ * o confirmar una preforma. El resto de las pantallas se usa con la caja cerrada.
+ */
 @Injectable({ providedIn: 'root' })
 export class CajaGateService {
-  private exigida = false;
   private escuchando = false;
 
   constructor(
@@ -29,7 +31,7 @@ export class CajaGateService {
   vigilar(): void {
     if (!this.escuchando) {
       this.escuchando = true;
-      this.router.events.pipe(filter((evento): evento is NavigationEnd => evento instanceof NavigationEnd)).subscribe(() => this.exigir());
+      this.router.events.pipe(filter((evento): evento is NavigationEnd => evento instanceof NavigationEnd)).subscribe(() => this.revisar());
     }
     this.revisar();
   }
@@ -40,22 +42,11 @@ export class CajaGateService {
     if (sedeId) params = params.set('sedeId', sedeId);
     this.http.get<TurnoAbierto>(`${environment.apiUrl}/api/v1/turnos-caja/abierto`, { params, context: new HttpContext().set(HTTP_SILENCIOSO, true) }).subscribe({
       next: (respuesta) => {
-        this.exigida = true;
         if (respuesta?.abierto && respuesta.turno?.id && this.coincide(respuesta.turno)) this.caja.recordar(respuesta.turno);
         else this.caja.recordar(null);
-        this.exigir();
       },
-      error: () => { this.exigida = false; },
+      error: () => undefined,
     });
-  }
-
-  private exigir(): void {
-    if (!this.exigida) return;
-    const turno = this.caja.turno();
-    if (turno?.id && turno.estado !== 'CERRADO' && this.coincide(turno)) return;
-    const ruta = this.router.url.split('?')[0];
-    if (ruta.startsWith('/modules/turnos-caja')) return;
-    void this.router.navigateByUrl('/modules/turnos-caja');
   }
 
   private coincide(turno: Api.TurnoCajaResponseDTO): boolean {

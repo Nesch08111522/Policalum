@@ -27,7 +27,7 @@ export class ListadoAsistenciasComponent implements OnInit, AfterViewInit {
   error: string | null = null;
 
   page: number = 0;
-  size: number = 10;
+  size: number = 20;
   totalElements: number = 0;
   totalPages: number = 0;
 

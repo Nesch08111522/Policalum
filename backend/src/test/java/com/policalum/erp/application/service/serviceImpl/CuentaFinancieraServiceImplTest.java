@@ -176,7 +176,7 @@ class CuentaFinancieraServiceImplTest {
         when(cuentaRepository.findDetalleById(c.getId())).thenReturn(Optional.of(c));
 
         assertThrows(IllegalArgumentException.class, () -> service.registrarSaldo(c.getId(),
-                new RegistrarSaldoCuentaRequestDTO(BigDecimal.TEN, LocalDateTime.now().plusDays(1), null)));
+                new RegistrarSaldoCuentaRequestDTO(BigDecimal.TEN, LocalDateTime.now().plusDays(1).withNano(0).toString(), null)));
         verify(saldoRepository, never()).save(any());
     }
 

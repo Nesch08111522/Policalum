@@ -125,6 +125,10 @@ export class VentasPageComponent implements OnInit, OnDestroy {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const value = this.form.getRawValue();
+    if (!value.turnoCajaId.trim()) {
+      this.errorFormulario = 'Para registrar una venta abre la caja de esta sede.';
+      return;
+    }
     const pagos = this.pagosAEnviar(value.pagos);
     if (!pagos) return;
     const body: Api.RegistrarVentaRequestDTO = {
@@ -268,6 +272,10 @@ export class VentasPageComponent implements OnInit, OnDestroy {
 
   private turnoActivo(): string {
     return this.caja.id();
+  }
+
+  get cajaAbierta(): boolean {
+    return !!this.caja.id();
   }
 }
 

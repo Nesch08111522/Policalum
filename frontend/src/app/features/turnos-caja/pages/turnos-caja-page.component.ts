@@ -17,6 +17,7 @@ import { SedeFiltroService } from '../../../shared/services/sede-filtro.service'
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { problemText } from '../../../shared/utils/feedback';
+import { ReportesApiService } from '../../reportes/data-access/reportes.api';
 import { TurnosCajaApiService } from '../data-access/turnos-caja.api';
 
 @Component({
@@ -47,6 +48,8 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
     detalle: ['', Validators.maxLength(255)],
   });
   movimientos: CajaChicaFila[] = [];
+  historial: Api.ArqueoTurnoDTO[] = [];
+  historialError: string | null = null;
   sedes: SelectOption[] = [];
   turno: Api.TurnoCajaResponseDTO | null = null;
   resumen: Api.ResumenCierreCajaDTO | null = null;
@@ -54,7 +57,7 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
   error: string | null = null;
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: TurnosCajaApiService, private readonly lookup: LookupService, private readonly toast: ToastService, private readonly http: HttpClient, private readonly sedeFiltro: SedeFiltroService) {
+  constructor(private readonly api: TurnosCajaApiService, private readonly reportes: ReportesApiService, private readonly lookup: LookupService, private readonly toast: ToastService, private readonly http: HttpClient, private readonly sedeFiltro: SedeFiltroService) {
     effect(() => {
       const actividad = this.caja.actividad();
       untracked(() => { if (actividad && this.cierre.controls.id.value) this.verResumen(); });
@@ -66,6 +69,7 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
       const elegida = this.sedeFiltro.sedeId() || this.sedes[0]?.value || '';
       if (elegida && !this.apertura.controls.sedeId.value) this.apertura.controls.sedeId.setValue(elegida);
     });
+    this.cargarHistorial();
     const sedeId = this.sedeFiltro.sedeId();
     const silencio = new HttpContext().set(HTTP_SILENCIOSO, true);
     this.http.get<{ abierto?: boolean; turno?: Api.TurnoCajaResponseDTO | null }>(`${environment.apiUrl}/api/v1/turnos-caja/abierto`, { params: sedeId ? { sedeId } : {}, context: silencio }).pipe(takeUntil(this.destroy$)).subscribe({
@@ -102,6 +106,7 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
         this.caja.recordar(turno);
         this.cargarCajaChica();
         this.toast.success('Caja abierta.');
+        this.cargarHistorial();
       },
       error: (error: unknown) => { this.guardando = false; this.error = problemText(error); },
     });
@@ -134,8 +139,20 @@ export class TurnosCajaPageComponent implements OnInit, OnDestroy {
         this.movimientos = [];
         this.error = null;
         this.toast.success('Caja cerrada.');
+        this.cargarHistorial();
       },
       error: (error: unknown) => { this.guardando = false; this.error = problemText(error); },
+    });
+  }
+
+  cargarHistorial(): void {
+    const hasta = new Date();
+    const desde = new Date(hasta);
+    desde.setMonth(desde.getMonth() - 6);
+    const iso = (fecha: Date) => fecha.toISOString().slice(0, 10);
+    this.reportes.GetApiV1ReportesCajaArqueos({ desde: iso(desde), hasta: iso(hasta), page: 0, size: 20 }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (data) => { this.historial = data?.turnos ?? []; this.historialError = null; },
+      error: (error: unknown) => { this.historialError = problemText(error); },
     });
   }
 

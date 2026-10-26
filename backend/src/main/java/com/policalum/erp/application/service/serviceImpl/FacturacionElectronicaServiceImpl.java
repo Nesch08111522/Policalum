@@ -36,7 +36,7 @@ public class FacturacionElectronicaServiceImpl implements FacturacionElectronica
         SunatFacturacionClient.EnlaceSunat enlace = sunat.enlace();
         Map<TipoComprobante, Long> porTipo = contarTipos(sedeId);
         Map<EstadoSunat, Long> porEstado = contarEstados(sedeId);
-        List<ComprobanteSunatDTO> historial = ventaRepository.recientesParaSunat(sedeId, PageRequest.of(0, 4)).stream()
+        List<ComprobanteSunatDTO> historial = ventaRepository.recientesParaSunat(sedeId, PageRequest.of(0, 20)).stream()
                 .map(this::comprobante)
                 .toList();
         return new FacturacionElectronicaPanelDTO(

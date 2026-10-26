@@ -15,6 +15,7 @@ import { StatCardComponent } from '../../../shared/components/stat-card/stat-car
 import { TabsComponent } from '../../../shared/components/tabs/tabs.component';
 import { ColumnDef, SelectOption, TabItem } from '../../../shared/models/ui.models';
 import { PenPipe } from '../../../shared/pipes/format.pipes';
+import { TokenService } from '../../../services/token.service';
 import { InventarioSyncService } from '../../../shared/services/inventario-sync.service';
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
@@ -58,7 +59,7 @@ export class KardexPageComponent implements OnInit, OnDestroy {
   private omitirRevision = 0;
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private readonly api: KardexApiService, private readonly lookup: LookupService, private readonly inventario: InventarioSyncService, private readonly toast: ToastService, private readonly route: ActivatedRoute) {
+  constructor(private readonly api: KardexApiService, private readonly lookup: LookupService, private readonly inventario: InventarioSyncService, private readonly toast: ToastService, private readonly route: ActivatedRoute, private readonly tokens: TokenService) {
     effect(() => {
       const revision = this.inventario.revision();
       untracked(() => {
@@ -72,12 +73,21 @@ export class KardexPageComponent implements OnInit, OnDestroy {
     const tab = this.route.snapshot.queryParamMap.get('tab') ?? '';
     if (productoId) this.filtros.controls.productoId.setValue(productoId);
     if (tab === 'mermas' || tab === 'saldos' || tab === 'valorizacion' || tab === 'movimientos') this.tab = tab;
+    if (!this.esAdmin && (this.tab === 'mermas' || this.tab === 'valorizacion')) this.tab = 'movimientos';
     this.cargar();
     this.lookup.loadProductos().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.productos = this.lookup.options(rows, (row) => (row as Api.ProductoResponseDTO).nombre ?? 'Producto'); });
     this.lookup.loadAlmacenes().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.almacenes = this.lookup.options(rows, (row) => (row as Api.AlmacenResponseDTO).nombre ?? 'Almacén'); });
     this.lookup.loadSedes().pipe(takeUntil(this.destroy$)).subscribe((rows) => { this.sedes = this.lookup.options(rows, (row) => (row as Api.SedeResponseDTO).nombre ?? 'Sede'); });
   }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+
+  get esAdmin(): boolean {
+    return this.tokens.session()?.rol === 'ROLE_ADMIN';
+  }
+
+  get tabsVisibles(): TabItem[] {
+    return this.esAdmin ? this.tabs : this.tabs.filter((item) => item.id === 'movimientos' || item.id === 'saldos');
+  }
 
   get textoFiltros(): string {
     const filtros = this.filtros.getRawValue();
@@ -140,7 +150,12 @@ export class KardexPageComponent implements OnInit, OnDestroy {
       error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
     });
   }
-  cambiarTab(id: string): void { this.tab = id; this.state.page = 0; this.cargar(); }
+  cambiarTab(id: string): void {
+    if (!this.esAdmin && (id === 'mermas' || id === 'valorizacion')) return;
+    this.tab = id;
+    this.state.page = 0;
+    this.cargar();
+  }
   filtrar(): void { this.state.page = 0; this.cargar(); }
   limpiar(): void { this.filtros.reset(); this.filtrar(); }
   cambiarPagina(page: number): void { this.state.page = page; this.cargar(); }

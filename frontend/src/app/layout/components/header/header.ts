@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -46,6 +46,7 @@ export class HeaderComponent implements OnInit {
     readonly avatar: AvatarService,
     private readonly notificaciones: NotificacionesApi,
     private readonly router: Router,
+    private readonly cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -60,6 +61,7 @@ export class HeaderComponent implements OnInit {
       const nuevas = lista.filter((aviso) => !aviso.leida && !aviso.eliminada);
       this.noLeidas = nuevas.length;
       this.avisos = nuevas.slice(0, 6);
+      this.cdr.detectChanges();
     });
   }
 

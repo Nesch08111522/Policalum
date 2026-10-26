@@ -18,6 +18,7 @@ import { InventarioSyncService } from '../../../shared/services/inventario-sync.
 import { LookupService } from '../../../shared/services/lookup.service';
 import { SedeFiltroService } from '../../../shared/services/sede-filtro.service';
 import { ToastService } from '../../../shared/services/toast.service';
+import { TokenService } from '../../../services/token.service';
 import { applyServerErrors, fieldError, isProblem, problemStatus, problemText } from '../../../shared/utils/feedback';
 import { PageState } from '../../../shared/utils/page-state';
 import { KardexApiService } from '../../kardex/data-access/kardex.api';
@@ -121,6 +122,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     private readonly toast: ToastService,
     private readonly router: Router,
     private readonly masivo: ProductosMasivoApiService,
+    private readonly tokens: TokenService,
   ) {
     this.state.sort = 'nombre,asc';
     effect(() => {
@@ -617,7 +619,15 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
   private cargarPanel(sedeId: string): void {
     this.stockApi.GetApiV1StockDashboard({ sedeId }).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.dashboard = data; }, error: () => { this.dashboard = null; } });
     this.stockApi.GetApiV1StockBajoStock({ sedeId, page: 0, size: 4 }).pipe(takeUntil(this.destroy$)).subscribe({ next: (page) => { this.alertas = page.content ?? []; }, error: () => { this.alertas = []; } });
-    this.kardex.GetApiV1KardexMermas({ sedeId, page: 0, size: 3 }).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.mermas = data; }, error: () => { this.mermas = null; } });
+    if (this.esAdmin) {
+      this.kardex.GetApiV1KardexMermas({ sedeId, page: 0, size: 3 }).pipe(takeUntil(this.destroy$)).subscribe({ next: (data) => { this.mermas = data; }, error: () => { this.mermas = null; } });
+    } else {
+      this.mermas = null;
+    }
+  }
+
+  get esAdmin(): boolean {
+    return this.tokens.session()?.rol === 'ROLE_ADMIN';
   }
 
   private avisarInventario(): void {

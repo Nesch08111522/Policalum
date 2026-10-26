@@ -16,12 +16,14 @@ public interface SaldoCuentaMapper {
     @Mapping(target = "cuenta", ignore = true)
     @Mapping(target = "registradoPor", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "fechaCorte", ignore = true)
     SaldoCuentaFinanciera toEntity(RegistrarSaldoCuentaRequestDTO dto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "cuenta", ignore = true)
     @Mapping(target = "registradoPor", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "fechaCorte", ignore = true)
     void updateEntityFromDto(RegistrarSaldoCuentaRequestDTO dto, @MappingTarget SaldoCuentaFinanciera entity);
 
     @Mapping(target = "cuentaId", source = "cuenta.id")

@@ -62,6 +62,7 @@
 </app-modal>
 
 <app-modal [open]="convertirAbierto" title="Convertir a venta" (closed)="convertirAbierto = false">
+  <div *ngIf="!cajaAbierta" class="alert">Para convertir la cotización en venta abre la caja. <a routerLink="/modules/turnos-caja">Ir a Caja</a></div>
   <form class="form-grid" [formGroup]="convertir">
     <app-form-field label="Almacén" inputId="cot-c-alm" [required]="true"><app-select inputId="cot-c-alm" [options]="almacenes" placeholder="Almacén" formControlName="almacenId" [clearable]="false"></app-select></app-form-field>
     <app-form-field label="Turno de caja" inputId="cot-c-turno" [required]="true" hint="Usa el turno abierto en Caja."><input id="cot-c-turno" class="input" formControlName="turnoCajaId" /></app-form-field>
@@ -72,7 +73,7 @@
   </form>
   <div modalFooter>
     <button type="button" class="btn btn-ghost" (click)="convertirAbierto = false">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="convertirVenta()" [disabled]="convertir.invalid || guardando">Convertir</button>
+    <button type="button" class="btn btn-primary" (click)="convertirVenta()" [disabled]="convertir.invalid || guardando || !cajaAbierta">Convertir</button>
   </div>
 </app-modal>
 

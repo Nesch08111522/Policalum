@@ -20,7 +20,9 @@ import com.policalum.erp.infrastructure.repository.CuentaFinancieraRepository;
 import com.policalum.erp.infrastructure.repository.SaldoCuentaFinancieraRepository;
 import com.policalum.erp.infrastructure.repository.SedeRepository;
 import com.policalum.erp.infrastructure.repository.UserRepository;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -131,13 +133,11 @@ public class CuentaFinancieraServiceImpl implements CuentaFinancieraService {
             throw new IllegalStateException("No se puede registrar saldo en una cuenta inactiva");
         }
         LocalDateTime ahora = LocalDateTime.now();
-        if (request.fechaCorte() != null && request.fechaCorte().isAfter(ahora)) {
-            throw new IllegalArgumentException("La fecha de corte no puede ser futura");
-        }
+        LocalDateTime corte = corte(request.fechaCorte(), ahora);
 
         SaldoCuentaFinanciera saldo = saldoMapper.toEntity(request);
         saldo.setSaldo(request.saldo().setScale(2, java.math.RoundingMode.HALF_UP));
-        saldo.setFechaCorte(request.fechaCorte() != null ? request.fechaCorte() : ahora);
+        saldo.setFechaCorte(corte);
         saldo.setObservacion(request.observacion() != null && !request.observacion().isBlank() ? request.observacion().trim() : null);
         saldo.setCuenta(cuenta);
         saldo.setRegistradoPor(admin);
@@ -194,6 +194,23 @@ public class CuentaFinancieraServiceImpl implements CuentaFinancieraService {
     private CuentaFinanciera buscar(UUID id) {
         return cuentaRepository.findDetalleById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cuenta financiera no encontrada: " + id));
+    }
+
+    /** Acepta YYYY-MM-DD del formulario o una fecha-hora. */
+    private LocalDateTime corte(String texto, LocalDateTime ahora) {
+        if (texto == null || texto.isBlank()) return ahora;
+        try {
+            if (texto.length() == 10) {
+                LocalDate dia = LocalDate.parse(texto);
+                if (dia.isAfter(ahora.toLocalDate())) throw new IllegalArgumentException("La fecha de corte no puede ser futura");
+                return dia.atStartOfDay();
+            }
+            LocalDateTime fecha = LocalDateTime.parse(texto);
+            if (fecha.isAfter(ahora)) throw new IllegalArgumentException("La fecha de corte no puede ser futura");
+            return fecha;
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("La fecha de corte no es válida");
+        }
     }
 
     private SaldoCuentaFinanciera ultimoSaldo(UUID cuentaId) {
