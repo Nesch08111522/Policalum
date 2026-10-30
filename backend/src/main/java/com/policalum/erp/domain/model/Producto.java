@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.UuidGenerator;
 
 import com.policalum.erp.domain.enums.TipoProducto;
@@ -18,7 +19,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "productos")
+@Table(name = "productos", indexes = {
+        @Index(name = "idx_productos_sku", columnList = "codigo_sku"),
+        @Index(name = "idx_productos_activo_categoria", columnList = "activo, categoria_id")
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Producto {
 
@@ -86,6 +90,7 @@ public class Producto {
 
 
     @Builder.Default
+    @BatchSize(size = 32)
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CatalogoFraccion> fracciones = new ArrayList<>();
 

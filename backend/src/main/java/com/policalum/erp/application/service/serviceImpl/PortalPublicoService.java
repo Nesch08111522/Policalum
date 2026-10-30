@@ -54,8 +54,7 @@ public class PortalPublicoService {
     }
 
     public ProductoPublicoDTO producto(UUID id) {
-        Producto producto = productoRepository.findById(id)
-                .filter(item -> Boolean.TRUE.equals(item.getActivo()))
+        Producto producto = productoRepository.findActivoParaPortal(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
         return ficha(producto, saldos(List.of(producto)));
     }

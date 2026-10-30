@@ -20,6 +20,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,7 +29,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "ventas")
+@Table(name = "ventas", indexes = {
+        @Index(name = "idx_ventas_estado_fecha", columnList = "estado, created_at"),
+        @Index(name = "idx_ventas_sede_fecha", columnList = "sede_id, created_at")
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Venta {
 

@@ -19,6 +19,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,7 +28,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "kardex_movimientos")
+@Table(name = "kardex_movimientos", indexes = {
+        @Index(name = "idx_kardex_producto_almacen_fecha", columnList = "producto_id, almacen_id, created_at"),
+        @Index(name = "idx_kardex_referencia", columnList = "referencia_id, tipo_referencia")
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class KardexMovimiento {
 

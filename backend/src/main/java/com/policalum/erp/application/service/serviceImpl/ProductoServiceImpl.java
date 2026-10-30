@@ -43,7 +43,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(rollbackFor = Exception.class)
 public class ProductoServiceImpl implements ProductoService {
 
     private static final String ENTITY_NAME = "Producto";

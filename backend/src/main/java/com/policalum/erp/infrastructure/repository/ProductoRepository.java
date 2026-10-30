@@ -30,7 +30,7 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
      *   traduzca de forma segura.
      * - El servicio normaliza "" a null antes de llamar a este método.
      */
-    @EntityGraph(attributePaths = { "categoria", "proveedor", "fracciones" })
+    @EntityGraph(attributePaths = { "categoria", "proveedor" })
     @Query("SELECT p FROM Producto p WHERE "
             + "(CAST(:searchTerm AS string) IS NULL OR "
             + " LOWER(p.nombre) LIKE LOWER(CONCAT('%', CAST(:searchTerm AS string), '%')) OR "
@@ -57,6 +57,7 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
      * Catálogo del portal: solo productos activos. q ya viene sin espacios o null.
      * soloDestacados en false no filtra el flag.
      */
+    @EntityGraph(attributePaths = { "categoria" })
     @Query(value = "SELECT p FROM Producto p WHERE p.activo = true AND "
             + "(CAST(:categoriaId AS string) IS NULL OR p.categoria.id = :categoriaId) AND "
             + "(CAST(:soloDestacados AS boolean) = false OR p.destacado = true) AND "
@@ -71,6 +72,14 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
                                    @Param("soloDestacados") boolean soloDestacados,
                                    @Param("q") String q,
                                    Pageable pageable);
+
+    @Query("""
+            SELECT DISTINCT p FROM Producto p
+            LEFT JOIN FETCH p.categoria
+            LEFT JOIN FETCH p.fracciones
+            WHERE p.id = :id AND p.activo = true
+            """)
+    Optional<Producto> findActivoParaPortal(@Param("id") UUID id);
 
     Optional<Producto> findByCodigoSkuIgnoreCase(String codigoSku);
 

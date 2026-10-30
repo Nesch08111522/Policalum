@@ -370,7 +370,7 @@ class VentaServiceImplTest {
     @Test
     void obtener_armaDetalleConLineasYPagos() {
         Venta v = ventaRegistrada(EstadoVenta.COMPLETADA, vendedor);
-        when(ventaRepository.findById(v.getId())).thenReturn(Optional.of(v));
+        when(ventaRepository.findDetalleById(v.getId())).thenReturn(Optional.of(v));
         when(detalleRepository.findByVenta_Id(v.getId())).thenReturn(List.of(
                 DetalleVenta.builder().id(UUID.randomUUID()).producto(producto).cantidad(new BigDecimal("2")).subtotal(new BigDecimal("118.00")).build(),
                 DetalleVenta.builder().id(UUID.randomUUID()).servicio(servicio).cantidad(BigDecimal.ONE).subtotal(new BigDecimal("25.00")).build()));
@@ -391,7 +391,7 @@ class VentaServiceImplTest {
     @Test
     void obtener_inexistente_lanzaNotFound() {
         UUID id = UUID.randomUUID();
-        when(ventaRepository.findById(id)).thenReturn(Optional.empty());
+        when(ventaRepository.findDetalleById(id)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> service.obtener(id));
     }

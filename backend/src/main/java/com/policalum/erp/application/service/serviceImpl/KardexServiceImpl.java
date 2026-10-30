@@ -91,7 +91,7 @@ public class KardexServiceImpl implements KardexService {
     private final AuditService auditService;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public KardexMovimientoResponseDTO registrarMovimiento(KardexMovimientoRequestDTO dto) {
         Producto producto = productoRepository.findById(dto.producto().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + dto.producto().getId()));
@@ -144,13 +144,13 @@ public class KardexServiceImpl implements KardexService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public List<KardexMovimientoResponseDTO> registrarTransferencia(TransferenciaRequestDTO dto) {
         return registrarTransferencia(dto, null);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public List<KardexMovimientoResponseDTO> registrarTransferencia(TransferenciaRequestDTO dto, UUID referenciaId) {
         if (dto.almacenOrigenId().equals(dto.almacenDestinoId())) {
             throw new IllegalArgumentException("El almacén de origen y destino no pueden ser el mismo.");
@@ -166,6 +166,7 @@ public class KardexServiceImpl implements KardexService {
                 .orElseThrow(() -> new ResourceNotFoundException("Almacén de destino no encontrado con ID: " + dto.almacenDestinoId()));
 
         User usuario = obtenerUsuarioAutenticado();
+        bloquearSaldosEnOrden(producto.getId(), almacenOrigen.getId(), almacenDestino.getId());
 
         String obsSalida = "Transferencia hacia " + almacenDestino.getNombre()
                 + (dto.motivo() != null ? " - " + dto.motivo() : "");
@@ -466,6 +467,17 @@ public class KardexServiceImpl implements KardexService {
             throw new AccessDeniedException("Solo un administrador puede ver costos del inventario y exportar el Kardex");
         }
         return u;
+    }
+
+    /**
+     * Dos transferencias en sentido contrario deben tomar las filas de stock en el mismo orden
+     * de almacén. El movimiento posterior reutiliza el bloqueo de esta transacción.
+     */
+    private void bloquearSaldosEnOrden(UUID productoId, UUID almacenOrigenId, UUID almacenDestinoId) {
+        UUID primero = almacenOrigenId.compareTo(almacenDestinoId) <= 0 ? almacenOrigenId : almacenDestinoId;
+        UUID segundo = primero.equals(almacenOrigenId) ? almacenDestinoId : almacenOrigenId;
+        stockRepository.findParaActualizar(primero, productoId);
+        stockRepository.findParaActualizar(segundo, productoId);
     }
 
     private Stock crearStockInicial(Producto producto, Almacen almacen) {

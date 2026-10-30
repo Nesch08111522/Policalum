@@ -39,7 +39,7 @@ public class VentaServiceImpl implements VentaService {
     private final KardexRepository kardexRepository;
     private final com.policalum.erp.infrastructure.repository.DevolucionRepository devolucionRepository; // Módulo 17
 
-    @Override @Transactional
+    @Override @Transactional(rollbackFor = Exception.class)
     public VentaProcesadaResponseDTO registrar(RegistrarVentaRequestDTO r) {
         User user = usuarioActual();
         Sede sede = sedeRepository.findById(r.sedeId()).orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
@@ -80,7 +80,7 @@ public class VentaServiceImpl implements VentaService {
 
     @Override @Transactional(readOnly = true)
     public VentaDetalleResponseDTO obtener(UUID id) {
-        Venta venta = ventaRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada"));
+        Venta venta = ventaRepository.findDetalleById(id).orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada"));
         return detalle(venta);
     }
 
@@ -94,7 +94,7 @@ public class VentaServiceImpl implements VentaService {
                         v.getCliente() == null ? null : v.getCliente().getNombre(), v.getUser().getId(), v.getCreatedAt()));
     }
 
-    @Override @Transactional
+    @Override @Transactional(rollbackFor = Exception.class)
     public VentaProcesadaResponseDTO anular(UUID id, AnularVentaRequestDTO request) {
         Venta venta = ventaRepository.findByIdParaActualizar(id).orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada"));
         if (venta.getEstado() == EstadoVenta.ANULADA) throw new IllegalStateException("La venta ya está anulada");

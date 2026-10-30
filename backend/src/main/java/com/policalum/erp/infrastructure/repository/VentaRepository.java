@@ -28,6 +28,10 @@ public interface VentaRepository extends JpaRepository<Venta, UUID> {
                                                     @Param("hasta") java.time.LocalDateTime hasta,
                                                     org.springframework.data.domain.Pageable pageable);
 
+    @EntityGraph(attributePaths = {"sede", "user", "cliente", "turnoCaja"})
+    @Query("select v from Venta v where v.id = :id")
+    java.util.Optional<Venta> findDetalleById(@Param("id") UUID id);
+
     /** Módulo 17: FOR UPDATE para que devoluciones/anulación concurrentes no se pisen. */
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("select v from Venta v where v.id = :id")

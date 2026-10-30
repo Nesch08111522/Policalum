@@ -452,8 +452,8 @@ class KardexServiceImplTest {
         assertEquals(2, r.size());
         assertEquals(new BigDecimal("6"), sOrigen.getCantidad());
         assertEquals(new BigDecimal("6"), sDestino.getCantidad());
-        verify(stockRepository).findParaActualizar(origen.getId(), plancha.getId());
-        verify(stockRepository).findParaActualizar(destino.getId(), plancha.getId());
+        verify(stockRepository, times(2)).findParaActualizar(origen.getId(), plancha.getId());
+        verify(stockRepository, times(2)).findParaActualizar(destino.getId(), plancha.getId());
 
         ArgumentCaptor<KardexMovimiento> c = ArgumentCaptor.forClass(KardexMovimiento.class);
         verify(kardexRepository, times(2)).save(c.capture());
