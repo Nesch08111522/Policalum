@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Injectable, inject, signal } from '@angular/core';
+import { Observable, of } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { CategoriaPublica, ContactoCreado, CotizacionCreada, EmpresaPublica, PaginaPublica, ProductoPublico, ProyectoPublico } from './models';
 
@@ -8,13 +9,18 @@ import { CategoriaPublica, ContactoCreado, CotizacionCreada, EmpresaPublica, Pag
 export class PortalApi {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/api/v1/public`;
+  private readonly categoriasGuardadas = signal<CategoriaPublica[] | null>(null);
 
   empresa(): Observable<EmpresaPublica> {
     return this.http.get<EmpresaPublica>(`${this.base}/empresa`);
   }
 
   categorias(): Observable<CategoriaPublica[]> {
-    return this.http.get<CategoriaPublica[]>(`${this.base}/catalogo/categorias`);
+    const guardadas = this.categoriasGuardadas();
+    if (guardadas) return of(guardadas);
+    return this.http.get<CategoriaPublica[]>(`${this.base}/catalogo/categorias`).pipe(
+      tap((lista) => this.categoriasGuardadas.set(lista)),
+    );
   }
 
   destacados(): Observable<ProductoPublico[]> {

@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -46,7 +47,7 @@ public class PortalPublicoController {
 
     @GetMapping("/catalogo/destacados")
     public ResponseEntity<List<ProductoPublicoDTO>> destacados() {
-        return ResponseEntity.ok(portal.destacados());
+        return fresco(portal.destacados());
     }
 
     @GetMapping("/catalogo/productos")
@@ -55,12 +56,12 @@ public class PortalPublicoController {
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "false") boolean destacados,
             @PageableDefault(size = 12, sort = "nombre") Pageable pageable) {
-        return ResponseEntity.ok(portal.catalogo(categoriaId, q, destacados, pageable));
+        return fresco(portal.catalogo(categoriaId, q, destacados, pageable));
     }
 
     @GetMapping("/catalogo/productos/{id}")
     public ResponseEntity<ProductoPublicoDTO> producto(@PathVariable UUID id) {
-        return ResponseEntity.ok(portal.producto(id));
+        return fresco(portal.producto(id));
     }
 
     @GetMapping("/catalogo/imagenes")
@@ -76,6 +77,10 @@ public class PortalPublicoController {
     @GetMapping("/portafolio")
     public ResponseEntity<List<ProyectoPortafolioResponseDTO>> portafolio() {
         return ResponseEntity.ok(portal.portafolio());
+    }
+
+    private static <T> ResponseEntity<T> fresco(T cuerpo) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(cuerpo);
     }
 
     private static MediaType tipo(String nombre) {

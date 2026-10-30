@@ -12,7 +12,9 @@ import com.policalum.erp.domain.model.Rol;
 import com.policalum.erp.domain.model.Sede;
 import com.policalum.erp.domain.model.User;
 import com.policalum.erp.exception.ResourceNotFoundException;
+import com.policalum.erp.infrastructure.repository.RefreshTokenRepository;
 import com.policalum.erp.infrastructure.repository.UserRepository;
+import com.policalum.erp.infrastructure.security.SesionUsuarioCache;
 import java.util.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +29,8 @@ class UserImplTest {
 
     @Mock PasswordEncoder passwordEncoder;
     @Mock UserRepository userRepository;
+    @Mock RefreshTokenRepository refreshTokenRepository;
+    @Mock SesionUsuarioCache sesionUsuarioCache;
     @Spy UserMapper userMapper = Mappers.getMapper(UserMapper.class);
     @InjectMocks UserImpl service;
 

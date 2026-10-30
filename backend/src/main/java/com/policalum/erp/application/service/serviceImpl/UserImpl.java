@@ -9,7 +9,9 @@ import com.policalum.erp.application.dto.response.UserResponseDTO;
 import com.policalum.erp.application.mapper.UserMapper;
 import com.policalum.erp.application.service.UserService;
 import com.policalum.erp.domain.model.User;
+import com.policalum.erp.infrastructure.repository.RefreshTokenRepository;
 import com.policalum.erp.infrastructure.repository.UserRepository;
+import com.policalum.erp.infrastructure.security.SesionUsuarioCache;
 import com.policalum.erp.exception.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,8 @@ public class UserImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final SesionUsuarioCache sesionUsuarioCache;
 
     @Transactional
     @Override
@@ -55,12 +59,20 @@ public class UserImpl implements UserService {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
+        String correoPrevio = existingUser.getEmail();
         String currentPasswordHash = existingUser.getPasswordHash();
 
         userMapper.updateEntityFromDto(dto, existingUser);
 
         if (dto.passwordHash() != null && !dto.passwordHash().isBlank()) {
             existingUser.setPasswordHash(passwordEncoder.encode(dto.passwordHash()));
+            int version = existingUser.getSesionVersion() == null ? 0 : existingUser.getSesionVersion();
+            existingUser.setSesionVersion(version + 1);
+            refreshTokenRepository.revocarDe(existingUser.getId());
+            sesionUsuarioCache.invalidar(correoPrevio);
+            if (existingUser.getEmail() != null && !existingUser.getEmail().equals(correoPrevio)) {
+                sesionUsuarioCache.invalidar(existingUser.getEmail());
+            }
         } else {
             existingUser.setPasswordHash(currentPasswordHash);
         }
@@ -72,7 +84,7 @@ public class UserImpl implements UserService {
     @Override
     public void DeleteUser(UUID id) {
         if (!userRepository.existsById(id)) {
-            throw new RuntimeException("Usuario no encontrado con el id: " + id);
+            throw new ResourceNotFoundException("Usuario no encontrado con el id: " + id);
         }
         userRepository.deleteById(id);
     }

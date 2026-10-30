@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -45,8 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (jwtUtil.validateToken(token)) {
                 if (tokenDenylist.revocado(token)) {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("Usuario inactivo o sesión cerrada");
+                    rechazar(request, response);
                     return;
                 }
                 String email = jwtUtil.getEmailFromToken(token);
@@ -56,8 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 int sesionToken = jwtUtil.getSesionVersion(token);
                 if (!sesion.existe() || !sesion.activo() || sesionToken != sesion.version()) {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("Usuario inactivo o sesión cerrada");
+                    rechazar(request, response);
                     return;
                 }
 
@@ -73,6 +72,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(request, response);
+    }
+
+    private static void rechazar(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        String ruta = request.getRequestURI() == null ? "" : request.getRequestURI().replace("\\", "\\\\").replace("\"", "\\\"");
+        response.getWriter().write("{\"timestamp\":\"" + LocalDateTime.now()
+                + "\",\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Usuario inactivo o sesión cerrada\",\"path\":\""
+                + ruta + "\"}");
     }
 
     /**

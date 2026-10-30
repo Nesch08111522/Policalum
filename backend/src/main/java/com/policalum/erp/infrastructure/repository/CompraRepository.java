@@ -41,7 +41,6 @@ public interface CompraRepository extends JpaRepository<Compra, UUID> {
             "LEFT JOIN FETCH d.producto " +
             "LEFT JOIN FETCH d.fraccion " +
             "LEFT JOIN FETCH d.almacen " +
-            "LEFT JOIN FETCH c.adjuntos " +
             "LEFT JOIN FETCH c.proveedor " +
             "LEFT JOIN FETCH c.sede " +
             "LEFT JOIN FETCH c.user " +

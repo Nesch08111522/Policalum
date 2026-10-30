@@ -178,6 +178,19 @@ h2 { font-size: clamp(1.8rem, 3vw, 2.6rem); }
 .contact { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 1rem; }
 .map-card { min-height: 280px; padding: 1.2rem; display: flex; flex-direction: column; justify-content: flex-end; background: #c2410c; color: white; border-radius: 12px; }
 
+.aviso {
+  margin: 0.8rem 0 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  background: #fff6e0;
+  color: #1c1917;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+.aviso button { border: 0; background: transparent; color: #9a3412; font-weight: 600; }
 .site-footer { margin-top: 2rem; padding: 2rem 0 2.4rem; border-top: 1px solid var(--line); color: var(--muted); }
 .foot { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .legal { max-width: 46rem; display: grid; gap: 0.8rem; line-height: 1.65; }

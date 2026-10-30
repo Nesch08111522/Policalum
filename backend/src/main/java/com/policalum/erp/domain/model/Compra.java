@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.UuidGenerator;
 
 import com.policalum.erp.domain.enums.EstadoCompra;
@@ -26,6 +27,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,7 +36,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "compras")
+@Table(name = "compras", indexes = {
+        @Index(name = "idx_compras_proveedor_fecha", columnList = "proveedor_id, fecha_emision"),
+        @Index(name = "idx_compras_sede_estado", columnList = "sede_id, estado_compra")
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Compra {
 
@@ -74,10 +79,12 @@ public class Compra {
     private String motivoAnulacion;
 
     @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @BatchSize(size = 32)
     @Builder.Default
     private List<DetalleCompra> detalles = new ArrayList<>();
 
     @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @BatchSize(size = 16)
     @Builder.Default
     private List<CompraAdjunto> adjuntos = new ArrayList<>();
 

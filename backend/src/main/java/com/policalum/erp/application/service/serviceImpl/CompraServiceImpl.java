@@ -33,7 +33,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional
+@Transactional(rollbackFor = Exception.class)
 public class CompraServiceImpl implements CompraService {
 
     private static final BigDecimal IGV_DIVISOR = new BigDecimal("1.18");

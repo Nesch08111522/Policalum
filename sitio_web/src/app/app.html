@@ -19,6 +19,12 @@
     </nav>
     <button type="button" class="menu-btn" (click)="menu.set(!menu())" [attr.aria-expanded]="menu()" aria-label="Abrir menú">☰</button>
   </header>
+  @if (avisos.texto()) {
+    <p class="aviso" role="alert">
+      <span>{{ avisos.texto() }}</span>
+      <button type="button" (click)="avisos.cerrar()">Cerrar</button>
+    </p>
+  }
   <nav class="mobile-nav" [class.open]="menu()" aria-label="Móvil">
     <a routerLink="/" (click)="cerrar()">Inicio</a>
     <a routerLink="/catalogo" (click)="cerrar()">Catálogo</a>

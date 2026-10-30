@@ -18,6 +18,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ValidationException;
 import java.time.LocalDateTime;
@@ -25,6 +26,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @RestControllerAdvice
 @RequiredArgsConstructor
@@ -46,7 +49,7 @@ public class GlobalExceptionHandler {
         response.put("error", "Not Found");
         response.put("message", ex.getMessage());
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        return responder(HttpStatus.NOT_FOUND, response);
     }
 
     /**
@@ -62,7 +65,7 @@ public class GlobalExceptionHandler {
         response.put("error", "Bad Request");
         response.put("message", ex.getMessage());
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return responder(HttpStatus.BAD_REQUEST, response);
     }
 
     /** A valid request that violates a business-state transition, e.g. closing an already closed shift. */
@@ -73,7 +76,7 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.CONFLICT.value());
         response.put("error", "Business Conflict");
         response.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        return responder(HttpStatus.CONFLICT, response);
     }
 
     /**
@@ -89,7 +92,7 @@ public class GlobalExceptionHandler {
         response.put("error", "Validation Error");
         response.put("message", ex.getMessage());
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return responder(HttpStatus.BAD_REQUEST, response);
     }
 
     /**
@@ -113,7 +116,7 @@ public class GlobalExceptionHandler {
         response.put("message", "Error de validación en los campos");
         response.put("errors", errors);
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return responder(HttpStatus.BAD_REQUEST, response);
     }
 
     /**
@@ -129,7 +132,7 @@ public class GlobalExceptionHandler {
         response.put("error", "Validation Error");
         response.put("message", ex.getMessage());
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return responder(HttpStatus.BAD_REQUEST, response);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
@@ -139,7 +142,7 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.UNAUTHORIZED.value());
         response.put("error", "Unauthorized");
         response.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        return responder(HttpStatus.UNAUTHORIZED, response);
     }
 
     /**
@@ -153,7 +156,7 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.FORBIDDEN.value());
         response.put("error", "Forbidden");
         response.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        return responder(HttpStatus.FORBIDDEN, response);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
@@ -163,7 +166,7 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.FORBIDDEN.value());
         response.put("error", "Forbidden");
         response.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        return responder(HttpStatus.FORBIDDEN, response);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
@@ -173,7 +176,7 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.NOT_FOUND.value());
         response.put("error", "Not Found");
         response.put("message", "No existe ese recurso.");
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        return responder(HttpStatus.NOT_FOUND, response);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
@@ -183,7 +186,7 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.METHOD_NOT_ALLOWED.value());
         response.put("error", "Method Not Allowed");
         response.put("message", "Ese método no está disponible en esta ruta.");
-        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(response);
+        return responder(HttpStatus.METHOD_NOT_ALLOWED, response);
     }
 
     @ExceptionHandler({MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class})
@@ -193,7 +196,7 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.BAD_REQUEST.value());
         response.put("error", "Bad Request");
         response.put("message", "Revisa el formato de los filtros.");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return responder(HttpStatus.BAD_REQUEST, response);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -204,7 +207,7 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.BAD_REQUEST.value());
         response.put("error", "Bad Request");
         response.put("message", "Revisa el formato de los datos enviados.");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return responder(HttpStatus.BAD_REQUEST, response);
     }
 
     @ExceptionHandler(ResponseStatusException.class)
@@ -214,7 +217,7 @@ public class GlobalExceptionHandler {
         response.put("status", ex.getStatusCode().value());
         response.put("error", ex.getStatusCode().toString());
         response.put("message", ex.getReason() == null ? "Solicitud rechazada" : ex.getReason());
-        return ResponseEntity.status(ex.getStatusCode()).body(response);
+        return responder(ex.getStatusCode(), response);
     }
 
     /**
@@ -235,7 +238,7 @@ public class GlobalExceptionHandler {
             response.put("details", ex.getMessage());
         }
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        return responder(HttpStatus.INTERNAL_SERVER_ERROR, response);
     }
 
     /**
@@ -266,7 +269,7 @@ public class GlobalExceptionHandler {
             response.put("fila", fila);
             response.put("motivo", motivo);
         }
-        return ResponseEntity.badRequest().body(response);
+        return responder(HttpStatus.BAD_REQUEST, response);
     }
 
     @ExceptionHandler(FileStorageException.class)
@@ -277,6 +280,19 @@ public class GlobalExceptionHandler {
         response.put("status", HttpStatus.BAD_REQUEST.value());
         response.put("error", "File Storage Error");
         response.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return responder(HttpStatus.BAD_REQUEST, response);
+    }
+
+    private ResponseEntity<Map<String, Object>> responder(org.springframework.http.HttpStatusCode status, Map<String, Object> response) {
+        response.put("path", rutaActual());
+        return ResponseEntity.status(status).body(response);
+    }
+
+    private static String rutaActual() {
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes atributos) {
+            HttpServletRequest request = atributos.getRequest();
+            return request.getRequestURI();
+        }
+        return "";
     }
 }
