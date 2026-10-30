@@ -1,23 +1,13 @@
 import { Injectable, signal } from '@angular/core';
 
-export type ThemeName = 'light' | 'dark';
-
+/** MarketNest es el único tema. El modo oscuro quedó retirado. */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  readonly theme = signal<ThemeName>('dark');
+  readonly theme = signal<'marketnest'>('marketnest');
 
   constructor() {
-    const saved = typeof localStorage === 'undefined' ? null : localStorage.getItem('erp-theme');
-    this.apply(saved === 'light' ? 'light' : 'dark');
-  }
-
-  toggle(): void {
-    this.apply(this.theme() === 'dark' ? 'light' : 'dark');
-  }
-
-  apply(theme: ThemeName): void {
-    this.theme.set(theme);
-    document.documentElement.setAttribute('data-theme', theme);
-    if (typeof localStorage !== 'undefined') localStorage.setItem('erp-theme', theme);
+    document.documentElement.setAttribute('data-theme', 'marketnest');
+    document.documentElement.style.colorScheme = 'light';
+    if (typeof localStorage !== 'undefined') localStorage.removeItem('erp-theme');
   }
 }

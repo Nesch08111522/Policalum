@@ -28,10 +28,6 @@
         <button type="button" class="dropdown-item" *ngFor="let sede of sedes" (click)="elegirSede(sede.id ?? '', sede.nombre ?? 'Sede')">{{ sede.nombre }}</button>
       </div>
     </div>
-    <button type="button" class="btn btn-ghost theme-toggle" (click)="theme.toggle()" [attr.aria-label]="theme.theme() === 'dark' ? 'Activar modo día' : 'Activar modo noche'">
-      <app-icon [name]="theme.theme() === 'dark' ? 'moon' : 'sun'"></app-icon>
-      <span class="text-sm">{{ theme.theme() === 'dark' ? 'Modo noche' : 'Modo día' }}</span>
-    </button>
     <div class="dropdown" [class.menu-open]="avisosAbiertos">
       <button type="button" class="btn btn-ghost icon-btn bell" (click)="avisosAbiertos = !avisosAbiertos; cargarAvisos()" aria-haspopup="menu" [attr.aria-expanded]="avisosAbiertos" aria-label="Notificaciones">
         <app-icon name="bell"></app-icon>

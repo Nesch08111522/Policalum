@@ -19,6 +19,8 @@ body {
 body.modal-open { overflow: hidden; }
 
 h1, h2, h3, h4, p { margin: 0; }
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+code, kbd, samp, .mono { font-family: var(--font-mono); }
 
 button, input, select, textarea { font: inherit; color: inherit; max-width: 100%; }
 input, select, textarea { font-size: 1rem; min-width: 0; }
@@ -30,7 +32,7 @@ a { color: var(--color-primary); }
   outline-offset: 2px;
 }
 
-::placeholder { color: var(--color-text-muted); }
+::placeholder { color: var(--color-disabled); }
 
 /* Barras finas alineadas al modo noche y al modo día.
    El riel queda transparente para no dibujar la franja gris del navegador. */

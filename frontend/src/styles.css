@@ -2,38 +2,21 @@
 
 @import 'tailwindcss';
 
-/* src/styles.css */
-:root {
-  /* Colores principales (se mantienen igual) */
-  --color-logo-bright: #FFFFFF;
-  --color-cyan-light: #61D4E8;
-  --color-blue-medium: #1FA2D6;
-  --color-blue-dark: #075591;
-  --color-bg-gray: #B3C1CD;
-
-  /* Textos adaptados a tema oscuro */
-  --color-text-primary: #FFFFFF;        /* Antes #2c3e50 → ahora blanco */
-  --color-text-secondary: #B3C1CD;      /* Antes #5a6d7e → ahora gris azulado (mismo que bg-gray) */
-
-  /* Fondos y superficies oscuras */
-  --color-bg-light: #1A1C2B;            /* Antes #f0f4f8 → ahora azul muy oscuro */
-  --color-bg-card: #232538;             /* Nuevo, para tarjetas o paneles (opcional) */
-  --color-bg-overlay: rgba(0, 0, 0, 0.7); /* Para superposiciones */
-
-  /* Bordes y líneas */
-  --color-border: rgba(255, 255, 255, 0.1);  /* Antes #dce3ea → ahora sutil transparencia */
-
-  /* Sombras (útil para elevar elementos) */
-  --shadow-light: 0 2px 8px rgba(0,0,0,0.3);
-  --shadow-medium: 0 4px 16px rgba(0,0,0,0.4);
-}
-* {
-  box-sizing: border-box;
+@theme {
+  --color-cream: #fffbf5;
+  --color-paper: #ffffff;
+  --color-terracotta: #c2410c;
+  --color-terracotta-hover: #9a3412;
+  --color-sand: #d4a373;
+  --color-forest: #365314;
+  --color-ink: #1c1917;
+  --color-stone: #57534e;
+  --color-mist: #a8a29e;
+  --color-line: #e7e5e4;
+  --color-line-strong: #d6d3d1;
+  --font-display: "Lora", Georgia, serif;
+  --font-sans: "Open Sans", sans-serif;
+  --font-mono: "Source Code Pro", ui-monospace, monospace;
 }
 
-body {
-  margin: 0;
-  font-family: 'Inter', 'Segoe UI', sans-serif;
-  background: var(--color-bg-light);
-  color: var(--color-text-primary);
-}
+* { box-sizing: border-box; }

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { environment } from '../../../environments/environment';
@@ -31,6 +31,7 @@ export class PortafolioWebPageComponent implements OnInit {
   editando: string | null = null;
   guardando = false;
   readonly esAdmin: boolean;
+  private readonly fb = inject(FormBuilder);
   readonly form = this.fb.nonNullable.group({
     titulo: ['', [Validators.required, Validators.maxLength(160)]],
     descripcion: ['', [Validators.required, Validators.maxLength(800)]],
@@ -41,7 +42,6 @@ export class PortafolioWebPageComponent implements OnInit {
 
   constructor(
     private readonly http: HttpClient,
-    private readonly fb: FormBuilder,
     private readonly toast: ToastService,
     private readonly cdr: ChangeDetectorRef,
     tokens: TokenService,

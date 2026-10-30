@@ -13,7 +13,6 @@ import { LookupService } from '../../../shared/services/lookup.service';
 import { CajaGateService } from '../../../shared/services/caja-gate.service';
 import { AvatarService } from '../../../shared/services/avatar.service';
 import { SedeFiltroService } from '../../../shared/services/sede-filtro.service';
-import { ThemeService } from '../../../shared/services/theme.service';
 import { environment } from '../../../../environments/environment';
 
 import { NAV_SECTIONS, NavItem } from '../../navigation';
@@ -40,7 +39,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private eventos?: EventSource;
 
   constructor(
-    readonly theme: ThemeService,
     readonly sedeFiltro: SedeFiltroService,
     private readonly layout: LayoutService,
     private readonly auth: AuthService,

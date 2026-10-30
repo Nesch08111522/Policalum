@@ -1,6 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { environment } from '../../../environments/environment';
@@ -39,11 +39,11 @@ export class MensajesWebPageComponent implements OnInit {
   cargando = true;
   abierto: MensajeWeb | null = null;
   guardando = false;
+  private readonly fb = inject(FormBuilder);
   readonly nota = this.fb.nonNullable.control('');
 
   constructor(
     private readonly http: HttpClient,
-    private readonly fb: FormBuilder,
     private readonly toast: ToastService,
     private readonly cdr: ChangeDetectorRef,
   ) {}
