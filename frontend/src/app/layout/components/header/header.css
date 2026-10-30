@@ -28,6 +28,8 @@
 .aviso span { color: var(--color-text-muted); font-size: var(--text-xs); }
 .user-label { max-width: clamp(5rem, 12vw, 11rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .theme-toggle span { white-space: nowrap; }
+.web-link { border: 1px solid var(--color-blue-medium, #1fa2d6); white-space: nowrap; }
+.web-link span { white-space: nowrap; }
 .search-shell { width: 100%; max-width: none; min-width: 0; }
 .app-header > .cluster:last-child { min-width: 0; justify-content: flex-end; }
 .dropdown > .btn.btn-sm { max-width: clamp(6.5rem, 16vw, 14rem); }
@@ -45,7 +47,7 @@
   .search-shell { padding-left: 0.55rem; }
 }
 @media (max-width: 1180px) {
-  .theme-toggle span {
+  .theme-toggle span, .web-link span {
     position: absolute;
     width: 1px;
     height: 1px;

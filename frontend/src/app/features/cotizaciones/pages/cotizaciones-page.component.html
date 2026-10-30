@@ -4,7 +4,7 @@
   <app-filter-bar *ngIf="tab === 'lista'">
     <app-form-field label="Cliente" inputId="cot-cli"><app-select inputId="cot-cli" [options]="clientes" placeholder="Todos" [formControl]="filtros.controls.clienteId"></app-select></app-form-field>
     <app-form-field label="Sede" inputId="cot-sede"><app-select inputId="cot-sede" [options]="sedes" placeholder="Todas" [formControl]="filtros.controls.sedeId"></app-select></app-form-field>
-    <app-form-field label="Estado" inputId="cot-est"><select id="cot-est" class="select" [formControl]="filtros.controls.estado"><option value="">Todos</option><option value="EMITIDA">Emitida</option><option value="ACEPTADA">Aceptada</option><option value="NO_COMPRADO">No comprada</option><option value="RECHAZADA">Rechazada</option><option value="VENCIDA">Vencida</option><option value="CONVERTIDA">Convertida</option></select></app-form-field>
+    <app-form-field label="Estado" inputId="cot-est"><select id="cot-est" class="select" [formControl]="filtros.controls.estado"><option value="">Todos</option><option value="PENDIENTE">Nuevo (web)</option><option value="EMITIDA">Emitida</option><option value="ACEPTADA">Aceptada</option><option value="NO_COMPRADO">No comprada</option><option value="RECHAZADA">Rechazada</option><option value="VENCIDA">Vencida</option><option value="CONVERTIDA">Convertida</option></select></app-form-field>
     <app-form-field label="Desde" inputId="cot-desde"><input id="cot-desde" class="input" type="date" [formControl]="filtros.controls.desde" /></app-form-field>
     <app-form-field label="Hasta" inputId="cot-hasta"><input id="cot-hasta" class="input" type="date" [formControl]="filtros.controls.hasta" /></app-form-field>
     <div class="filter-actions"><button type="button" class="btn btn-primary" (click)="filtrar()">Filtrar</button><button type="button" class="btn btn-ghost" (click)="limpiar()">Limpiar</button></div>
@@ -15,9 +15,9 @@
       <button type="button" class="btn btn-ghost btn-sm" (click)="descargar(row, 'pdf')" [disabled]="documentoId === row.id">PDF</button>
       <button type="button" class="btn btn-ghost btn-sm" (click)="descargar(row, 'xlsx')" [disabled]="documentoId === row.id">Excel</button>
       <button type="button" class="btn btn-ghost btn-sm" *ngIf="esEmitida(row)" (click)="abrirEditar(row)">Editar</button>
-      <button type="button" class="btn btn-ghost btn-sm" *ngIf="esEmitida(row)" (click)="noComprada(row)">No compró</button>
-      <button type="button" class="btn btn-ghost btn-sm" *ngIf="esEmitida(row)" (click)="aceptar(row)">Aceptar</button>
-      <button type="button" class="btn btn-ghost btn-sm" *ngIf="esEmitida(row)" (click)="abrirRechazar(row)">Rechazar</button>
+      <button type="button" class="btn btn-ghost btn-sm" *ngIf="esGestionable(row)" (click)="noComprada(row)">No compró</button>
+      <button type="button" class="btn btn-ghost btn-sm" *ngIf="esGestionable(row)" (click)="aceptar(row)">Aceptar</button>
+      <button type="button" class="btn btn-ghost btn-sm" *ngIf="esGestionable(row)" (click)="abrirRechazar(row)">Rechazar</button>
       <button type="button" class="btn btn-primary btn-sm" *ngIf="puedeConvertir(row)" (click)="abrirConvertir(row)">Convertir</button>
       <button type="button" class="btn btn-danger btn-sm" *ngIf="esEmitida(row)" (click)="pedirEliminar(row)">Eliminar</button>
     </ng-template>
@@ -50,7 +50,7 @@
 
 <app-modal [open]="detalleAbierto" title="Detalle de cotización" size="lg" (closed)="detalleAbierto = false">
   <div *ngIf="detalle">
-    <p>{{ detalle.clienteNombre || 'Sin cliente' }} · {{ detalle.estado }} · {{ detalle.total | pen }}</p>
+    <p>{{ detalle.clienteNombre || 'Sin cliente' }} · {{ detalle.origen || detalle.estado }} · {{ detalle.estado }} · {{ detalle.total | pen }}</p>
     <div class="cluster">
       <button type="button" class="btn btn-ghost btn-sm" (click)="descargar(detalle, 'pdf')"><app-icon name="file"></app-icon> Descargar PDF</button>
       <button type="button" class="btn btn-ghost btn-sm" (click)="descargar(detalle, 'xlsx')"><app-icon name="chart"></app-icon> Descargar Excel</button>

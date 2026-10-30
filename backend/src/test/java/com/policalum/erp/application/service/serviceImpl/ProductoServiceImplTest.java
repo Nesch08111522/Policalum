@@ -43,7 +43,7 @@ class ProductoServiceImplTest {
 
     private ProductoRequestDTO request(String sku, boolean fraccionable, List<CatalogoFraccionRequestDTO> fracciones) {
         return new ProductoRequestDTO(null, null, sku, "Policarbonato 6mm", null, TipoProducto.FISICO, new BigDecimal("80.00"),
-                new BigDecimal("150.00"), "unid", fraccionable, true, true, "10", fracciones, null);
+                new BigDecimal("150.00"), "unid", fraccionable, true, true, "10", fracciones, null, null);
     }
 
     /** El mapper es un mock: devolvemos una entidad "como la mapearía" MapStruct, sin normalizar. */

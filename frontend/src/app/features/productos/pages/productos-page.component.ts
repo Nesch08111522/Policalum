@@ -77,6 +77,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     precioVentaBase: [0, [Validators.required, Validators.min(0)]],
     activo: [true],
     esFraccionable: [false],
+    destacado: [false],
     incluyeIgv: [true],
     imagen: [''],
   });
@@ -243,7 +244,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     this.modoImagen = 'archivo';
     this.archivoPendiente = null;
     this.vistaPrevia = null;
-    this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, incluyeIgv: true, imagen: '' });
+    this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, destacado: false, incluyeIgv: true, imagen: '' });
     this.modal = true;
   }
   abrirEditar(item: Api.ProductoResponseDTO): void {
@@ -254,7 +255,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     this.form.reset({
       id: item.id ?? '', nombre: item.nombre ?? '', codigoSku: item.codigoSku ?? '', descripcion: item.descripcion ?? '',
       categoriaId: item.categoria?.id ?? '', proveedorId: item.proveedor?.id ?? '', tipo: item.tipo ?? 'FISICO', unidad: item.unidad ?? 'UNIDAD',
-      precioCompra: item.precioCompra ?? 0, precioVentaBase: item.precioVentaBase ?? 0, activo: item.activo ?? true, esFraccionable: item.esFraccionable ?? false, incluyeIgv: item.incluyeIgv ?? true,
+      precioCompra: item.precioCompra ?? 0, precioVentaBase: item.precioVentaBase ?? 0, activo: item.activo ?? true, esFraccionable: item.esFraccionable ?? false, destacado: item.destacado ?? false, incluyeIgv: item.incluyeIgv ?? true,
       imagen: item.imagen ?? '',
     });
     this.archivoPendiente = null;
@@ -308,7 +309,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
         this.guardando = false;
         this.archivoPendiente = null;
         this.modal = false;
-        this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, incluyeIgv: true, imagen: '' });
+        this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, destacado: false, incluyeIgv: true, imagen: '' });
         this.lookup.invalidate('productos');
         this.aplicarProducto(guardado, this.editando ? 'actualizar' : 'crear');
         this.avisarInventario();
@@ -709,7 +710,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     return {
       nombre: value.nombre.trim(), codigoSku: value.codigoSku.trim() || undefined, descripcion: value.descripcion.trim() || undefined,
       categoriaId: value.categoriaId || undefined, proveedorId: value.proveedorId || undefined, tipo: value.tipo, unidad: value.unidad.trim() || undefined,
-      precioCompra: Number(value.precioCompra), precioVentaBase: Number(value.precioVentaBase), activo: value.activo, esFraccionable: value.esFraccionable, incluyeIgv: value.incluyeIgv,
+      precioCompra: Number(value.precioCompra), precioVentaBase: Number(value.precioVentaBase), activo: value.activo, esFraccionable: value.esFraccionable, destacado: value.destacado, incluyeIgv: value.incluyeIgv,
       fracciones: value.esFraccionable ? this.fraccionesDe(productoId, fracciones) : undefined,
       imagen: value.imagen.trim() || undefined,
     };
@@ -728,6 +729,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
       precioVentaBase: Number(item.precioVentaBase ?? 0),
       activo,
       esFraccionable: item.esFraccionable ?? false,
+      destacado: item.destacado ?? false,
       incluyeIgv: item.incluyeIgv ?? true,
       fracciones: item.esFraccionable ? this.fraccionesDe(item.id ?? '', item.fracciones ?? []) : undefined,
       imagen: item.imagen,

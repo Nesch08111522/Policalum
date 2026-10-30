@@ -1,0 +1,66 @@
+<section class="hero">
+  <div>
+    <p class="kicker">Policarbonato para obras reales</p>
+    <h1>Cubiertas que aguantan el clima y dejan entrar la luz.</h1>
+    <p class="lead">El catálogo sale del inventario de POLICALUM. Si una plancha se agota en almacén, aquí se marca al momento. Cierras por WhatsApp o pides la cotización formal de tu empresa.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" routerLink="/catalogo">Ver catálogo</a>
+      <a class="btn btn-sun" routerLink="/cotizar">Solicitar cotización</a>
+    </div>
+  </div>
+  <div class="slides" aria-live="polite">
+    @for (item of slides; track item.titulo) {
+      <article class="slide">
+        <strong>{{ item.titulo }}</strong>
+        <span>{{ item.texto }}</span>
+      </article>
+    }
+  </div>
+</section>
+
+<section class="band" aria-label="Cómo compramos">
+  <article><strong>Stock en vivo</strong><p>Lo que ves es lo que hay en almacén. Agotado significa agotado.</p></article>
+  <article><strong>WhatsApp</strong><p>Armas el pedido y lo envías al equipo de ventas, sin pasarela.</p></article>
+  <article><strong>Cotización PDF</strong><p>RUC, razón social y un documento con el logo de la empresa.</p></article>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <p class="kicker">Ofertas y destacados</p>
+      <h2>Lo que el equipo marcó para la portada</h2>
+    </div>
+    <a class="btn btn-line btn-sm no-print" routerLink="/catalogo">Todo el catálogo</a>
+  </div>
+  @if (destacados().length) {
+    <div class="grid">
+      @for (producto of destacados(); track producto.id) {
+        <app-ficha [producto]="producto"></app-ficha>
+      }
+    </div>
+  } @else {
+    <p class="muted">Cuando un producto se marque como destacado en el ERP, aparece en esta portada.</p>
+  }
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <p class="kicker">{{ obrasReales() ? 'Portafolio' : 'Líneas de obra' }}</p>
+      <h2>{{ obrasReales() ? 'Trabajos publicados' : 'Techos, cerramientos y luz cenital' }}</h2>
+    </div>
+    <a class="btn btn-line btn-sm" routerLink="/portafolio">Ver galería</a>
+  </div>
+  <div class="works">
+    @for (obra of obras().slice(0, 3); track obra.id; let i = $index) {
+      <article class="work tone-{{ i % 4 }}">
+        @if (foto(obra); as imagen) { <img [src]="imagen" [alt]="obra.titulo" /> }
+        <div class="veil"></div>
+        <div>
+          <h3>{{ obra.titulo }}</h3>
+          <p>{{ obra.descripcion }}</p>
+        </div>
+      </article>
+    }
+  </div>
+</section>

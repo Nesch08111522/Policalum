@@ -64,6 +64,7 @@ public class ProductoServiceImpl implements ProductoService {
 
         Producto producto = productoMapper.toEntity(requestDTO);
         resolverReferencias(producto, requestDTO);
+        if (producto.getDestacado() == null) producto.setDestacado(false);
         normalize(producto);
 
         procesarFracciones(producto, requestDTO, null);
@@ -81,8 +82,10 @@ public class ProductoServiceImpl implements ProductoService {
         validateSkuAvailability(requestDTO.codigoSku(), id);
         String imagenAnterior = producto.getImagen();
         BigDecimal precioAnterior = producto.getPrecioVentaBase();
+        boolean destacadoPrevio = Boolean.TRUE.equals(producto.getDestacado());
 
         productoMapper.updateEntityFromDto(requestDTO, producto);
+        if (requestDTO.destacado() == null) producto.setDestacado(destacadoPrevio);
         resolverReferencias(producto, requestDTO);
         normalize(producto);
 

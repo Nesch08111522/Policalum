@@ -2,6 +2,7 @@ package com.policalum.erp.application.service;
 
 import com.policalum.erp.application.dto.request.ConvertirCotizacionRequestDTO;
 import com.policalum.erp.application.dto.request.CotizacionRequestDTO;
+import com.policalum.erp.application.dto.request.CotizacionWebRequestDTO;
 import com.policalum.erp.application.dto.request.RechazarCotizacionRequestDTO;
 import com.policalum.erp.application.dto.response.CotizacionListadoDTO;
 import com.policalum.erp.application.dto.response.CotizacionResponseDTO;
@@ -17,6 +18,8 @@ import org.springframework.data.domain.Pageable;
 public interface CotizacionService {
     /** Creates a new quotation and calculates all commercial amounts in the server. */
     CotizacionResponseDTO create(CotizacionRequestDTO request);
+    /** Recibe un carrito del portal, recalcula precios y la deja pendiente para ventas. */
+    CotizacionResponseDTO crearDesdeWeb(CotizacionWebRequestDTO request);
     /** Updates an issued quotation only. */
     CotizacionResponseDTO update(UUID id, CotizacionRequestDTO request);
     /** Obtains the full quotation including lines. */

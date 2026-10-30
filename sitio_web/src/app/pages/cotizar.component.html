@@ -1,0 +1,72 @@
+<section class="section">
+  <p class="kicker">Cotización formal</p>
+  <h1>Documento para tu empresa</h1>
+  <p class="lead">El ERP recalcula precios e IGV. Al enviarla queda como NUEVO (WEB) en Cotizaciones.</p>
+</section>
+
+@if (!lineas().length && !creada()) {
+  <p class="muted">Agrega productos antes de cotizar. <a routerLink="/catalogo">Ir al catálogo</a></p>
+} @else if (creada(); as oficial) {
+  <div class="okbox">Cotización registrada. El equipo de ventas ya tiene el aviso.</div>
+  <article class="sheet" style="margin-top:1rem">
+    <p class="kicker">{{ marca.empresa().nombreComercial }}</p>
+    <h2>Cotización</h2>
+    <p>{{ oficial.clienteNombre }} · {{ oficial.origen || oficial.estado }}</p>
+    <p class="muted">Vigente hasta {{ oficial.fechaVigencia }}</p>
+    <table>
+      <thead><tr><th>Ítem</th><th>Cantidad</th><th>Subtotal</th></tr></thead>
+      <tbody>
+        @for (linea of oficial.lineas; track $index) {
+          <tr>
+            <td>{{ linea.productoNombre || linea.servicioNombre }} {{ linea.fraccionNombre }}</td>
+            <td>{{ linea.cantidad }}</td>
+            <td>{{ pen(linea.subtotal) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <p class="price">Total {{ pen(oficial.total) }}</p>
+    <div class="hero-actions no-print">
+      <button type="button" class="btn btn-primary" (click)="pdf()">Descargar PDF</button>
+      <a class="btn btn-line" routerLink="/catalogo">Seguir viendo</a>
+    </div>
+  </article>
+} @else {
+  <div class="quote-grid">
+    <form class="panel" style="padding:1rem; display:grid; gap:0.7rem" [formGroup]="form" (ngSubmit)="ver()">
+      <label class="field trap" aria-hidden="true">Web<input class="input" formControlName="website" tabindex="-1" autocomplete="off" /></label>
+      <label class="field"><span>RUC</span><input class="input" formControlName="ruc" inputmode="numeric" maxlength="11" /></label>
+      <label class="field"><span>Razón social</span><input class="input" formControlName="razonSocial" /></label>
+      <label class="field"><span>Correo</span><input class="input" type="email" formControlName="correo" /></label>
+      <label class="field"><span>Teléfono</span><input class="input" formControlName="telefono" /></label>
+      <label class="field"><span>Observaciones</span><textarea class="textarea" formControlName="observaciones"></textarea></label>
+      @if (error()) { <p class="alert">{{ error() }}</p> }
+      <button type="submit" class="btn btn-line no-print">Ver cotización</button>
+    </form>
+    @if (vista()) {
+      <article class="sheet">
+        <p class="kicker">{{ marca.empresa().nombreComercial }}</p>
+        <h2>{{ form.controls.razonSocial.value }}</h2>
+        <p class="muted">RUC {{ form.controls.ruc.value }} · {{ form.controls.correo.value }}</p>
+        <table>
+          <thead><tr><th>Ítem</th><th>Cantidad</th><th>Subtotal</th></tr></thead>
+          <tbody>
+            @for (linea of lineas(); track $index) {
+              <tr>
+                <td>{{ linea.nombre }} {{ linea.fraccionNombre }}</td>
+                <td>{{ linea.cantidad }}</td>
+                <td>{{ pen(linea.precio * linea.cantidad) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <p class="price">Total aproximado {{ pen(totalLocal()) }}</p>
+        <p class="muted">El total oficial se confirma al enviar, con los precios del ERP.</p>
+        <div class="hero-actions no-print">
+          <button type="button" class="btn btn-line" (click)="imprimir()">Descargar en PDF</button>
+          <button type="button" class="btn btn-primary" (click)="enviar()" [disabled]="enviando()">{{ enviando() ? 'Enviando...' : 'Enviar a POLICALUM' }}</button>
+        </div>
+      </article>
+    }
+  </div>
+}

@@ -1,0 +1,37 @@
+@if (error()) { <p class="alert">{{ error() }}</p> }
+@if (producto(); as item) {
+  <article class="product section">
+    <div class="product-photo">
+      @if (foto(item); as imagen) {
+        <img [src]="imagen" [alt]="item.nombre" />
+      } @else {
+        <span class="swatch">{{ item.nombre.charAt(0) }}</span>
+      }
+    </div>
+    <div>
+      <p class="kicker">{{ item.categoriaNombre || 'Catálogo' }}</p>
+      <h1>{{ item.nombre }}</h1>
+      <p class="lead">{{ item.descripcion || 'Precio público con IGV, calculado desde el ERP.' }}</p>
+      <p class="price">{{ precioVisible(item) }} <span class="muted">/ {{ item.unidad || 'unidad' }}</span></p>
+      <p class="stock" [class.on]="item.disponible" [class.off]="!item.disponible">{{ item.disponible ? 'Disponible' : 'Agotado' }}</p>
+      <form class="buy" [formGroup]="form" (ngSubmit)="agregar(item)">
+        @if (item.esFraccionable) {
+          <label class="field">
+            <span>Corte</span>
+            <select class="select" formControlName="fraccionId">
+              @for (fraccion of item.fracciones; track fraccion.id) {
+                <option [value]="fraccion.id">{{ fraccion.nombre }}</option>
+              }
+            </select>
+          </label>
+        }
+        <label class="field">
+          <span>Cantidad</span>
+          <input class="input qty" type="number" min="0.0001" step="0.0001" formControlName="cantidad" />
+        </label>
+        <button type="submit" class="btn btn-primary" [disabled]="form.invalid">Agregar al carrito</button>
+        @if (aviso()) { <p class="okbox">{{ aviso() }} <a routerLink="/carrito">Ir al carrito</a></p> }
+      </form>
+    </div>
+  </article>
+}

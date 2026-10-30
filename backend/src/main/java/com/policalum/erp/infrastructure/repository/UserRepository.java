@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.policalum.erp.domain.enums.RolNombre;
 import com.policalum.erp.domain.model.User;
 
 @Repository
@@ -31,4 +32,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("SELECT u FROM User u WHERE u.email = :email AND u.activo = true AND u.rol.nombre = :rol")
     Optional<User> findByEmailAndRolAndActivoTrue(@Param("email") String email, @Param("rol") String rol);
+
+    Optional<User> findFirstByActivoTrueAndRol_NombreOrderByEmailAsc(RolNombre nombre);
 }

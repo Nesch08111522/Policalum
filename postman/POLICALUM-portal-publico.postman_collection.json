@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "POLICALUM portal público",
+    "description": "Flujos del portal: catálogo, cotización web y mensajes de contacto. No expone costos ni proveedores.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "productoId", "value": "" },
+    { "key": "fraccionId", "value": "" },
+    { "key": "cotizacionId", "value": "" },
+    { "key": "mensajeId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Empresa pública",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/public/empresa" }
+    },
+    {
+      "name": "Categorías",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/public/catalogo/categorias" }
+    },
+    {
+      "name": "Destacados",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/public/catalogo/destacados" }
+    },
+    {
+      "name": "Catálogo",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/public/catalogo/productos?page=0&size=12" }
+    },
+    {
+      "name": "Producto",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/public/catalogo/productos/{{productoId}}" }
+    },
+    {
+      "name": "Portafolio",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/public/portafolio" }
+    },
+    {
+      "name": "Crear cotización web",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/v1/public/cotizaciones",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ruc\": \"20100070970\",\n  \"razonSocial\": \"Cliente Demo SAC\",\n  \"correo\": \"compras@cliente-demo.pe\",\n  \"telefono\": \"999888777\",\n  \"observaciones\": \"Obra en azotea\",\n  \"website\": \"\",\n  \"lineas\": [\n    { \"productoId\": \"{{productoId}}\", \"fraccionId\": \"{{fraccionId}}\", \"cantidad\": 2 }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "PDF de cotización web",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/public/cotizaciones/{{cotizacionId}}/pdf" }
+    },
+    {
+      "name": "Enviar contacto",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/v1/public/contacto",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Ana Quispe\",\n  \"correo\": \"ana@obra.pe\",\n  \"telefono\": \"999111222\",\n  \"empresa\": \"Obra Norte\",\n  \"asunto\": \"Techo de cochera\",\n  \"mensaje\": \"Necesito medida y plazo para 40 m2.\",\n  \"website\": \"\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Listar mensajes (ERP)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/v1/mensajes-web?estado=NUEVO"
+      }
+    },
+    {
+      "name": "Gestionar mensaje (ERP)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/api/v1/mensajes-web/{{mensajeId}}/gestionar",
+        "body": { "mode": "raw", "raw": "{\n  \"nota\": \"Llamado devuelto. Pasa a cotización.\"\n}" }
+      }
+    }
+  ]
+}

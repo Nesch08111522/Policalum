@@ -1,0 +1,112 @@
+{
+  "info": {
+    "name": "POLICALUM Portal público",
+    "description": "Catálogo, cotización web y mensajes de contacto. Los dos últimos de la carpeta ERP requieren el token del login del ERP.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "productoId", "value": "" },
+    { "key": "cotizacionId", "value": "" },
+    { "key": "mensajeId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Público",
+      "item": [
+        {
+          "name": "Empresa",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/public/empresa" }
+        },
+        {
+          "name": "Categorías",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/public/catalogo/categorias" }
+        },
+        {
+          "name": "Destacados",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/public/catalogo/destacados" }
+        },
+        {
+          "name": "Productos",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/public/catalogo/productos?page=0&size=12" }
+        },
+        {
+          "name": "Portafolio",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/public/portafolio" }
+        },
+        {
+          "name": "Contacto",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana Rojas\",\n  \"correo\": \"ana@obra.com\",\n  \"telefono\": \"999888777\",\n  \"empresa\": \"Obras del Norte\",\n  \"asunto\": \"Techo de almacén\",\n  \"mensaje\": \"Necesito plancha de 6 mm para 80 m2.\",\n  \"website\": \"\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/public/contacto"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "if (pm.response.code === 201) pm.collectionVariables.set('mensajeId', pm.response.json().id);"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Cotización web",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruc\": \"20100070970\",\n  \"razonSocial\": \"Cliente Web SAC\",\n  \"correo\": \"compras@clienteweb.com\",\n  \"telefono\": \"999111222\",\n  \"observaciones\": \"Obra en Trujillo\",\n  \"website\": \"\",\n  \"lineas\": [\n    { \"productoId\": \"{{productoId}}\", \"cantidad\": 2 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/public/cotizaciones"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "if (pm.response.code === 201) pm.collectionVariables.set('cotizacionId', pm.response.json().id);"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "PDF de cotización web",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/public/cotizaciones/{{cotizacionId}}/pdf" }
+        }
+      ]
+    },
+    {
+      "name": "ERP",
+      "item": [
+        {
+          "name": "Mensajes web",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/v1/mensajes-web?estado=NUEVO"
+          }
+        },
+        {
+          "name": "Gestionar mensaje",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"nota\": \"Llamado y citado a tienda\" }" },
+            "url": "{{baseUrl}}/api/v1/mensajes-web/{{mensajeId}}/gestionar"
+          }
+        }
+      ]
+    }
+  ]
+}

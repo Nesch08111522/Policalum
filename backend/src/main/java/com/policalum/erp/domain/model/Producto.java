@@ -64,6 +64,10 @@ public class Producto {
     @Column(nullable = false)
     private Boolean activo = true;
 
+    /** Visible en la portada del portal público. Null se trata como no destacado. */
+    @Column(name = "destacado")
+    private Boolean destacado = false;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -112,6 +116,7 @@ public class Producto {
         if (this.unidad == null) this.unidad = "UNID";
         if (this.esFraccionable == null) this.esFraccionable = false;
         if (this.activo == null) this.activo = true;
+        if (this.destacado == null) this.destacado = false;
         if (this.createdAt == null) this.createdAt = LocalDateTime.now();
         if (this.incluyeIgv == null) this.incluyeIgv = true;
         if (this.tipoAfectacion == null) this.tipoAfectacion = "10";

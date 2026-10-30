@@ -10,6 +10,7 @@ import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import com.policalum.erp.domain.enums.CanalCotizacion;
 import com.policalum.erp.domain.enums.EstadoCotizacion;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -53,6 +54,23 @@ public class Cotizacion {
     @Enumerated(EnumType.STRING)
     private EstadoCotizacion estado = EstadoCotizacion.EMITIDA;
 
+    /** Null en filas anteriores a la web: se leen como canal interno. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private CanalCotizacion canal = CanalCotizacion.INTERNO;
+
+    @Column(name = "contacto_ruc", length = 11)
+    private String contactoRuc;
+
+    @Column(name = "contacto_razon_social", length = 200)
+    private String contactoRazonSocial;
+
+    @Column(name = "contacto_correo", length = 150)
+    private String contactoCorreo;
+
+    @Column(name = "contacto_telefono", length = 20)
+    private String contactoTelefono;
+
     @Column(precision = 12, scale = 2)
     private BigDecimal total = BigDecimal.ZERO;
 
@@ -74,6 +92,7 @@ public class Cotizacion {
     void prePersist() {
         // FIX deuda técnica: @Builder (y MapStruct, que usa el builder) ignora los inicializadores de campo
         if (this.estado == null) this.estado = EstadoCotizacion.EMITIDA;
+        if (this.canal == null) this.canal = CanalCotizacion.INTERNO;
         if (this.total == null) this.total = BigDecimal.ZERO;
         if (createdAt == null) {
             createdAt = LocalDateTime.now();

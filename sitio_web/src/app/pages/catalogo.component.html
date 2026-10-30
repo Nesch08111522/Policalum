@@ -1,0 +1,34 @@
+<section class="section">
+  <p class="kicker">Catálogo</p>
+  <h1>Inventario publicado</h1>
+  <p class="lead">Precios de venta con IGV. El stock se lee de los almacenes del ERP.</p>
+</section>
+<div class="catalog">
+  <aside class="panel filters">
+    <form class="field" (ngSubmit)="buscar()">
+      <span>Buscar</span>
+      <input class="input" type="search" placeholder="Nombre o código" [formControl]="busqueda" />
+    </form>
+    <button type="button" [class.on]="categoriaId() === ''" (click)="filtrarCategoria('')">Todas las categorías</button>
+    @for (categoria of categorias(); track categoria.id) {
+      <button type="button" [class.on]="categoriaId() === categoria.id" (click)="filtrarCategoria(categoria.id)">{{ categoria.nombre }}</button>
+    }
+  </aside>
+  <div>
+    @if (error()) { <p class="alert">{{ error() }}</p> }
+    @if (cargando()) { <p class="muted">Cargando catálogo...</p> }
+    @if (!cargando() && !productos().length) { <p class="muted">No hay productos con ese filtro.</p> }
+    <div class="grid">
+      @for (producto of productos(); track producto.id) {
+        <app-ficha [producto]="producto"></app-ficha>
+      }
+    </div>
+    @if (paginas() > 1) {
+    <div class="pager">
+      <button type="button" class="btn btn-line btn-sm" (click)="mover(-1)" [disabled]="pagina() === 0">Anterior</button>
+      <span>{{ total() }} productos</span>
+      <button type="button" class="btn btn-line btn-sm" (click)="mover(1)" [disabled]="pagina() + 1 >= paginas()">Siguiente</button>
+    </div>
+    }
+  </div>
+</div>

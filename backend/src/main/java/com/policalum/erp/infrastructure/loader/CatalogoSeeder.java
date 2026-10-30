@@ -115,7 +115,8 @@ public class CatalogoSeeder implements CommandLineRunner {
                     true,
                     "10",
                     null,
-                    semilla.imagen()));
+                    semilla.imagen(),
+                    false));
             if (almacen != null && operador != null && semilla.stock().signum() > 0) {
                 Producto producto = productoRepository.findById(creado.id()).orElseThrow();
                 kardexService.registrarMovimiento(new KardexMovimientoRequestDTO(

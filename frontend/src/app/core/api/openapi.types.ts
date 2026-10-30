@@ -466,11 +466,13 @@ export interface CotizacionListadoDTO {
   clienteId?: string;
   clienteNombre?: string;
   createdAt?: string;
-  estado?: "EMITIDA" | "ACEPTADA" | "RECHAZADA" | "VENCIDA" | "CONVERTIDA" | "NO_COMPRADO";
+  estado?: "PENDIENTE" | "EMITIDA" | "ACEPTADA" | "RECHAZADA" | "VENCIDA" | "CONVERTIDA" | "NO_COMPRADO";
   fechaVigencia?: string;
   id?: string;
   sedeId?: string;
   total?: number;
+  canal?: "INTERNO" | "WEB";
+  origen?: string;
 }
 
 export interface CotizacionRequestDTO {
@@ -485,7 +487,7 @@ export interface CotizacionResponseDTO {
   clienteId?: string;
   clienteNombre?: string;
   createdAt?: string;
-  estado?: "EMITIDA" | "ACEPTADA" | "RECHAZADA" | "VENCIDA" | "CONVERTIDA" | "NO_COMPRADO";
+  estado?: "PENDIENTE" | "EMITIDA" | "ACEPTADA" | "RECHAZADA" | "VENCIDA" | "CONVERTIDA" | "NO_COMPRADO";
   fechaVigencia?: string;
   id?: string;
   lineas?: Array<DetalleCotizacionResponseDTO>;
@@ -496,6 +498,8 @@ export interface CotizacionResponseDTO {
   usuarioId?: string;
   usuarioNombre?: string;
   ventaId?: string;
+  canal?: "INTERNO" | "WEB";
+  origen?: string;
 }
 
 export interface CrearDespachoRequestDTO {
@@ -1986,6 +1990,7 @@ export interface ProductoRequestDTO {
   tipoAfectacion?: string;
   unidad?: string;
   imagen?: string;
+  destacado?: boolean;
 }
 
 export interface ProductoResponseDTO {
@@ -2006,6 +2011,7 @@ export interface ProductoResponseDTO {
   tipoAfectacion?: string;
   unidad?: string;
   imagen?: string;
+  destacado?: boolean;
 }
 
 export interface ProductosEstrellaDTO {

@@ -17,6 +17,11 @@ public interface CotizacionMapper {
     @Mapping(target = "estado", ignore = true)
     @Mapping(target = "total", ignore = true)
     @Mapping(target = "venta", ignore = true)
+    @Mapping(target = "canal", ignore = true)
+    @Mapping(target = "contactoRuc", ignore = true)
+    @Mapping(target = "contactoRazonSocial", ignore = true)
+    @Mapping(target = "contactoCorreo", ignore = true)
+    @Mapping(target = "contactoTelefono", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     Cotizacion toEntity(CotizacionRequestDTO requestDTO);
 
@@ -27,6 +32,11 @@ public interface CotizacionMapper {
     @Mapping(target = "estado", ignore = true)
     @Mapping(target = "total", ignore = true)
     @Mapping(target = "venta", ignore = true)
+    @Mapping(target = "canal", ignore = true)
+    @Mapping(target = "contactoRuc", ignore = true)
+    @Mapping(target = "contactoRazonSocial", ignore = true)
+    @Mapping(target = "contactoCorreo", ignore = true)
+    @Mapping(target = "contactoTelefono", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     void updateEntityFromDto(CotizacionRequestDTO dto, @MappingTarget Cotizacion entity);
 }

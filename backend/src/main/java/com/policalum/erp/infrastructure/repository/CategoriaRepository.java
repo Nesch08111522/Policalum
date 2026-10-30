@@ -54,6 +54,8 @@ public interface CategoriaRepository extends JpaRepository<Categoria, UUID> {
 
     Optional<Categoria> findBySlugIgnoreCase(String slug);
 
+    List<Categoria> findByActivaTrueOrderByNombreAsc();
+
     @Query("SELECT c FROM Categoria c WHERE LOWER(c.nombre) = LOWER(:valor) OR LOWER(c.slug) = LOWER(:valor)")
     List<Categoria> buscarPorNombreOSlug(@Param("valor") String valor);
 

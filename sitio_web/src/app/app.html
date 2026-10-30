@@ -1,0 +1,47 @@
+<div class="wrap">
+  <header class="topbar" [class.scrolled]="scrolled()">
+    <a class="brand" routerLink="/" (click)="cerrar()">
+      <span class="mark">P</span>
+      <span>{{ marca.empresa().nombreComercial }}</span>
+    </a>
+    <nav class="nav" aria-label="Principal">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+      <a routerLink="/catalogo" routerLinkActive="active">Catálogo</a>
+      <a routerLink="/portafolio" routerLinkActive="active">Proyectos</a>
+      <a routerLink="/contacto" routerLinkActive="active">Contacto</a>
+      <a class="cart-link" routerLink="/carrito" routerLinkActive="active">
+        Carrito
+        @if (carrito.piezas | async; as piezas) {
+          @if (piezas > 0) { <span class="cart-count">{{ piezas }}</span> }
+        }
+      </a>
+      <a class="btn btn-primary btn-sm" routerLink="/cotizar">Cotizar</a>
+    </nav>
+    <button type="button" class="menu-btn" (click)="menu.set(!menu())" [attr.aria-expanded]="menu()" aria-label="Abrir menú">☰</button>
+  </header>
+  <nav class="mobile-nav" [class.open]="menu()" aria-label="Móvil">
+    <a routerLink="/" (click)="cerrar()">Inicio</a>
+    <a routerLink="/catalogo" (click)="cerrar()">Catálogo</a>
+    <a routerLink="/portafolio" (click)="cerrar()">Proyectos</a>
+    <a routerLink="/contacto" (click)="cerrar()">Contacto</a>
+    <a routerLink="/carrito" (click)="cerrar()">Carrito</a>
+    <a routerLink="/cotizar" (click)="cerrar()">Cotizar</a>
+  </nav>
+  <router-outlet></router-outlet>
+  <footer class="site-footer">
+    <div class="foot">
+      <div>
+        <strong>{{ marca.empresa().nombreComercial }}</strong>
+        <p class="muted">{{ marca.empresa().direccion || 'Policarbonato, techos y cerramientos.' }}</p>
+      </div>
+      <div>
+        <p class="muted">{{ marca.empresa().telefono }}</p>
+        <p class="muted">{{ marca.empresa().email }}</p>
+      </div>
+      <div class="nav">
+        <a routerLink="/privacidad">Privacidad</a>
+        <a routerLink="/terminos">Términos</a>
+      </div>
+    </div>
+  </footer>
+</div>

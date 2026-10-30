@@ -95,6 +95,7 @@
                 <td>
                   <span class="badge" [class.badge-success]="fila.estado === 'optimo'" [class.badge-warning]="fila.estado === 'minimo'" [class.badge-danger]="fila.estado === 'agotado'" [class.badge-neutral]="fila.estado === 'inactivo'">{{ fila.estadoLabel }}</span>
                   <span class="badge badge-success" *ngIf="fila.producto?.activo !== false">Activo</span>
+                  <span class="badge badge-info" *ngIf="fila.producto?.destacado">Destacado</span>
                   <span class="minimo" *ngIf="fila.minimo > 0">Mínimo {{ fila.minimo | number:'1.0-2' }}</span>
                 </td>
                 <td class="acciones">
@@ -178,6 +179,7 @@
     </div>
     <app-form-field label="Activo" inputId="prod-act"><input id="prod-act" class="switch" type="checkbox" formControlName="activo" /></app-form-field>
     <app-form-field label="Fraccionable" inputId="prod-esfrac"><input id="prod-esfrac" class="switch" type="checkbox" formControlName="esFraccionable" /></app-form-field>
+    <app-form-field label="Destacado en la web" inputId="prod-dest" hint="Aparece en la portada del portal público."><input id="prod-dest" class="switch" type="checkbox" formControlName="destacado" /></app-form-field>
     <app-form-field label="Incluye IGV" inputId="prod-igv"><input id="prod-igv" class="switch" type="checkbox" formControlName="incluyeIgv" /></app-form-field>
   </form>
   <div modalFooter>

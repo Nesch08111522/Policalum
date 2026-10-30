@@ -1,0 +1,32 @@
+<section class="section">
+  <p class="kicker">Contacto</p>
+  <h1>Habla con ventas</h1>
+  <p class="lead">El mensaje entra a Mensajes web del ERP, no se queda solo en un correo.</p>
+</section>
+<div class="contact">
+  <aside class="map-card">
+    <p class="kicker" style="color:#f4d7b0">Sede</p>
+    <h2>{{ marca.empresa().nombreComercial }}</h2>
+    <p>{{ marca.empresa().direccion || 'La dirección se toma de la configuración de la empresa.' }}</p>
+    <p>{{ marca.empresa().telefono }}</p>
+    <p>{{ marca.empresa().email }}</p>
+    @if (mapa(); as enlace) {
+      <a class="btn btn-sun btn-sm" style="margin-top:0.8rem; width:fit-content" [href]="enlace" target="_blank" rel="noopener noreferrer">Abrir mapa</a>
+    }
+  </aside>
+  @if (enviado()) {
+    <div class="okbox">Mensaje recibido. Ventas lo verá en la bandeja del ERP.</div>
+  } @else {
+    <form class="panel" style="padding:1rem; display:grid; gap:0.7rem" [formGroup]="form" (ngSubmit)="enviar()">
+      <label class="field trap" aria-hidden="true">Web<input formControlName="website" tabindex="-1" autocomplete="off" /></label>
+      <label class="field"><span>Nombre</span><input class="input" formControlName="nombre" /></label>
+      <label class="field"><span>Correo</span><input class="input" type="email" formControlName="correo" /></label>
+      <label class="field"><span>Teléfono</span><input class="input" formControlName="telefono" /></label>
+      <label class="field"><span>Empresa</span><input class="input" formControlName="empresa" /></label>
+      <label class="field"><span>Asunto</span><input class="input" formControlName="asunto" /></label>
+      <label class="field"><span>Mensaje</span><textarea class="textarea" formControlName="mensaje"></textarea></label>
+      @if (error()) { <p class="alert">{{ error() }}</p> }
+      <button type="submit" class="btn btn-primary" [disabled]="enviando()">{{ enviando() ? 'Enviando...' : 'Enviar mensaje' }}</button>
+    </form>
+  }
+</div>

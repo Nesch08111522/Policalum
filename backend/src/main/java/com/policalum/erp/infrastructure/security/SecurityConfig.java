@@ -44,6 +44,8 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/v1/public/**").permitAll()
+
                         // ✅ Permitir login sin autenticación
                         .requestMatchers("/api/v1/auth/**").permitAll()
 
@@ -78,6 +80,8 @@ public class SecurityConfig {
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:4200",
                 "http://127.0.0.1:4200",
+                "http://localhost:4201",
+                "http://127.0.0.1:4201",
                 "http://10.189.117.157:4200",
                 "http://10.189.117.157:8080",
                 "https://192.168.18.9:4200",

@@ -56,6 +56,9 @@ public record ProductoRequestDTO(
         List<CatalogoFraccionRequestDTO> fracciones,
 
         @Size(max = 500, message = "La imagen no puede exceder 500 caracteres")
-        String imagen
+        String imagen,
+
+        /** Null conserva el valor actual al editar. */
+        Boolean destacado
 ) {
 }

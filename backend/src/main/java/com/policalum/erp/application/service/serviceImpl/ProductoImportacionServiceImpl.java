@@ -204,7 +204,8 @@ public class ProductoImportacionServiceImpl implements ProductoImportacionServic
                 igv,
                 afectacion,
                 fraccionesDe(existente, fraccionable),
-                imagen);
+                imagen,
+                existente != null && Boolean.TRUE.equals(existente.getDestacado()));
     }
 
     private List<CatalogoFraccionRequestDTO> fraccionesDe(Producto existente, Boolean fraccionable) {

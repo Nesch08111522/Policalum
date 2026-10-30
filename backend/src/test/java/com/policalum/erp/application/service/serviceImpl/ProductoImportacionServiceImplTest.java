@@ -178,6 +178,6 @@ class ProductoImportacionServiceImplTest {
 
     private ProductoResponseDTO respuesta(UUID id) {
         return new ProductoResponseDTO(id, null, null, "A-1", "Uno", null, TipoProducto.FISICO,
-                BigDecimal.ONE, BigDecimal.TEN, "UNID", false, true, null, true, "10", List.of(), null);
+                BigDecimal.ONE, BigDecimal.TEN, "UNID", false, true, null, true, "10", List.of(), null, false);
     }
 }

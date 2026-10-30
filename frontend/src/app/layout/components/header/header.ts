@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, HostListener, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -14,6 +14,8 @@ import { CajaGateService } from '../../../shared/services/caja-gate.service';
 import { AvatarService } from '../../../shared/services/avatar.service';
 import { SedeFiltroService } from '../../../shared/services/sede-filtro.service';
 import { ThemeService } from '../../../shared/services/theme.service';
+import { environment } from '../../../../environments/environment';
+
 import { NAV_SECTIONS, NavItem } from '../../navigation';
 
 @Component({
@@ -24,7 +26,8 @@ import { NAV_SECTIONS, NavItem } from '../../navigation';
   templateUrl: './header.html',
   styleUrls: ['./header.css'],
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements OnInit, OnDestroy {
+  readonly sitioWeb = environment.sitioWebUrl;
   query = '';
   results: NavItem[] = [];
   menuOpen = false;
@@ -34,6 +37,7 @@ export class HeaderComponent implements OnInit {
   noLeidas = 0;
   sedes: Api.SedeResponseDTO[] = [];
   private items: NavItem[] = [];
+  private eventos?: EventSource;
 
   constructor(
     readonly theme: ThemeService,
@@ -54,6 +58,11 @@ export class HeaderComponent implements OnInit {
     this.items = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => !item.roles || item.roles.includes(role));
     this.lookup.loadSedes().subscribe((rows) => { this.sedes = rows.filter((sede) => sede.activa !== false); });
     this.cargarAvisos();
+    this.escucharCanal();
+  }
+
+  ngOnDestroy(): void {
+    this.eventos?.close();
   }
 
   cargarAvisos(): void {
@@ -63,6 +72,14 @@ export class HeaderComponent implements OnInit {
       this.avisos = nuevas.slice(0, 6);
       this.cdr.detectChanges();
     });
+  }
+
+  private escucharCanal(): void {
+    const token = this.tokens.getToken();
+    if (!token || typeof EventSource === 'undefined') return;
+    const url = `${environment.apiUrl}/api/v1/canal-web/eventos?access_token=${encodeURIComponent(token)}`;
+    this.eventos = new EventSource(url);
+    this.eventos.addEventListener('aviso', () => this.cargarAvisos());
   }
 
   abrirAviso(aviso: Notificacion): void {

@@ -13,6 +13,10 @@
     </div>
   </div>
   <div class="cluster">
+    <a class="btn btn-ghost btn-sm web-link" [href]="sitioWeb" target="_blank" rel="noopener noreferrer" title="Ir a la Página Web">
+      <app-icon name="globe"></app-icon>
+      <span>Ir a la Página Web</span>
+    </a>
     <div class="dropdown" [class.menu-open]="sedesAbiertas">
       <button type="button" class="btn btn-ghost btn-sm sede-btn" (click)="sedesAbiertas = !sedesAbiertas" aria-haspopup="listbox" [attr.aria-expanded]="sedesAbiertas">
         <app-icon name="building"></app-icon>

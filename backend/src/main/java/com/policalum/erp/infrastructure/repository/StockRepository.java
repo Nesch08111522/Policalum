@@ -13,6 +13,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -143,4 +144,8 @@ public interface StockRepository extends JpaRepository<Stock, UUID> {
     @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockMinimo > 0 AND s.cantidad <= 0 AND " +
             "(CAST(:sedeId AS string) IS NULL OR s.almacen.sede.id = :sedeId)")
     long contarAgotados(@Param("sedeId") UUID sedeId);
+
+    /** Suma el saldo de los almacenes. La lista de ids no puede ir vacía. */
+    @Query("SELECT s.producto.id, COALESCE(SUM(s.cantidad), 0) FROM Stock s WHERE s.producto.id IN :ids GROUP BY s.producto.id")
+    List<Object[]> sumarCantidadPorProductos(@Param("ids") Collection<UUID> ids);
 }

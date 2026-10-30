@@ -53,6 +53,25 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
             + "WHERE p.id = :id")
     Optional<Producto> findWithRelationsById(@Param("id") UUID id);
 
+    /**
+     * Catálogo del portal: solo productos activos. q ya viene sin espacios o null.
+     * soloDestacados en false no filtra el flag.
+     */
+    @Query(value = "SELECT p FROM Producto p WHERE p.activo = true AND "
+            + "(CAST(:categoriaId AS string) IS NULL OR p.categoria.id = :categoriaId) AND "
+            + "(CAST(:soloDestacados AS boolean) = false OR p.destacado = true) AND "
+            + "(CAST(:q AS string) IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR "
+            + " LOWER(COALESCE(p.codigoSku, '')) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')))",
+            countQuery = "SELECT COUNT(p) FROM Producto p WHERE p.activo = true AND "
+            + "(CAST(:categoriaId AS string) IS NULL OR p.categoria.id = :categoriaId) AND "
+            + "(CAST(:soloDestacados AS boolean) = false OR p.destacado = true) AND "
+            + "(CAST(:q AS string) IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR "
+            + " LOWER(COALESCE(p.codigoSku, '')) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')))")
+    Page<Producto> catalogoPublico(@Param("categoriaId") UUID categoriaId,
+                                   @Param("soloDestacados") boolean soloDestacados,
+                                   @Param("q") String q,
+                                   Pageable pageable);
+
     Optional<Producto> findByCodigoSkuIgnoreCase(String codigoSku);
 
     boolean existsByCodigoSkuIgnoreCase(String codigoSku);

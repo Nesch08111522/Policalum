@@ -1,0 +1,7 @@
+.filtros { margin-bottom: 1rem; }
+.layout { display: grid; gap: 1rem; }
+@media (min-width: 960px) { .layout { grid-template-columns: 1.4fr 0.8fr; align-items: start; } }
+.detalle { padding: 1rem; border: 1px solid var(--color-border); border-radius: 12px; }
+.detalle h2 { margin: 0 0 0.4rem; font-size: 1.1rem; }
+.cuerpo { white-space: pre-wrap; }
+.textarea { width: 100%; min-height: 5rem; margin: 0.4rem 0 0.8rem; }

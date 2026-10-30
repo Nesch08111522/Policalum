@@ -49,7 +49,8 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
   readonly state = new PageState<Api.CotizacionListadoDTO>();
   readonly columns: ColumnDef[] = [
     { key: 'clienteNombre', label: 'Cliente' },
-    { key: 'estado', label: 'Estado', kind: 'badge', badge: { EMITIDA: 'info', ACEPTADA: 'success', RECHAZADA: 'danger', VENCIDA: 'warning', CONVERTIDA: 'neutral', NO_COMPRADO: 'warning' } },
+    { key: 'origen', label: 'Origen', kind: 'badge', badge: { 'NUEVO (WEB)': 'info', WEB: 'info', INTERNO: 'neutral' } },
+    { key: 'estado', label: 'Estado', kind: 'badge', badge: { PENDIENTE: 'warning', EMITIDA: 'info', ACEPTADA: 'success', RECHAZADA: 'danger', VENCIDA: 'warning', CONVERTIDA: 'neutral', NO_COMPRADO: 'warning' } },
     { key: 'fechaVigencia', label: 'Vigencia', kind: 'date' },
     { key: 'createdAt', label: 'Creada', kind: 'date', sortable: true },
     { key: 'total', label: 'Total', kind: 'money', align: 'end' },
@@ -269,6 +270,10 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
   }
 
   esEmitida(row: unknown): boolean { return (row as Api.CotizacionListadoDTO).estado === 'EMITIDA'; }
+  esGestionable(row: unknown): boolean {
+    const estado = (row as Api.CotizacionListadoDTO).estado;
+    return estado === 'EMITIDA' || estado === 'PENDIENTE';
+  }
   puedeConvertir(row: unknown): boolean { const estado = (row as Api.CotizacionListadoDTO).estado; return estado === 'EMITIDA' || estado === 'ACEPTADA'; }
   agregarLinea(): void { this.lineas.push(this.linea()); this.fraccionesLinea.push([]); }
   quitarLinea(index: number): void { if (this.lineas.length > 1) { this.lineas.removeAt(index); this.fraccionesLinea.splice(index, 1); } }

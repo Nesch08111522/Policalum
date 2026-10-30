@@ -31,6 +31,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
+        if ((authHeader == null || !authHeader.startsWith("Bearer "))
+                && request.getRequestURI() != null
+                && request.getRequestURI().endsWith("/api/v1/canal-web/eventos")) {
+            String access = request.getParameter("access_token");
+            if (access != null && !access.isBlank()) {
+                authHeader = "Bearer " + access.trim();
+            }
+        }
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);

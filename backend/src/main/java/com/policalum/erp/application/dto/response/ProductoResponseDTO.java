@@ -24,6 +24,7 @@ public record ProductoResponseDTO(
         Boolean incluyeIgv,
         String tipoAfectacion,
         List<CatalogoFraccionResponseDTO> fracciones,
-        String imagen
+        String imagen,
+        Boolean destacado
 ) {
 }

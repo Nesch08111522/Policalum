@@ -1,0 +1,17 @@
+<section class="section">
+  <p class="kicker">Portafolio</p>
+  <h1>{{ reales() ? 'Proyectos publicados desde el ERP' : 'Así se usa el material' }}</h1>
+  <p class="lead">{{ reales() ? 'Galería administrada en el ERP.' : 'Estas líneas describen el tipo de obra. Cuando cargues proyectos en el ERP, reemplazan esta galería.' }}</p>
+</section>
+<div class="works">
+  @for (obra of obras(); track obra.id; let i = $index) {
+    <article class="work tone-{{ i % 4 }}">
+      @if (foto(obra); as imagen) { <img [src]="imagen" [alt]="obra.titulo" /> }
+      <div class="veil"></div>
+      <div>
+        <h3>{{ obra.titulo }}</h3>
+        <p>{{ obra.descripcion }}</p>
+      </div>
+    </article>
+  }
+</div>

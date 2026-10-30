@@ -1,0 +1,45 @@
+<section class="section">
+  <p class="kicker">Carrito</p>
+  <h1>Pedido para ventas</h1>
+  <p class="lead">No hay pago en línea. WhatsApp lleva el detalle al equipo, o pides la cotización con RUC.</p>
+</section>
+
+@if (carrito.lineas | async; as lineas) {
+  @if (!lineas.length) {
+    <p class="muted">El carrito está vacío. <a routerLink="/catalogo">Revisar el catálogo</a></p>
+  } @else {
+    <div class="lines">
+      @for (linea of lineas; track $index) {
+        <article class="panel line">
+          @if (media(linea.imagenUrl); as imagen) {
+            <img class="thumb" [src]="imagen" [alt]="linea.nombre" />
+          } @else {
+            <div class="thumb"></div>
+          }
+          <div>
+            <strong>{{ linea.nombre }}</strong>
+            <p class="muted">{{ linea.fraccionNombre || linea.unidad }} · {{ pen(linea.precio) }}</p>
+            <input class="input qty" type="number" min="0.0001" step="0.0001" [value]="linea.cantidad" (change)="carrito.cambiarCantidad($index, +$any($event.target).value)" />
+          </div>
+          <div>
+            <strong>{{ pen(linea.precio * linea.cantidad) }}</strong>
+            <button type="button" class="btn btn-line btn-sm" (click)="carrito.quitar($index)">Quitar</button>
+          </div>
+        </article>
+      }
+    </div>
+    @if (carrito.total | async; as total) {
+      <div class="section-head" style="margin-top:1rem">
+        <h2>Total aproximado {{ pen(total) }}</h2>
+        <div class="hero-actions no-print">
+          @if (whatsapp(total); as enlace) {
+            <a class="btn btn-wa" [href]="enlace" target="_blank" rel="noopener noreferrer">Comprar por WhatsApp</a>
+          } @else {
+            <p class="muted">Configura el teléfono de la empresa en el ERP para abrir WhatsApp.</p>
+          }
+          <a class="btn btn-primary" routerLink="/cotizar">Solicitar cotización</a>
+        </div>
+      </div>
+    }
+  }
+}

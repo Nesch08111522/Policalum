@@ -86,7 +86,7 @@ public class CotizacionDocumentoService {
 
     private String usuario() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) return "";
+        if (auth == null || auth.getName() == null || "anonymousUser".equals(auth.getName())) return "Canal web";
         return userRepository.findByEmailAndActivoTrue(auth.getName())
                 .map(user -> ((user.getNombre() == null ? "" : user.getNombre()) + " " + (user.getApellido() == null ? "" : user.getApellido())).trim())
                 .orElse(auth.getName());

@@ -27,6 +27,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { id: 'pos', label: 'Punto de venta', path: '/ventas/pos', icon: 'cash' },
       { id: 'clientes', label: 'Clientes', path: '/modules/clientes', icon: 'users' },
       { id: 'cotizaciones', label: 'Cotizaciones', path: '/modules/cotizaciones', icon: 'file' },
+      { id: 'mensajes-web', label: 'Mensajes web', path: '/modules/mensajes-web', icon: 'mail' },
       { id: 'preformas', label: 'Preformas', path: '/modules/preformas', icon: 'file' },
       { id: 'devoluciones', label: 'Devoluciones', path: '/modules/devoluciones', icon: 'refresh' },
       { id: 'reembolsos', label: 'Reembolsos', path: '/modules/reembolsos', icon: 'cash' },
@@ -90,6 +91,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { id: 'roles', label: 'Roles', path: '/modules/roles', icon: 'shield', roles: admin },
       { id: 'sedes', label: 'Sedes', path: '/modules/sedes', icon: 'map', roles: admin },
       { id: 'configuracion', label: 'Configuración', path: '/modules/configuracion', icon: 'settings', roles: admin },
+      { id: 'portafolio-web', label: 'Portafolio web', path: '/modules/portafolio-web', icon: 'image', roles: admin },
     ],
   },
 ];

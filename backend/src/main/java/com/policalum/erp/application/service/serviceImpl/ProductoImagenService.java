@@ -67,7 +67,8 @@ public class ProductoImagenService {
                 dto.incluyeIgv(),
                 dto.tipoAfectacion(),
                 dto.fracciones(),
-                ruta);
+                ruta,
+                dto.destacado());
     }
 
     public Resource cargar(String ruta) {

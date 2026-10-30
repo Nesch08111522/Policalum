@@ -197,6 +197,7 @@ class CotizacionServiceImplTest {
     @Test
     void dashboard_cuentaCadaEstado() {
         when(cotizacionRepository.countByEstado(EstadoCotizacion.EMITIDA)).thenReturn(7L);
+        when(cotizacionRepository.countByEstado(EstadoCotizacion.PENDIENTE)).thenReturn(4L);
         when(cotizacionRepository.countByEstado(EstadoCotizacion.ACEPTADA)).thenReturn(3L);
         when(cotizacionRepository.countByEstado(EstadoCotizacion.CONVERTIDA)).thenReturn(2L);
         when(cotizacionRepository.countByEstado(EstadoCotizacion.VENCIDA)).thenReturn(1L);
@@ -204,6 +205,7 @@ class CotizacionServiceImplTest {
         Map<String, Object> d = service.dashboard();
 
         assertEquals(7L, d.get("emitidas"));
+        assertEquals(4L, d.get("pendientesWeb"));
         assertEquals(3L, d.get("aceptadas"));
         assertEquals(2L, d.get("convertidas"));
         assertEquals(1L, d.get("vencidas"));

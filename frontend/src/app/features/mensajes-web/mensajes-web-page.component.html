@@ -1,0 +1,34 @@
+<section class="module-page">
+  <app-page-header title="Mensajes web" subtitle="Prospectos que escribieron desde el portal. Al gestionarlos salen de la bandeja de nuevos."></app-page-header>
+  <div class="cluster filtros">
+    <button type="button" class="btn btn-sm" [class.btn-primary]="filtro === 'NUEVO'" [class.btn-ghost]="filtro !== 'NUEVO'" (click)="cambiar('NUEVO')">Nuevos</button>
+    <button type="button" class="btn btn-sm" [class.btn-primary]="filtro === 'GESTIONADO'" [class.btn-ghost]="filtro !== 'GESTIONADO'" (click)="cambiar('GESTIONADO')">Gestionados</button>
+    <button type="button" class="btn btn-sm" [class.btn-primary]="filtro === ''" [class.btn-ghost]="filtro !== ''" (click)="cambiar('')">Todos</button>
+  </div>
+  <p *ngIf="cargando">Cargando mensajes...</p>
+  <p *ngIf="!cargando && !mensajes.length">No hay mensajes en esta bandeja.</p>
+  <div class="layout" *ngIf="!cargando && mensajes.length">
+    <table class="table table-compact">
+      <thead><tr><th>Cuando</th><th>Nombre</th><th>Asunto</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let mensaje of mensajes">
+          <td>{{ mensaje.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ mensaje.nombre }}<br><span class="text-muted">{{ mensaje.correo }}</span></td>
+          <td>{{ mensaje.asunto }}</td>
+          <td><span class="badge" [class.badge-warning]="mensaje.estado === 'NUEVO'" [class.badge-success]="mensaje.estado === 'GESTIONADO'">{{ mensaje.estado === 'NUEVO' ? 'Nuevo' : 'Gestionado' }}</span></td>
+          <td><button type="button" class="btn btn-ghost btn-sm" (click)="ver(mensaje)">Abrir</button></td>
+        </tr>
+      </tbody>
+    </table>
+    <article class="detalle" *ngIf="abierto as mensaje">
+      <h2>{{ mensaje.asunto }}</h2>
+      <p>{{ mensaje.nombre }} · {{ mensaje.correo }}<span *ngIf="mensaje.telefono"> · {{ mensaje.telefono }}</span></p>
+      <p *ngIf="mensaje.empresa">{{ mensaje.empresa }}</p>
+      <p class="cuerpo">{{ mensaje.mensaje }}</p>
+      <label for="nota-web">Nota de seguimiento</label>
+      <textarea id="nota-web" class="textarea" [formControl]="nota" [disabled]="mensaje.estado === 'GESTIONADO'"></textarea>
+      <button type="button" class="btn btn-primary" *ngIf="mensaje.estado === 'NUEVO'" (click)="gestionar()" [disabled]="guardando">Marcar gestionado</button>
+      <p *ngIf="mensaje.notaGestion && mensaje.estado === 'GESTIONADO'">{{ mensaje.notaGestion }}</p>
+    </article>
+  </div>
+</section>
