@@ -183,15 +183,7 @@ class UserImplTest {
         verify(userRepository, never()).deleteById(any());
     }
 
-    // ===================== Completado en auditoría de cobertura =====================
-    /**
-     * RIESGO: UserMapper.updateEntityFromDto copia dto.activo() tal cual. Si el cliente edita un
-     * usuario sin enviar "activo", queda activo = null: findByEmailAndActivoTrue deja de encontrarlo
-     * (no puede iniciar sesión) y RrhhAsistenciaImpl hace !usuario.getActivo() → NPE.
-     * Habilitar tras agregar @BeanMapping(nullValuePropertyMappingStrategy = IGNORE) o equivalente.
-     */
     @Test
-    @Disabled("Riesgo: editar sin 'activo' deja activo = null. Habilitar tras ignorar nulos en UserMapper.updateEntityFromDto")
     void updateUser_sinCampoActivo_conservaElEstadoActual() {
         User u = existente();
 

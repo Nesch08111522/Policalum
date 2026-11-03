@@ -93,6 +93,12 @@ public class KardexServiceImpl implements KardexService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public KardexMovimientoResponseDTO registrarMovimiento(KardexMovimientoRequestDTO dto) {
+        if (dto.tipoMovimiento() != TipoMovimiento.ENTRADA && dto.tipoMovimiento() != TipoMovimiento.SALIDA) {
+            throw new IllegalArgumentException("El tipo de movimiento es requerido");
+        }
+        if (dto.cantidadMovida() == null || dto.cantidadMovida().signum() <= 0) {
+            throw new IllegalArgumentException("La cantidad movida debe ser mayor a cero");
+        }
         Producto producto = productoRepository.findById(dto.producto().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + dto.producto().getId()));
 

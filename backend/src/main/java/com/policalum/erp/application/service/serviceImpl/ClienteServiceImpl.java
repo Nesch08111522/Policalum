@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -286,7 +287,7 @@ public class ClienteServiceImpl implements ClienteService {
 
         // Validar email único si cambia y no está vacío
         if (requestDTO.email() != null && !requestDTO.email().isEmpty() &&
-                !existingCliente.getEmail().equals(requestDTO.email()) &&
+                !Objects.equals(existingCliente.getEmail(), requestDTO.email()) &&
                 clienteRepository.existsByEmail(requestDTO.email())) {
             throw new ValidationException(
                     String.format("El email %s ya está registrado por otro cliente", requestDTO.email()));

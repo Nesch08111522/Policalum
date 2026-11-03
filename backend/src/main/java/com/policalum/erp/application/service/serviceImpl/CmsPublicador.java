@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /** Invalida la caché del CMS y avisa al sitio abierto para que vuelva a leer. */
@@ -33,6 +35,19 @@ public class CmsPublicador {
     }
 
     public void publicar(String tipo) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    emitir(tipo);
+                }
+            });
+            return;
+        }
+        emitir(tipo);
+    }
+
+    private void emitir(String tipo) {
         Cache cache = cacheManager.getCache("cms-publico");
         if (cache != null) cache.clear();
         String carga = "{\"tipo\":\"" + tipo + "\"}";

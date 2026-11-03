@@ -111,7 +111,9 @@ class FileStorageServiceImplTest {
         Resource r = service.cargar(ruta);
 
         assertTrue(r.exists());
-        assertEquals("hola", new String(r.getInputStream().readAllBytes()));
+        try (var entrada = r.getInputStream()) {
+            assertEquals("hola", new String(entrada.readAllBytes()));
+        }
     }
 
     @Test
@@ -143,13 +145,7 @@ class FileStorageServiceImplTest {
         assertDoesNotThrow(() -> service.eliminar("compras/nada.pdf"));
     }
 
-    /**
-     * HALLAZGO DE SEGURIDAD: eliminar() no valida que la ruta quede dentro de basePath (guardar y
-     * cargar sí lo hacen). Hoy borra el archivo de fuera. Habilitar este test al corregir
-     * FileStorageServiceImpl.eliminar/existe con el mismo chequeo startsWith(basePath).
-     */
     @Test
-    @Disabled("Hallazgo: eliminar() permite path traversal. Habilitar tras agregar la validación startsWith(basePath)")
     void eliminar_rutaConTraversal_noBorraFueraDelAlmacenamiento() throws IOException {
         Path fuera = Files.writeString(raiz.resolve("no-borrar.txt"), "x");
 

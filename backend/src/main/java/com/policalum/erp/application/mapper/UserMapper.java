@@ -1,8 +1,10 @@
 package com.policalum.erp.application.mapper;
 
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
 import com.policalum.erp.application.dto.request.UserRequestDTO;
 import com.policalum.erp.application.dto.response.UserResponseDTO;
@@ -19,6 +21,7 @@ public interface UserMapper {
     @Mapping(target = "passwordHash", source = "passwordHash")
     User toEntity(UserRequestDTO userRequestDTO);
 
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "rol", source = "rol")
     @Mapping(target = "sede", source = "sede")
     @Mapping(target = "passwordHash", source = "passwordHash")

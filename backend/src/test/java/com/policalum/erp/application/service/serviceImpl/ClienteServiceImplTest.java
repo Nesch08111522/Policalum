@@ -122,13 +122,7 @@ class ClienteServiceImplTest {
         assertThrows(ResourceNotFoundException.class, () -> service.update(id, request("1", null)));
     }
 
-    /**
-     * BUG: validateClientUpdate hace existingCliente.getEmail().equals(...) sin chequear null.
-     * Un cliente registrado sin email (es opcional) no puede actualizarse agregándole uno: NPE → 500.
-     * Habilitar tras usar Objects.equals(existingCliente.getEmail(), requestDTO.email()).
-     */
     @Test
-    @Disabled("Bug: NPE al agregar email a un cliente que no tenía. Habilitar tras usar Objects.equals en validateClientUpdate")
     void update_clienteSinEmailAgregaEmail_guarda() {
         existente("45678912", null);
         when(clienteRepository.existsByEmail("nuevo@mail.com")).thenReturn(false);

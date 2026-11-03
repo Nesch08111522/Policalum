@@ -91,6 +91,15 @@ class KardexServiceImplTest {
         assertEquals(new BigDecimal("3"), stock.getCantidad());
     }
 
+    @Test
+    void registrarMovimiento_rechazaCantidadNegativaQueInflariaElStock() {
+        assertThrows(IllegalArgumentException.class, () -> service.registrarMovimiento(new KardexMovimientoRequestDTO(
+                plancha, principal, null, TipoReferencia.VENTA, TipoMovimiento.SALIDA, new BigDecimal("-2"), BigDecimal.ZERO, admin, null)));
+
+        verify(stockRepository, never()).save(any());
+        verify(kardexRepository, never()).save(any());
+    }
+
     // ===================== MOVIMIENTOS =====================
 
     @Test
