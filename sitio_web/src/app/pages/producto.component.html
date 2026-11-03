@@ -8,7 +8,7 @@
       <p class="kicker">{{ item.categoriaNombre || 'Catálogo' }}</p>
       <h1>{{ item.nombre }}</h1>
       <p class="lead">{{ item.descripcion || 'Precio público con IGV, calculado desde el ERP.' }}</p>
-      <p class="price">{{ precioVisible(item) }} <span class="muted">/ {{ item.unidad || 'unidad' }}</span></p>
+      <p class="price">@if (precioAnterior(item)) { <span class="precio-antes">{{ precioAnterior(item) }}</span> }{{ precioVisible(item) }} <span class="muted">/ {{ item.unidad || 'unidad' }}</span></p>
       <p class="tile-meta">
         @if (item.codigoSku) { <span>SKU {{ item.codigoSku }}</span> }
         <span class="stock" [class.on]="item.disponible" [class.off]="!item.disponible">

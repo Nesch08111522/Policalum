@@ -1,5 +1,8 @@
 <div class="shell" [class.menu-abierto]="menu()">
   <p class="trust">{{ cms.paquete()?.banner || 'Stock publicado desde el almacén · Cotización formal con RUC · Atención B2B desde Trujillo' }}</p>
+  @if (cms.paquete()?.atencion?.configurado) {
+    <p class="atencion" [class.abierto]="cms.paquete()?.atencion?.abiertoAhora" [class.cerrado]="cms.paquete()?.atencion?.configurado && !cms.paquete()?.atencion?.abiertoAhora">{{ cms.paquete()?.atencion?.texto }}</p>
+  }
   <header class="mast">
     <button type="button" class="icon-btn mast-menu" (click)="menu.set(!menu())" [attr.aria-expanded]="menu()" aria-label="Abrir menú">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -115,8 +118,12 @@
           @for (sede of sedes(); track sede.id) {
             <p>{{ sede.nombre }}@if (sede.direccion) { · {{ sede.direccion }} }</p>
           }
-          @if (cms.paquete()?.horarioSemana) { <p>Lun a vie: {{ cms.paquete()?.horarioSemana }}</p> }
-          @if (cms.paquete()?.horarioSabado) { <p>Sáb: {{ cms.paquete()?.horarioSabado }}</p> }
+          @if (cms.paquete()?.atencion?.configurado) {
+            <p [class.abierto-txt]="cms.paquete()?.atencion?.abiertoAhora">{{ cms.paquete()?.atencion?.texto }}</p>
+          } @else {
+            @if (cms.paquete()?.horarioSemana) { <p>Lun a vie: {{ cms.paquete()?.horarioSemana }}</p> }
+            @if (cms.paquete()?.horarioSabado) { <p>Sáb: {{ cms.paquete()?.horarioSabado }}</p> }
+          }
         </div>
       </div>
       <div class="pie-base">

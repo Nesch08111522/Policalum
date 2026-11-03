@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Routes } from '@angular/router';
+import { RouterLink, Routes } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
@@ -23,7 +23,7 @@ import { ClientesApiService } from '../data-access/clientes.api';
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-clientes-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, ExportButtonsComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, ExportButtonsComponent, FilterBarComponent, DataTableComponent, ModalComponent, ConfirmDialogComponent, FormFieldComponent],
   templateUrl: './clientes-page.component.html',
   styleUrls: ['./clientes-page.component.css'],
 })
@@ -61,6 +61,12 @@ export class ClientesPageComponent implements OnInit, OnDestroy {
 
   constructor(private readonly api: ClientesApiService, private readonly lookup: LookupService, private readonly toast: ToastService) {
     this.state.sort = 'nombre,asc';
+  }
+
+  enlaceCelular(celular: string): string {
+    const digitos = celular.replace(/\D/g, '');
+    const numero = digitos.length === 9 ? `51${digitos}` : digitos;
+    return `https://wa.me/${numero}`;
   }
 
   ngOnInit(): void {

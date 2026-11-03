@@ -26,6 +26,7 @@ import com.policalum.erp.infrastructure.repository.VentaRepository;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -62,9 +63,10 @@ public class ExportacionServiceImpl {
     public byte[] generar(String modulo, String formato, String filtros) {
         String usuario = usuarioActual();
         try {
-            return CompletableFuture.supplyAsync(() -> self.materializar(modulo, formato, filtros, usuario), reportes)
-                    .get(45, TimeUnit.SECONDS);
-        } catch (Exception e) {
+            return self.materializar(modulo, formato, filtros, usuario);
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (RuntimeException e) {
             throw new IllegalStateException("No se pudo generar el reporte", e);
         }
     }
@@ -155,7 +157,9 @@ public class ExportacionServiceImpl {
 
     private ReporteSolicitud ventas(String usuario, List<String> notas) {
         List<List<Object>> filas = new ArrayList<>();
+        Rango rango = rango(notas);
         for (Venta venta : ventaRepository.findAll(PageRequest.of(0, TOPE, Sort.by(Sort.Direction.DESC, "createdAt")))) {
+            if (!rango.contiene(venta.getCreatedAt())) continue;
             filas.add(List.of(ReporteSolicitud.fecha(venta.getCreatedAt()), ReporteSolicitud.texto(venta.getSerieCorrelativo()),
                     venta.getCliente() == null ? "Público" : venta.getCliente().getNombre(),
                     String.valueOf(venta.getTipoComprobante()), String.valueOf(venta.getEstado()),
@@ -169,7 +173,9 @@ public class ExportacionServiceImpl {
 
     private ReporteSolicitud compras(String usuario, List<String> notas) {
         List<List<Object>> filas = new ArrayList<>();
+        Rango rango = rango(notas);
         for (Compra compra : compraRepository.findAll(PageRequest.of(0, TOPE, Sort.by(Sort.Direction.DESC, "createdAt")))) {
+            if (!rango.contiene(compra.getCreatedAt())) continue;
             filas.add(List.of(ReporteSolicitud.fecha(compra.getCreatedAt()), ReporteSolicitud.texto(compra.getNumeroOrdenCompra()),
                     compra.getProveedor() == null ? "" : compra.getProveedor().getNombreRazon(),
                     String.valueOf(compra.getEstadoCompra()), ReporteSolicitud.dinero(compra.getTotal())));
@@ -204,6 +210,31 @@ public class ExportacionServiceImpl {
         return new ReporteSolicitud("Nóminas", "RRHH", usuario, notas, List.of(
                 ReporteSolicitud.Columna.texto("Periodo"), ReporteSolicitud.Columna.texto("Persona"),
                 ReporteSolicitud.Columna.texto("Estado"), ReporteSolicitud.Columna.moneda("Neto")), filas);
+    }
+
+    private Rango rango(List<String> notas) {
+        LocalDate desde = null;
+        LocalDate hasta = null;
+        for (String nota : notas) {
+            for (String parte : nota.split(";")) {
+                try {
+                    if (parte.startsWith("desde=")) desde = LocalDate.parse(parte.substring(6));
+                    if (parte.startsWith("hasta=")) hasta = LocalDate.parse(parte.substring(6));
+                } catch (RuntimeException ignored) {
+                    // Un texto que no es fecha se queda como nota del reporte.
+                }
+            }
+        }
+        return new Rango(desde, hasta);
+    }
+
+    private record Rango(LocalDate desde, LocalDate hasta) {
+        boolean contiene(LocalDateTime momento) {
+            if (momento == null) return true;
+            LocalDate dia = momento.toLocalDate();
+            if (desde != null && dia.isBefore(desde)) return false;
+            return hasta == null || !dia.isAfter(hasta);
+        }
     }
 
     private PdfCorporativo.EmpresaPdf empresa() {

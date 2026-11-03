@@ -29,6 +29,8 @@ export function guardarBlob(blob: Blob, nombre: string): void {
   const enlace = document.createElement('a');
   enlace.href = url;
   enlace.download = nombre;
+  document.body.appendChild(enlace);
   enlace.click();
-  window.URL.revokeObjectURL(url);
+  enlace.remove();
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 1500);
 }

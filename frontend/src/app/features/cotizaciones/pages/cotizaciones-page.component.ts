@@ -17,6 +17,7 @@ import { SelectComponent } from '../../../shared/components/select/select.compon
 import { TabsComponent } from '../../../shared/components/tabs/tabs.component';
 import { ColumnDef, SelectOption, TabItem } from '../../../shared/models/ui.models';
 import { PenPipe } from '../../../shared/pipes/format.pipes';
+import { precioFraccionVigente } from '../../../shared/utils/precio-oferta';
 import { CajaSessionService } from '../../../shared/services/caja-session.service';
 import { InventarioSyncService } from '../../../shared/services/inventario-sync.service';
 import { LookupService } from '../../../shared/services/lookup.service';
@@ -364,7 +365,7 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
     group.controls.fraccionId.addValidators(Validators.required);
     group.controls.fraccionId.updateValueAndValidity({ emitEvent: false });
     this.fraccionesApi.GetApiV1CatalogoFraccionesProductoProductoIdDisponibles({ productoId }).pipe(takeUntil(this.destroy$)).subscribe((rows) => {
-      for (const row of rows ?? []) if (row.id != null) this.precioFraccion.set(row.id, Number(row.precioVenta ?? 0));
+      for (const row of rows ?? []) if (row.id != null) this.precioFraccion.set(row.id, precioFraccionVigente(Number(row.precioVenta ?? 0), producto));
       const current = this.lineas.controls.indexOf(group);
       if (current >= 0) this.fraccionesLinea[current] = (rows ?? []).filter((row) => row.id).map((row) => ({ value: row.id as string, label: row.nombreFraccion ?? 'Fracción' }));
       if (conservar && fraccionActual && (rows ?? []).some((row) => row.id === fraccionActual)) group.controls.fraccionId.setValue(fraccionActual, { emitEvent: false });

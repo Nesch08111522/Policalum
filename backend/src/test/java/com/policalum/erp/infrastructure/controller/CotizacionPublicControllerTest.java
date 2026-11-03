@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.policalum.erp.application.dto.response.CotizacionResponseDTO;
 import com.policalum.erp.application.service.CotizacionService;
 import com.policalum.erp.application.service.serviceImpl.CanalWebNotificador;
+import com.policalum.erp.application.service.serviceImpl.ChatWebService;
 import com.policalum.erp.application.service.serviceImpl.CotizacionDocumentoService;
 import com.policalum.erp.application.service.serviceImpl.LimitePublico;
 import com.policalum.erp.application.service.serviceImpl.MensajeWebService;
@@ -37,6 +38,7 @@ class CotizacionPublicControllerTest {
     @MockitoBean CotizacionService cotizaciones;
     @MockitoBean CotizacionDocumentoService documentos;
     @MockitoBean MensajeWebService mensajes;
+    @MockitoBean ChatWebService chat;
     @MockitoBean CanalWebNotificador notificador;
     @MockitoBean LimitePublico limite;
     @MockitoBean JwtUtil jwtUtil;

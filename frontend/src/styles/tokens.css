@@ -48,6 +48,9 @@
   --space-7: 2rem;
 
   --font-sans: "Segoe UI", Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: var(--font-sans);
+  --color-line: var(--color-border);
+  --color-line-strong: var(--color-border-strong);
   --font-mono: "Cascadia Code", "Segoe UI Mono", ui-monospace, monospace;
   --text-xs: 0.75rem;
   --text-sm: 0.8125rem;
@@ -83,9 +86,9 @@
   --z-toast: 80;
   --z-tooltip: 90;
 
-  --sidebar-width: 15.5rem;
-  --sidebar-collapsed: 4.5rem;
-  --header-height: 3.5rem;
+  --sidebar-width: 13.25rem;
+  --sidebar-collapsed: 4.25rem;
+  --header-height: 3rem;
   --modal-sm: clamp(16rem, 88vw, 26rem);
   --modal-md: clamp(18rem, 92vw, 40rem);
   --modal-lg: clamp(18rem, 94vw, 65rem);
@@ -113,6 +116,7 @@
 
 [data-theme="light"] {
   --color-primary: #075591;
+  --color-primary-600: #064472;
   --color-primary-contrast: #ffffff;
   --color-secondary: #4b5d73;
   --color-success: #0f7b4c;

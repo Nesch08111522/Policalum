@@ -8,6 +8,9 @@ export interface Producto {
   id: string;
   nombre: string;
   precioVentaBase: number;
+  precioOferta?: number;
+  ofertaDesde?: string;
+  ofertaHasta?: string;
   esFraccionable: boolean;
   unidad?: string;
   codigoSku?: string;

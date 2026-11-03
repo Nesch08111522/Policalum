@@ -25,6 +25,8 @@ export interface CmsPublico {
   heroKicker?: string;
   heroTitulo?: string;
   heroTexto?: string;
+  atencion?: { configurado: boolean; abiertoAhora: boolean; atiendeHoy: boolean; texto: string };
+  dias?: Array<{ dia: string; abierto: boolean; desde?: string; hasta?: string }>;
 }
 
 @Injectable({ providedIn: 'root' })

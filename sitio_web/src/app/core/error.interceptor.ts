@@ -10,6 +10,7 @@ export const portalErrorInterceptor: HttpInterceptorFn = (request, next) => {
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status !== 0 && error.status < 400) return throwError(() => error);
+      if (error.status === 404 && request.url.includes('/public/chat/')) return throwError(() => error);
       avisos.mostrar(mensajeError(error));
       return throwError(() => error);
     }),

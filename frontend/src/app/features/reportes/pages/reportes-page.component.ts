@@ -40,6 +40,10 @@ export class ReportesPageComponent implements OnInit, OnDestroy {
     { id: 'arqueos', label: 'Arqueos' },
   ];
   tab = 'ventas';
+  get filtrosExportacion(): string {
+    const valor = this.filtros.getRawValue();
+    return `desde=${valor.desde};hasta=${valor.hasta}`;
+  }
   get moduloExportacion(): string {
     if (this.tab === 'clientes') return 'clientes';
     if (this.tab === 'proveedores') return 'compras';

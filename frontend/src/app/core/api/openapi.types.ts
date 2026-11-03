@@ -2024,6 +2024,11 @@ export interface ProductoResponseDTO {
   unidad?: string;
   imagen?: string;
   destacado?: boolean;
+  precioOferta?: number;
+  ofertaPorcentaje?: number;
+  ofertaDesde?: string;
+  ofertaHasta?: string;
+  oferta?: boolean;
 }
 
 export interface ProductosEstrellaDTO {

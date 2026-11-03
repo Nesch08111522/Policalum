@@ -26,4 +26,8 @@ public class HorarioOperativo {
 
     @Column(nullable = false)
     private Boolean activo = false;
+
+    /** Semana de atención: días, apertura y cierre. El sitio calcula si hoy está abierto. */
+    @Column(name = "horario_json", columnDefinition = "TEXT")
+    private String horarioJson;
 }

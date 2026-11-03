@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Component, HostListener, OnDestroy, OnInit, effect, inject, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink, Routes } from '@angular/router';
+import { environment } from '../../../../environments/environment';
 import { Subject, catchError, debounceTime, distinctUntilChanged, forkJoin, of, takeUntil } from 'rxjs';
 import * as Api from '../../../core/api/openapi.types';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -20,6 +22,7 @@ import { SedeFiltroService } from '../../../shared/services/sede-filtro.service'
 import { ToastService } from '../../../shared/services/toast.service';
 import { TokenService } from '../../../services/token.service';
 import { applyServerErrors, fieldError, isProblem, problemStatus, problemText } from '../../../shared/utils/feedback';
+import { ofertaVigente } from '../../../shared/utils/precio-oferta';
 import { PageState } from '../../../shared/utils/page-state';
 import { KardexApiService } from '../../kardex/data-access/kardex.api';
 import { StockApiService } from '../../stock/data-access/stock.api';
@@ -60,6 +63,7 @@ interface FilaCatalogo {
 })
 export class ProductosPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly http = inject(HttpClient);
   private readonly inventario = inject(InventarioSyncService);
   private readonly sedeFiltro = inject(SedeFiltroService);
   readonly state = new PageState<Api.ProductoResponseDTO>();
@@ -80,6 +84,10 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     destacado: [false],
     incluyeIgv: [true],
     imagen: [''],
+    enOferta: [false],
+    ofertaPorcentaje: [0],
+    precioOferta: [0],
+    ofertaDias: [7],
   });
   categorias: SelectOption[] = [];
   proveedores: SelectOption[] = [];
@@ -89,6 +97,8 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
   alertas: Api.SaldoKardexDTO[] = [];
   mermas: Api.ReporteMermasDTO | null = null;
   stockTruncado = false;
+  private silencioOferta = false;
+  private teniaPrecioOferta = false;
   modal = false;
   editando = false;
   guardando = false;
@@ -154,6 +164,7 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     });
     this.filtros.controls.categoriaId.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.filtrar());
     this.filtros.controls.sedeId.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.filtrar());
+    this.enlazarOferta();
   }
 
   ngOnDestroy(): void {
@@ -244,7 +255,8 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     this.modoImagen = 'archivo';
     this.archivoPendiente = null;
     this.vistaPrevia = null;
-    this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, destacado: false, incluyeIgv: true, imagen: '' });
+    this.teniaPrecioOferta = false;
+    this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, destacado: false, incluyeIgv: true, imagen: '', enOferta: false, ofertaPorcentaje: 0, precioOferta: 0, ofertaDias: 7 });
     this.modal = true;
   }
   abrirEditar(item: Api.ProductoResponseDTO): void {
@@ -257,7 +269,13 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
       categoriaId: item.categoria?.id ?? '', proveedorId: item.proveedor?.id ?? '', tipo: item.tipo ?? 'FISICO', unidad: item.unidad ?? 'UNIDAD',
       precioCompra: item.precioCompra ?? 0, precioVentaBase: item.precioVentaBase ?? 0, activo: item.activo ?? true, esFraccionable: item.esFraccionable ?? false, destacado: item.destacado ?? false, incluyeIgv: item.incluyeIgv ?? true,
       imagen: item.imagen ?? '',
+      enOferta: ofertaVigente(item),
+      ofertaPorcentaje: item.ofertaPorcentaje ?? 0,
+      precioOferta: item.precioOferta ?? 0,
+      ofertaDias: this.diasRestantes(item.ofertaHasta),
     });
+    this.teniaPrecioOferta = item.precioOferta != null;
+    this.silencioOferta = false;
     this.archivoPendiente = null;
     this.modoImagen = item.imagen?.startsWith('http://') || item.imagen?.startsWith('https://') ? 'url' : 'archivo';
     this.vistaPrevia = this.modoImagen === 'url' ? item.imagen ?? null : null;
@@ -273,6 +291,19 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
       const url = value.imagen.trim();
       if (url && !/^https?:\/\//i.test(url)) {
         this.errorFormulario = 'La URL de la imagen debe empezar por http:// o https://.';
+        return;
+      }
+    }
+    if (value.enOferta) {
+      const base = Number(value.precioVentaBase);
+      const oferta = Number(value.precioOferta);
+      const dias = Number(value.ofertaDias);
+      if (!(oferta > 0) || oferta >= base) {
+        this.errorFormulario = 'El precio de oferta tiene que ser menor que el precio de venta.';
+        return;
+      }
+      if (dias < 1 || dias > 365) {
+        this.errorFormulario = 'La oferta dura entre 1 y 365 días.';
         return;
       }
     }
@@ -295,6 +326,52 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
     this.persistir();
   }
 
+  get gananciaOferta(): number {
+    return Math.round((Number(this.form.controls.precioOferta.value) - Number(this.form.controls.precioCompra.value)) * 100) / 100;
+  }
+
+  private cerrarProducto(guardado: Api.ProductoResponseDTO): void {
+    const editaba = this.editando;
+    this.guardando = false;
+    this.archivoPendiente = null;
+    this.modal = false;
+    this.teniaPrecioOferta = false;
+    this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, destacado: false, incluyeIgv: true, imagen: '', enOferta: false, ofertaPorcentaje: 0, precioOferta: 0, ofertaDias: 7 });
+    this.lookup.invalidate('productos');
+    this.aplicarProducto(guardado, editaba ? 'actualizar' : 'crear');
+    this.avisarInventario();
+    this.toast.success(editaba ? 'Producto actualizado.' : 'Producto creado.');
+  }
+
+  private diasRestantes(hasta?: string): number {
+    if (!hasta) return 7;
+    const hoy = new Date(`${new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date())}T00:00:00`);
+    const fin = new Date(`${hasta}T00:00:00`);
+    const dias = Math.round((fin.getTime() - hoy.getTime()) / 86400000) + 1;
+    return dias >= 1 && dias <= 365 ? dias : 7;
+  }
+
+  private enlazarOferta(): void {
+    this.form.controls.ofertaPorcentaje.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      if (this.silencioOferta) return;
+      const base = Number(this.form.controls.precioVentaBase.value);
+      const porcentaje = Number(this.form.controls.ofertaPorcentaje.value);
+      if (!(base > 0) || !(porcentaje > 0) || porcentaje >= 100) return;
+      this.silencioOferta = true;
+      this.form.controls.precioOferta.setValue(Math.round(base * (1 - porcentaje / 100) * 100) / 100, { emitEvent: false });
+      this.silencioOferta = false;
+    });
+    this.form.controls.precioOferta.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      if (this.silencioOferta) return;
+      const base = Number(this.form.controls.precioVentaBase.value);
+      const oferta = Number(this.form.controls.precioOferta.value);
+      if (!(base > 0) || !(oferta > 0) || oferta >= base) return;
+      this.silencioOferta = true;
+      this.form.controls.ofertaPorcentaje.setValue(Math.round((base - oferta) / base * 10000) / 100, { emitEvent: false });
+      this.silencioOferta = false;
+    });
+  }
+
   private persistir(): void {
     const value = this.form.getRawValue();
     const body = this.cuerpo(value, value.id, this.fraccionesActuales);
@@ -306,14 +383,28 @@ export class ProductosPageComponent implements OnInit, OnDestroy {
         : this.api.PostApiV1Productos({}, body);
     request.pipe(takeUntil(this.destroy$)).subscribe({
       next: (guardado) => {
-        this.guardando = false;
-        this.archivoPendiente = null;
-        this.modal = false;
-        this.form.reset({ id: '', nombre: '', codigoSku: '', descripcion: '', categoriaId: '', proveedorId: '', tipo: 'FISICO', unidad: 'UNIDAD', precioCompra: 0, precioVentaBase: 0, activo: true, esFraccionable: false, destacado: false, incluyeIgv: true, imagen: '' });
-        this.lookup.invalidate('productos');
-        this.aplicarProducto(guardado, this.editando ? 'actualizar' : 'crear');
-        this.avisarInventario();
-        this.toast.success(this.editando ? 'Producto actualizado.' : 'Producto creado.');
+        const id = guardado.id ?? value.id;
+        const publicar = value.enOferta || this.teniaPrecioOferta;
+        const oferta = value.enOferta
+          ? { oferta: true, porcentaje: Number(value.ofertaPorcentaje), precioOferta: Number(value.precioOferta), dias: Number(value.ofertaDias) }
+          : { oferta: false };
+        if (!id || !publicar) {
+          this.cerrarProducto(guardado);
+          return;
+        }
+        this.http.put(`${environment.apiUrl}/api/v1/cms/productos/${id}/oferta`, oferta).pipe(takeUntil(this.destroy$)).subscribe({
+          next: () => {
+            guardado.precioOferta = value.enOferta ? Number(value.precioOferta) : undefined;
+            guardado.ofertaPorcentaje = value.enOferta ? Number(value.ofertaPorcentaje) : undefined;
+            guardado.oferta = value.enOferta;
+            this.cerrarProducto(guardado);
+          },
+          error: (error: unknown) => {
+            this.guardando = false;
+            this.errorFormulario = problemText(error);
+            this.toast.error('El producto quedó guardado, pero la oferta no. ' + this.errorFormulario);
+          },
+        });
       },
       error: (error: unknown) => {
         this.guardando = false;

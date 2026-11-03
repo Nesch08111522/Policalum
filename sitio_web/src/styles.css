@@ -69,16 +69,18 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 }
 
 .shell { min-height: 100dvh; background: var(--bg); }
-.trust {
+.trust, .atencion {
   margin: 0;
   padding: 8px 18px;
   background: var(--trust);
   color: var(--trust-ink);
   text-align: center;
   font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.04em;
 }
+.atencion.abierto { background: #166534; color: #f0fdf4; }
+.atencion.cerrado { background: #7f1d1d; color: #fef2f2; }
+.precio-antes { margin-right: 0.4rem; color: var(--muted, #667); text-decoration: line-through; font-weight: 500; }
+.trust { font-weight: 650; letter-spacing: 0.04em; }
 .mast {
   position: sticky;
   top: 0;
@@ -274,19 +276,33 @@ h2 { font-size: clamp(1.35rem, 2vw, 1.8rem); margin-bottom: 12px; }
 .flotante.chat { border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
 .flotante.wa { background: #128c4a; color: #ffffff; border: 0; }
 .chat-panel {
-  position: absolute; right: 0; bottom: 58px; width: min(340px, calc(100vw - 28px));
+  position: absolute; right: 0; bottom: 58px; width: min(380px, calc(100vw - 28px)); height: min(560px, calc(100dvh - 120px));
+  display: flex; flex-direction: column;
   background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 16px;
   box-shadow: var(--shadow); overflow: hidden;
 }
 .chat-panel header, .chat-form { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 10px; }
-.chat-panel header { border-bottom: 1px solid var(--line); }
+.chat-panel header { border-bottom: 1px solid var(--line); background: var(--soft); }
+.chat-panel header p { margin: 0; color: var(--muted); font-size: 12px; }
 .chat-panel header button { border: 0; background: transparent; color: var(--ink); font-size: 1.3rem; }
-.chat-cuerpo { display: grid; gap: 8px; max-height: 240px; overflow: auto; padding: 10px; }
-.burbuja { margin: 0; padding: 8px 10px; border-radius: 12px; }
-.burbuja.ellos { background: var(--soft); color: var(--ink); }
-.burbuja.yo { background: var(--accent); color: var(--accent-ink); }
-.chat-form { display: grid; border-top: 1px solid var(--line); }
-.chat-form .textarea { min-height: 4.2rem; }
+.chat-cuerpo { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow: auto; padding: 10px; background: var(--bg); }
+.burbuja { margin: 0; max-width: 85%; padding: 8px 10px; border-radius: 12px; white-space: pre-wrap; }
+.burbuja small, .burbuja time { display: block; font-size: 11px; }
+.burbuja.ellos { align-self: flex-start; background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
+.burbuja.ellos small, .burbuja.ellos time { color: var(--muted); }
+.burbuja.yo { align-self: flex-end; background: var(--accent); color: var(--accent-ink); }
+.burbuja.yo time { color: var(--accent-ink); opacity: 0.8; }
+.escribiendo { margin: 0; color: var(--muted); font-size: 12px; }
+.chat-opciones { display: grid; gap: 6px; padding: 8px 10px 10px; border-top: 1px solid var(--line); background: var(--paper); }
+.chat-opciones button { text-align: left; border: 1px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 10px; padding: 8px 10px; cursor: pointer; }
+.chat-form { display: grid; border-top: 1px solid var(--line); background: var(--paper); }
+.chat-form .textarea { min-height: 4.2rem; color: var(--ink); background: var(--paper); }
+.flotante.chat { position: relative; }
+.chat-badge {
+  position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 4px;
+  border-radius: 999px; background: #9a3412; color: #ffffff; font-size: 11px; font-weight: 700;
+  display: grid; place-items: center;
+}
 
 .pie { margin-top: 28px; background: var(--trust); color: var(--trust-ink); border-radius: 18px; padding: 28px 22px 16px; }
 .pie p, .pie a { color: var(--trust-ink); }
@@ -326,6 +342,7 @@ h2 { font-size: clamp(1.35rem, 2vw, 1.8rem); margin-bottom: 12px; }
   .dock a { text-align: center; color: var(--muted); font-size: 12px; font-weight: 700; }
   .dock a.active { color: var(--ink); }
   .flotantes { bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .chat-panel { position: fixed; inset: 0 0 calc(64px + env(safe-area-inset-bottom)) 0; width: auto; height: auto; border-radius: 0; }
   .filtros { position: static; }
 }
 @media (max-width: 640px) {

@@ -3,6 +3,7 @@ export interface FraccionPublica {
   nombre: string;
   factor: number;
   precio: number;
+  precioLista?: number;
 }
 
 export interface ProductoPublico {
@@ -12,6 +13,7 @@ export interface ProductoPublico {
   codigoSku?: string;
   unidad?: string;
   precioPublico: number;
+  precioLista?: number;
   disponible: boolean;
   destacado: boolean;
   esFraccionable: boolean;

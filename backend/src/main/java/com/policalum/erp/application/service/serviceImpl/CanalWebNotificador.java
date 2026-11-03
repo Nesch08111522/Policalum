@@ -3,6 +3,7 @@ package com.policalum.erp.application.service.serviceImpl;
 import com.policalum.erp.application.dto.response.CotizacionResponseDTO;
 import com.policalum.erp.domain.model.MensajeContacto;
 import com.policalum.erp.domain.model.Notificacion;
+import java.util.UUID;
 import com.policalum.erp.infrastructure.repository.NotificacionRepository;
 import java.io.IOException;
 import java.util.List;
@@ -20,6 +21,7 @@ public class CanalWebNotificador {
 
     private static final long TIMEOUT_MS = 15 * 60 * 1000L;
     private final NotificacionRepository notificacionRepository;
+    private final EnvioPushService push;
     private final CopyOnWriteArrayList<SseEmitter> emisores = new CopyOnWriteArrayList<>();
 
     public SseEmitter suscribir() {
@@ -48,6 +50,11 @@ public class CanalWebNotificador {
                 mensaje.getNombre() + ": " + mensaje.getAsunto(), "/modules/mensajes-web");
     }
 
+    public void mensajeChat(UUID lineaId, String nombre, String texto) {
+        avisar("WEB-CHAT-" + lineaId, "MENSAJE_WEB", "Mensaje nuevo del portal",
+                nombre + ": " + texto, "/modules/mensajes-web");
+    }
+
     private void avisar(String clave, String tipo, String titulo, String detalle, String ruta) {
         try {
             if (notificacionRepository.findByClave(clave).isEmpty()) {
@@ -66,6 +73,7 @@ public class CanalWebNotificador {
         } catch (Exception ex) {
             log.warn("No se pudo guardar el aviso {}: {}", clave, ex.getMessage());
         }
+        push.enviar(titulo, detalle, ruta);
         String carga = "{\"tipo\":\"" + tipo + "\",\"ruta\":\"" + ruta + "\"}";
         for (SseEmitter emisor : List.copyOf(emisores)) {
             try {

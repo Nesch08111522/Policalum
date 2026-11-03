@@ -13,10 +13,14 @@
     </div>
   </div>
   <div class="cluster">
-    <a class="btn btn-ghost btn-sm web-link" [href]="sitioWeb" target="_blank" rel="noopener noreferrer" title="Ir a la Página Web">
+    <a class="btn btn-ghost btn-sm web-link" [href]="sitioWeb" target="_blank" rel="noopener noreferrer" title="Ir a la Página Web" (click)="abrirSitio($event)">
       <app-icon name="globe"></app-icon>
       <span>Ir a la Página Web</span>
     </a>
+    <button type="button" class="btn btn-ghost theme-toggle" (click)="theme.toggle()" [attr.aria-label]="theme.theme() === 'dark' ? 'Activar modo día' : 'Activar modo noche'">
+      <app-icon [name]="theme.theme() === 'dark' ? 'moon' : 'sun'"></app-icon>
+      <span class="text-sm">{{ theme.theme() === 'dark' ? 'Modo noche' : 'Modo día' }}</span>
+    </button>
     <div class="dropdown" [class.menu-open]="sedesAbiertas">
       <button type="button" class="btn btn-ghost btn-sm sede-btn" (click)="sedesAbiertas = !sedesAbiertas" aria-haspopup="listbox" [attr.aria-expanded]="sedesAbiertas">
         <app-icon name="building"></app-icon>

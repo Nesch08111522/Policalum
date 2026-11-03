@@ -28,7 +28,7 @@ import { VisorProductoComponent } from './visor-producto.component';
         @if (producto.codigoSku) { <span>{{ producto.codigoSku }}</span> }
       </p>
       <div class="tile-row">
-        <p class="tile-price">{{ precio }}</p>
+        <p class="tile-price">@if (antes) { <span class="precio-antes">{{ antes }}</span> }{{ precio }}</p>
         <button type="button" class="btn btn-sm" [class.btn-primary]="!enCarrito" [class.btn-ok]="enCarrito" [disabled]="!producto.disponible" (click)="sumar()">
           {{ enCarrito ? 'En el carrito' : 'Agregar' }}
         </button>
@@ -75,6 +75,12 @@ export class FichaProductoComponent {
 
   get precio(): string {
     return pen(this.producto.precioPublico);
+  }
+
+  get antes(): string {
+    const lista = Number(this.producto.precioLista ?? 0);
+    if (!this.producto.oferta || !(lista > Number(this.producto.precioPublico))) return '';
+    return pen(lista);
   }
 
   get existencia(): string {

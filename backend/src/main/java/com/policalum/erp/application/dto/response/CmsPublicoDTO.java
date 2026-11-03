@@ -1,5 +1,8 @@
 package com.policalum.erp.application.dto.response;
 
+import com.policalum.erp.application.dto.request.DiaAtencionDTO;
+import java.util.List;
+
 public record CmsPublicoDTO(
         String primaryColor,
         String secondaryColor,
@@ -22,5 +25,7 @@ public record CmsPublicoDTO(
         String textoFaq,
         String heroKicker,
         String heroTitulo,
-        String heroTexto
+        String heroTexto,
+        AtencionPublicaDTO atencion,
+        List<DiaAtencionDTO> dias
 ) {}

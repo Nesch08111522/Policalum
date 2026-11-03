@@ -1,8 +1,10 @@
+import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, firstValueFrom, takeUntil } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 import * as Api from '../../../core/api/openapi.types';
 import { RoleGuard } from '../../../guards/role.guard';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
@@ -78,12 +80,16 @@ export class ConfiguracionPageComponent implements OnInit, OnDestroy {
   sedes: SelectOption[] = [];
   cargando = false;
   guardando = false;
+  pushActivo = false;
+  pushTrabajando = false;
+  private readonly http = inject(HttpClient);
   error: string | null = null;
   private readonly destroy$ = new Subject<void>();
 
   constructor(private readonly api: ConfiguracionApiService, private readonly lookup: LookupService, private readonly toast: ToastService, readonly marca: MarcaService) {}
 
   ngOnInit(): void {
+    this.pushActivo = typeof Notification !== 'undefined' && Notification.permission === 'granted' && !!localStorage.getItem('policalum-push');
     this.lookup.loadSedes().pipe(takeUntil(this.destroy$)).subscribe((rows) => (this.sedes = this.lookup.options(rows, (row) => (row as Api.SedeResponseDTO).nombre ?? 'Sede')));
     this.cargar();
   }
@@ -227,6 +233,56 @@ export class ConfiguracionPageComponent implements OnInit, OnDestroy {
   }
 
   errorSerie(): string | null { return fieldError(this.serie.controls.serie, { pattern: 'La serie tiene 4 letras o números.' }); }
+
+  async alternarPush(): Promise<void> {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      this.toast.error('Este navegador no puede recibir notificaciones.');
+      return;
+    }
+    this.pushTrabajando = true;
+    try {
+      if (this.pushActivo) {
+        const registro = await navigator.serviceWorker.getRegistration();
+        const actual = await registro?.pushManager.getSubscription();
+        const endpoint = actual?.endpoint || localStorage.getItem('policalum-push') || '';
+        await actual?.unsubscribe();
+        if (endpoint) await firstValueFrom(this.http.delete(`${environment.apiUrl}/api/v1/notificaciones/push`, { params: { endpoint }, responseType: 'text' }));
+        localStorage.removeItem('policalum-push');
+        this.pushActivo = false;
+        this.toast.success('Este dispositivo ya no recibe notificaciones.');
+        return;
+      }
+      const permiso = await Notification.requestPermission();
+      if (permiso !== 'granted') {
+        this.toast.error('El navegador no dio permiso para las notificaciones.');
+        return;
+      }
+      const registro = await navigator.serviceWorker.register('/sw.js');
+      const clave = await firstValueFrom(this.http.get<{ publica: string }>(`${environment.apiUrl}/api/v1/notificaciones/push/clave`));
+      const suscripcion = await registro.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: clavePush(clave.publica) });
+      const json = suscripcion.toJSON();
+      await firstValueFrom(this.http.post(`${environment.apiUrl}/api/v1/notificaciones/push`, {
+        endpoint: suscripcion.endpoint,
+        keys: { p256dh: json.keys?.['p256dh'], auth: json.keys?.['auth'] },
+        dispositivo: navigator.userAgent,
+      }, { responseType: 'text' }));
+      localStorage.setItem('policalum-push', suscripcion.endpoint);
+      this.pushActivo = true;
+      this.toast.success('Este dispositivo recibirá las notificaciones.');
+    } catch {
+      this.toast.error('No se pudo cambiar las notificaciones de este dispositivo.');
+    } finally {
+      this.pushTrabajando = false;
+    }
+  }
+}
+
+function clavePush(base64: string): ArrayBuffer {
+  const limpia = base64.replace(/-/g, '+').replace(/_/g, '/');
+  const crudo = atob(limpia);
+  const bytes = new Uint8Array(crudo.length);
+  for (let i = 0; i < crudo.length; i += 1) bytes[i] = crudo.charCodeAt(i);
+  return bytes.buffer as ArrayBuffer;
 }
 
 export const CONFIGURACION_ROUTES: Routes = [{

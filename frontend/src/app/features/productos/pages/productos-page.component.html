@@ -96,6 +96,7 @@
                   <span class="badge" [class.badge-success]="fila.estado === 'optimo'" [class.badge-warning]="fila.estado === 'minimo'" [class.badge-danger]="fila.estado === 'agotado'" [class.badge-neutral]="fila.estado === 'inactivo'">{{ fila.estadoLabel }}</span>
                   <span class="badge badge-success" *ngIf="fila.producto?.activo !== false">Activo</span>
                   <span class="badge badge-info" *ngIf="fila.producto?.destacado">Destacado</span>
+                  <span class="badge badge-warning" *ngIf="fila.producto?.oferta || fila.producto?.precioOferta">Oferta</span>
                   <span class="minimo" *ngIf="fila.minimo > 0">Mínimo {{ fila.minimo | number:'1.0-2' }}</span>
                 </td>
                 <td class="acciones">
@@ -161,6 +162,29 @@
     <app-form-field label="Unidad" inputId="prod-unidad"><input id="prod-unidad" class="input" formControlName="unidad" /></app-form-field>
     <app-form-field label="Precio de compra" inputId="prod-compra" [required]="true" [error]="errorDe('precioCompra')"><input id="prod-compra" class="input" type="number" min="0" step="0.01" formControlName="precioCompra" /></app-form-field>
     <app-form-field label="Precio de venta" inputId="prod-venta" [required]="true" [error]="errorDe('precioVentaBase')"><input id="prod-venta" class="input" type="number" min="0" step="0.01" formControlName="precioVentaBase" /></app-form-field>
+    <div class="span-2 acordeon">
+      <details [open]="form.controls.enOferta.value">
+        <summary>Oferta en el sitio web</summary>
+        <div class="acordeon-cuerpo">
+          <label class="check-row"><input class="checkbox" type="checkbox" formControlName="enOferta" /> Poner este producto en oferta</label>
+          <div class="form-grid" *ngIf="form.controls.enOferta.value">
+            <app-form-field label="Descuento %" inputId="prod-desc-oferta" hint="Al cambiar el porcentaje se calcula el precio nuevo.">
+              <input id="prod-desc-oferta" class="input" type="number" min="0.01" max="99.99" step="0.01" formControlName="ofertaPorcentaje" />
+            </app-form-field>
+            <app-form-field label="Precio de oferta" inputId="prod-precio-oferta" hint="También puedes escribir el precio. El porcentaje se ajusta solo.">
+              <input id="prod-precio-oferta" class="input" type="number" min="0.01" step="0.01" formControlName="precioOferta" />
+            </app-form-field>
+            <app-form-field label="Días desde hoy" inputId="prod-dias-oferta" hint="Al guardar, el plazo empieza hoy y termina al cabo de estos días.">
+              <input id="prod-dias-oferta" class="input" type="number" min="1" max="365" step="1" formControlName="ofertaDias" />
+            </app-form-field>
+            <p class="ganancia" [class.baja]="gananciaOferta < 0">
+              Antes {{ form.controls.precioVentaBase.value | pen }}. Ahora {{ form.controls.precioOferta.value | pen }}.
+              Ganancia por unidad {{ gananciaOferta | pen }}: precio de oferta menos precio de compra.
+            </p>
+          </div>
+        </div>
+      </details>
+    </div>
     <app-form-field class="span-2" label="Descripción" inputId="prod-desc"><textarea id="prod-desc" class="textarea" formControlName="descripcion"></textarea></app-form-field>
     <div class="span-2 imagen-bloque">
       <span class="imagen-titulo">Imagen</span>

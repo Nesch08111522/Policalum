@@ -61,7 +61,7 @@ public class CmsController {
     @PutMapping("/api/v1/cms/productos/{id}/oferta")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> marcarOferta(@PathVariable UUID id, @Valid @RequestBody OfertaManualRequestDTO request) {
-        cms.marcarOferta(id, request.oferta());
+        cms.marcarOferta(id, request);
         return ResponseEntity.noContent().build();
     }
 

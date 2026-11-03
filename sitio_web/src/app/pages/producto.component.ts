@@ -84,6 +84,14 @@ export class ProductoComponent implements OnInit {
     return pen(fraccion ? fraccion.precio : producto.precioPublico);
   }
 
+  precioAnterior(producto: ProductoPublico): string {
+    const fraccion = producto.fracciones.find((item) => item.id === this.form.controls.fraccionId.value);
+    const lista = Number(fraccion ? fraccion.precioLista : producto.precioLista);
+    const actual = Number(fraccion ? fraccion.precio : producto.precioPublico);
+    if (!producto.oferta || !(lista > actual)) return '';
+    return pen(lista);
+  }
+
   agregar(producto: ProductoPublico): void {
     if (this.form.invalid) return;
     const fraccion = producto.fracciones.find((item) => item.id === this.form.controls.fraccionId.value);

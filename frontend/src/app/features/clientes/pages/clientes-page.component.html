@@ -41,6 +41,8 @@
     (retry)="cargar()"
     (empty)="abrirCrear()">
     <ng-template #rowActions let-row>
+      <a class="btn btn-ghost btn-sm" [routerLink]="['/modules/mensajes-web']" [queryParams]="{ correo: row.email }" *ngIf="row.email">Mensaje</a>
+      <a class="btn btn-ghost btn-sm" *ngIf="row.celular" [href]="enlaceCelular(row.celular)" target="_blank" rel="noopener noreferrer">Celular</a>
       <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(row)">Editar</button>
       <button type="button" class="btn btn-danger btn-sm" (click)="pedirEliminar(row)">Eliminar</button>
     </ng-template>

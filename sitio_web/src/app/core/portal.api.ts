@@ -90,6 +90,48 @@ export class PortalApi {
   contacto(cuerpo: unknown): Observable<ContactoCreado> {
     return this.http.post<ContactoCreado>(`${this.base}/contacto`, cuerpo);
   }
+
+  leerChat(clave: string): Observable<HiloPublico> {
+    return this.http.get<HiloPublico>(`${this.base}/chat/${clave}`);
+  }
+
+  enviarChat(cuerpo: { clave?: string; nombre: string; correo: string; telefono?: string; empresa?: string; texto: string; dispositivo?: string }): Observable<HiloPublico> {
+    return this.http.post<HiloPublico>(`${this.base}/chat`, cuerpo);
+  }
+
+  coincidencias(correo: string, telefono: string, dispositivoId: string): Observable<{ encontrada: boolean; mismoDispositivo: boolean; nombre?: string; referencia?: string }> {
+    const params = new HttpParams().set('correo', correo).set('telefono', telefono).set('dispositivo', dispositivoId);
+    return this.http.get<{ encontrada: boolean; mismoDispositivo: boolean; nombre?: string; referencia?: string }>(`${this.base}/chat-coincidencias`, { params });
+  }
+
+  continuarChat(cuerpo: { referencia: string; correo: string; telefono?: string; dispositivo?: string }): Observable<{ clave: string }> {
+    return this.http.post<{ clave: string }>(`${this.base}/chat-continuar`, cuerpo);
+  }
+
+  leerChatCliente(clave: string): Observable<string> {
+    return this.http.post(`${this.base}/chat/${clave}/leido`, {}, { responseType: 'text' });
+  }
+
+  presenciaChat(clave: string, activo: boolean): Observable<string> {
+    return this.http.post(`${this.base}/chat/${clave}/escribiendo`, { activo }, { responseType: 'text' });
+  }
+}
+
+export interface LineaChat {
+  id: string;
+  autor: 'CLIENTE' | 'EQUIPO';
+  autorNombre?: string;
+  texto: string;
+  createdAt?: string;
+}
+
+export interface HiloPublico {
+  id: string;
+  clave: string;
+  nombre: string;
+  noLeidos: number;
+  equipoEscribiendo: boolean;
+  lineas: LineaChat[];
 }
 
 export function media(ruta?: string | null): string | null {

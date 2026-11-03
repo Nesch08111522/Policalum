@@ -18,6 +18,7 @@ import { InventarioSyncService } from '../../../shared/services/inventario-sync.
 import { LookupService } from '../../../shared/services/lookup.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
+import { precioFraccionVigente, precioVigente } from '../../../shared/utils/precio-oferta';
 import { ignoreStale, PageState } from '../../../shared/utils/page-state';
 import { rangoFechaFiltro } from '../../../shared/utils/turno';
 import { lineaProductoOServicio } from '../../../shared/utils/validators';
@@ -210,7 +211,7 @@ export class VentasPageComponent implements OnInit, OnDestroy {
     group.controls.fraccionId.addValidators(Validators.required);
     group.controls.fraccionId.updateValueAndValidity({ emitEvent: false });
     this.fraccionesApi.GetApiV1CatalogoFraccionesProductoProductoIdDisponibles({ productoId }).pipe(takeUntil(this.destroy$)).subscribe((rows) => {
-      for (const row of rows ?? []) if (row.id != null) this.precioFraccion.set(row.id, Number(row.precioVenta ?? 0));
+      for (const row of rows ?? []) if (row.id != null) this.precioFraccion.set(row.id, precioFraccionVigente(Number(row.precioVenta ?? 0), producto));
       const current = this.lineas.controls.indexOf(group);
       if (current >= 0) this.fraccionesLinea[current] = (rows ?? []).filter((row) => row.id).map((row) => ({ value: row.id as string, label: row.nombreFraccion ?? 'Fracción' }));
       this.recalcularTotal();
@@ -239,7 +240,7 @@ export class VentasPageComponent implements OnInit, OnDestroy {
     const producto = this.lookup.productos.find((item) => item.id === productoId);
     if (!producto) return null;
     if (producto.esFraccionable) return fraccionId && this.precioFraccion.has(fraccionId) ? this.precioFraccion.get(fraccionId) ?? null : null;
-    return producto.precioVentaBase == null ? null : Number(producto.precioVentaBase);
+    return producto.precioVentaBase == null ? null : precioVigente(Number(producto.precioVentaBase), producto);
   }
 
   private pagosAEnviar(pagos: Array<{ metodoPago: Api.PagoVentaCommandDTO['metodoPago']; monto: number; referencia: string }>): Api.RegistrarVentaRequestDTO['pagos'] | null {

@@ -2,6 +2,7 @@ package com.policalum.erp.domain.model;
 
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,6 +80,19 @@ public class Producto {
     /** Si es true, la sincronización automática no pisa la decisión del admin. */
     @Column(name = "oferta_manual")
     private Boolean ofertaManual = false;
+
+    /** Precio con IGV mientras la oferta está vigente. La ganancia de la venta usa este monto menos el precio de compra. */
+    @Column(name = "precio_oferta", precision = 12, scale = 2)
+    private BigDecimal precioOferta;
+
+    @Column(name = "oferta_porcentaje", precision = 5, scale = 2)
+    private BigDecimal ofertaPorcentaje;
+
+    @Column(name = "oferta_desde")
+    private LocalDate ofertaDesde;
+
+    @Column(name = "oferta_hasta")
+    private LocalDate ofertaHasta;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

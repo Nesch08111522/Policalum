@@ -146,10 +146,16 @@ public class PortalPublicoService {
     private ProductoPublicoDTO ficha(Producto producto, Map<UUID, BigDecimal> saldos) {
         Categoria categoria = producto.getCategoria();
         BigDecimal saldo = saldos.getOrDefault(producto.getId(), BigDecimal.ZERO);
+        boolean vigente = com.policalum.erp.application.service.PrecioComercial.vigente(producto);
         List<FraccionPublicaDTO> fracciones = producto.getFracciones() == null ? List.of() : producto.getFracciones().stream()
                 .filter(fraccion -> Boolean.TRUE.equals(fraccion.getActivo()))
                 .sorted(Comparator.comparing(CatalogoFraccion::getFactorDescuentoKardex).reversed())
-                .map(fraccion -> new FraccionPublicaDTO(fraccion.getId(), fraccion.getNombreFraccion(), fraccion.getFactorDescuentoKardex(), fraccion.getPrecioVenta()))
+                .map(fraccion -> new FraccionPublicaDTO(
+                        fraccion.getId(),
+                        fraccion.getNombreFraccion(),
+                        fraccion.getFactorDescuentoKardex(),
+                        com.policalum.erp.application.service.PrecioComercial.fraccion(producto, fraccion.getPrecioVenta()),
+                        vigente ? fraccion.getPrecioVenta() : null))
                 .toList();
         return new ProductoPublicoDTO(
                 producto.getId(),
@@ -157,7 +163,7 @@ public class PortalPublicoService {
                 producto.getDescripcion(),
                 producto.getCodigoSku(),
                 producto.getUnidad(),
-                producto.getPrecioVentaBase(),
+                com.policalum.erp.application.service.PrecioComercial.venta(producto),
                 saldo.compareTo(BigDecimal.ZERO) > 0,
                 Boolean.TRUE.equals(producto.getDestacado()),
                 Boolean.TRUE.equals(producto.getEsFraccionable()),
@@ -165,8 +171,9 @@ public class PortalPublicoService {
                 categoria == null ? null : categoria.getNombre(),
                 imagen(producto.getImagen()),
                 fracciones,
-                Boolean.TRUE.equals(producto.getOferta()),
-                saldo);
+                com.policalum.erp.application.service.PrecioComercial.mostrar(producto),
+                saldo,
+                vigente ? producto.getPrecioVentaBase() : null);
     }
 
     private ServicioPublicoDTO servicioPublico(Servicio servicio) {

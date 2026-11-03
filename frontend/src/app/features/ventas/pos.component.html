@@ -98,7 +98,7 @@
           <p class="bloqueo" *ngIf="producto.esFraccionable && !fraccionesDe(producto).length">Este producto no tiene medidas activas.</p>
 
           <div class="simple" *ngIf="!producto.esFraccionable">
-            <strong>{{ producto.precioVentaBase | pen }}</strong>
+            <strong><s *ngIf="enOferta(producto)">{{ producto.precioVentaBase | pen }}</s> {{ precioDe(producto) | pen }}</strong>
             <button type="button" class="agregar" [disabled]="!corteDisponible(producto)" [attr.title]="tituloProducto(producto)" (click)="agregarProducto(producto)">
               Agregar al ticket
               <em *ngIf="cantidadEnTicket(producto.id) as llevados">× {{ llevados }}</em>

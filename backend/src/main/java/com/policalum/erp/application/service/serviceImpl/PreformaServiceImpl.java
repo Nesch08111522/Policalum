@@ -335,10 +335,10 @@ public class PreformaServiceImpl implements PreformaService {
                 if (!f.getProducto().getId().equals(p.getId()) || !Boolean.TRUE.equals(f.getActivo())) {
                     throw new IllegalArgumentException("La fracción no pertenece al producto o está inactiva");
                 }
-                precio = f.getPrecioVenta();
+                precio = com.policalum.erp.application.service.PrecioComercial.fraccion(p, f.getPrecioVenta());
             } else {
                 if (Boolean.TRUE.equals(p.getEsFraccionable())) throw new IllegalArgumentException("Seleccione una fracción para " + p.getNombre());
-                precio = p.getPrecioVentaBase();
+                precio = com.policalum.erp.application.service.PrecioComercial.venta(p);
             }
         } else {
             if (l.fraccionId() != null) throw new IllegalArgumentException("Un servicio no admite fracción");

@@ -1,9 +1,17 @@
 <section class="module-page">
   <app-page-header title="Configuración" subtitle="Datos de la empresa, parámetros operativos, series y el formato de cotización."></app-page-header>
+  <article class="card card-body">
+    <h2>Notificaciones de este dispositivo</h2>
+    <p class="text-muted">Si lo enciendes, este navegador recibe las alertas del ERP aunque la pestaña esté en segundo plano. Cada dispositivo donde inicies sesión puede tener su propio aviso.</p>
+    <button type="button" class="btn" [class.btn-primary]="!pushActivo" [class.btn-ghost]="pushActivo" (click)="alternarPush()" [disabled]="pushTrabajando">{{ pushActivo ? 'Apagar notificaciones aquí' : 'Encender notificaciones aquí' }}</button>
+  </article>
   <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
   <div *ngIf="error && tab === 'empresa'" class="alert alert-error"><div><strong>No se cargó la empresa</strong><p>{{ error }}</p></div><button type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button></div>
 
-  <form *ngIf="tab === 'empresa'" class="card card-body marca-card" [formGroup]="marcaForm" (ngSubmit)="guardarMarca()">
+  <div class="acordeon" *ngIf="tab === 'empresa'">
+  <details open>
+    <summary>Marca</summary>
+  <form class="acordeon-cuerpo marca-card" [formGroup]="marcaForm" (ngSubmit)="guardarMarca()">
     <h2>Marca de la empresa</h2>
     <p class="text-muted">El nombre y el logo se ven en el menú, el acceso y los comprobantes. El archivo nuevo reemplaza al anterior.</p>
     <div class="marca-row">
@@ -19,8 +27,10 @@
     </label>
     <div class="filter-actions"><button type="submit" class="btn btn-primary" [disabled]="marcaForm.invalid || guardandoMarca">Guardar marca</button></div>
   </form>
-
-  <form *ngIf="tab === 'empresa'" class="card card-body form-grid" [formGroup]="empresa" (ngSubmit)="guardarEmpresa()">
+  </details>
+  <details open>
+    <summary>Datos de la empresa</summary>
+  <form class="acordeon-cuerpo form-grid" [formGroup]="empresa" (ngSubmit)="guardarEmpresa()">
     <app-form-field label="Razón social" inputId="emp-razon" [required]="true" [error]="errorEmpresa('razonSocial')"><input id="emp-razon" class="input" formControlName="razonSocial" /></app-form-field>
     <app-form-field label="Nombre comercial" inputId="emp-nom"><input id="emp-nom" class="input" formControlName="nombreComercial" /></app-form-field>
     <app-form-field label="RUC" inputId="emp-ruc" [required]="true" [error]="errorEmpresa('ruc')"><input id="emp-ruc" class="input" formControlName="ruc" inputmode="numeric" /></app-form-field>
@@ -30,22 +40,27 @@
     <app-form-field label="Teléfono" inputId="emp-tel"><input id="emp-tel" class="input" formControlName="telefono" /></app-form-field>
     <div class="filter-actions span-2"><button type="submit" class="btn btn-primary" [disabled]="empresa.invalid || guardando">Guardar empresa</button></div>
   </form>
+  </details>
+  </div>
 
-  <form *ngIf="tab === 'parametros'" class="card card-body form-grid" [formGroup]="parametros" (ngSubmit)="guardarParametros()">
-    <h2 class="span-2">Finanzas</h2>
+  <form *ngIf="tab === 'parametros'" class="acordeon" [formGroup]="parametros" (ngSubmit)="guardarParametros()">
+    <details open><summary>Finanzas</summary><div class="acordeon-cuerpo form-grid">
     <app-form-field label="Meses históricos" inputId="par-hist"><input id="par-hist" class="input" type="number" min="1" formControlName="mesesHistoricosProyeccion" /></app-form-field>
     <app-form-field label="Proyección por defecto" inputId="par-def"><input id="par-def" class="input" type="number" min="1" formControlName="mesesProyeccionDefault" /></app-form-field>
     <app-form-field label="Proyección máxima" inputId="par-max"><input id="par-max" class="input" type="number" min="1" formControlName="mesesProyeccionMax" /></app-form-field>
-    <h2 class="span-2">Inventario</h2>
+    </div></details>
+    <details open><summary>Inventario</summary><div class="acordeon-cuerpo form-grid">
     <app-form-field label="Mínimo de justificación" inputId="par-jus"><input id="par-jus" class="input" type="number" min="0" formControlName="minCaracteresJustificacion" /></app-form-field>
     <app-form-field label="Umbral de ajuste" inputId="par-umb"><input id="par-umb" class="input" type="number" min="0" step="0.01" formControlName="umbralJustificacionAjuste" /></app-form-field>
-    <h2 class="span-2">Ventas y reportes</h2>
+    </div></details>
+    <details open><summary>Ventas y reportes</summary><div class="acordeon-cuerpo form-grid">
     <app-form-field label="Vigencia de cotización (días)" inputId="par-vig"><input id="par-vig" class="input" type="number" min="1" formControlName="vigenciaCotizacionDias" /></app-form-field>
     <app-form-field label="Preforma por defecto (min)" inputId="par-pre"><input id="par-pre" class="input" type="number" min="1" formControlName="preformaMinutosDefault" /></app-form-field>
     <app-form-field label="Preforma mínima" inputId="par-pmin"><input id="par-pmin" class="input" type="number" min="1" formControlName="preformaMinutosMin" /></app-form-field>
     <app-form-field label="Preforma máxima" inputId="par-pmax"><input id="par-pmax" class="input" type="number" min="1" formControlName="preformaMinutosMax" /></app-form-field>
     <app-form-field label="Máximo de filas al exportar" inputId="par-exp"><input id="par-exp" class="input" type="number" min="1" formControlName="maxFilasExportacion" /></app-form-field>
     <div class="filter-actions span-2"><button type="submit" class="btn btn-primary" [disabled]="parametros.invalid || guardando">Guardar parámetros</button></div>
+    </div></details>
   </form>
 
   <ng-container *ngIf="tab === 'series'">

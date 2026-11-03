@@ -15,6 +15,7 @@ import { AvatarService } from '../../../shared/services/avatar.service';
 import { SedeFiltroService } from '../../../shared/services/sede-filtro.service';
 import { CanalWebAvisos } from '../../../shared/services/canal-web-avisos.service';
 import { environment } from '../../../../environments/environment';
+import { ThemeService } from '../../../shared/services/theme.service';
 
 import { NAV_SECTIONS, NavItem } from '../../navigation';
 
@@ -28,6 +29,7 @@ import { NAV_SECTIONS, NavItem } from '../../navigation';
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   readonly sitioWeb = environment.sitioWebUrl;
+  readonly theme = inject(ThemeService);
   query = '';
   results: NavItem[] = [];
   menuOpen = false;
@@ -115,6 +117,13 @@ export class HeaderComponent implements OnInit, OnDestroy {
   clear(): void {
     this.query = '';
     this.results = [];
+  }
+
+  abrirSitio(event: Event): void {
+    event.preventDefault();
+    const destino = this.sitioWeb;
+    const ventana = window.open(destino, '_blank', 'noopener,noreferrer');
+    if (!ventana) window.location.assign(destino);
   }
 
   toggleMenu(): void {

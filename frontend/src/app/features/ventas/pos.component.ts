@@ -13,6 +13,7 @@ import { MarcaService } from '../../shared/services/marca.service';
 import { CotizacionesApiService } from '../cotizaciones/data-access/cotizaciones.api';
 import { FacturacionElectronicaApiService } from '../facturacion-electronica/data-access/facturacion-electronica.api';
 import { PreformasApiService } from '../preformas/data-access/preformas.api';
+import { ofertaVigente, precioFraccionVigente, precioVigente } from '../../shared/utils/precio-oferta';
 import { Almacen, Cliente, Fraccion, Page, Producto, SaldoAlmacen, Sede, Servicio, StockFila, Turno, VentasApiService } from './ventas-api.service';
 
 type Catalogo = 'productos' | 'servicios' | 'favoritos';
@@ -374,6 +375,9 @@ export class PosComponent implements OnInit, OnDestroy {
     localStorage.setItem(FAVORITOS, JSON.stringify([...siguiente]));
   }
 
+  enOferta(producto: Producto): boolean { return ofertaVigente(producto); }
+  precioDe(producto: Producto): number { return precioVigente(Number(producto.precioVentaBase), producto); }
+
   agregarProducto(producto: Producto, fraccion?: Fraccion): void {
     if (producto.esFraccionable && !fraccion) {
       this.error = 'Elige la medida del producto. Cada botón agrega ese corte al ticket.';
@@ -389,7 +393,9 @@ export class PosComponent implements OnInit, OnDestroy {
       id: producto.id,
       nombre: producto.nombre,
       detalle: fraccion?.nombreFraccion,
-      precio: Number(fraccion ? fraccion.precioVenta : producto.precioVentaBase),
+      precio: fraccion
+        ? precioFraccionVigente(Number(fraccion.precioVenta), producto)
+        : precioVigente(Number(producto.precioVentaBase), producto),
       cantidad: 1,
       unidad: this.unidadCorta(producto.unidad),
       fraccion,

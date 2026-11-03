@@ -1,6 +1,7 @@
 package com.policalum.erp.application.dto.response;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +26,11 @@ public record ProductoResponseDTO(
         String tipoAfectacion,
         List<CatalogoFraccionResponseDTO> fracciones,
         String imagen,
-        Boolean destacado
+        Boolean destacado,
+        BigDecimal precioOferta,
+        BigDecimal ofertaPorcentaje,
+        LocalDate ofertaDesde,
+        LocalDate ofertaHasta,
+        Boolean oferta
 ) {
 }
