@@ -25,7 +25,7 @@ public class CajaChicaServiceImpl {
     private final TurnoCajaRepository turnoRepository;
     private final UserRepository userRepository;
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public CajaChicaResponseDTO registrar(UUID turnoId, CajaChicaRequestDTO request) {
         TurnoCaja turno = turnoRepository.findById(turnoId).orElseThrow(() -> new ResourceNotFoundException("Turno no encontrado"));
         User user = usuario();

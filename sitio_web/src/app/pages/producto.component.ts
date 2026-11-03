@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CarritoService } from '../core/carrito.service';
@@ -22,6 +22,17 @@ export class ProductoComponent implements OnInit {
     fraccionId: [''],
     cantidad: [1, [Validators.required, Validators.min(0.0001)]],
   });
+
+  @HostListener('document:visibilitychange')
+  alVolver(): void {
+    if (document.visibilityState !== 'visible') return;
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) return;
+    this.api.producto(id).subscribe({
+      next: (producto) => this.producto.set(producto),
+      error: () => undefined,
+    });
+  }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {

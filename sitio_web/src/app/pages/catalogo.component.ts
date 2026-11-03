@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { FichaProductoComponent } from '../components/ficha-producto.component';
 import { PortalApi, mensajeError } from '../core/portal.api';
@@ -38,6 +38,11 @@ export class CatalogoComponent implements OnInit {
     this.cargar();
   }
 
+  @HostListener('document:visibilitychange')
+  alVolver(): void {
+    if (document.visibilityState === 'visible') this.cargar(true);
+  }
+
   mover(delta: number): void {
     const siguiente = this.pagina() + delta;
     if (siguiente < 0 || siguiente >= this.paginas()) return;
@@ -45,9 +50,11 @@ export class CatalogoComponent implements OnInit {
     this.cargar();
   }
 
-  private cargar(): void {
-    this.cargando.set(true);
-    this.error.set('');
+  private cargar(silencioso = false): void {
+    if (!silencioso) {
+      this.cargando.set(true);
+      this.error.set('');
+    }
     this.api.productos({
       categoriaId: this.categoriaId() || undefined,
       q: this.busqueda.value.trim() || undefined,
@@ -61,7 +68,7 @@ export class CatalogoComponent implements OnInit {
       },
       error: (error: unknown) => {
         this.cargando.set(false);
-        this.error.set(mensajeError(error));
+        if (!silencioso || !this.productos().length) this.error.set(mensajeError(error));
       },
     });
   }

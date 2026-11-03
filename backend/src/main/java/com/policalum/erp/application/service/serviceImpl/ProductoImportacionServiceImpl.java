@@ -53,7 +53,7 @@ public class ProductoImportacionServiceImpl implements ProductoImportacionServic
     private final FileStorageService fileStorageService;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ProductoImportacionResultadoDTO importar(ProductoImportacionRequestDTO request) {
         List<ProductoImportacionFilaDTO> filas = request.filas();
         if (filas == null || filas.isEmpty()) {

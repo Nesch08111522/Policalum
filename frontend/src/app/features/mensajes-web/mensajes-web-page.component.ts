@@ -1,11 +1,12 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, effect, inject, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { ToastService } from '../../shared/services/toast.service';
+import { CanalWebAvisos } from '../../shared/services/canal-web-avisos.service';
 import { problemText } from '../../shared/utils/feedback';
 
 export interface MensajeWeb {
@@ -40,6 +41,11 @@ export class MensajesWebPageComponent implements OnInit {
   abierto: MensajeWeb | null = null;
   guardando = false;
   private readonly fb = inject(FormBuilder);
+  private readonly canal = inject(CanalWebAvisos);
+  private readonly alLlegarWeb = effect(() => {
+    if (this.canal.revision() === 0) return;
+    untracked(() => this.cargar());
+  });
   readonly nota = this.fb.nonNullable.control('');
 
   constructor(

@@ -36,7 +36,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional
+@Transactional(rollbackFor = Exception.class)
 public class CuentaPorPagarServiceImpl implements CuentaPorPagarService {
 
     private final FinanzasCuentaPorPagarRepository cuentaRepository;

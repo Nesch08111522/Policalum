@@ -54,7 +54,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(rollbackFor = Exception.class)
 @Slf4j
 public class OrdenDespachoServiceImpl implements OrdenDespachoService {
 

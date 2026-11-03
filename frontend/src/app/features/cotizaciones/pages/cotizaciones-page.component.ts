@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink, Routes } from '@angular/router';
 import { environment } from '../../../../environments/environment';
@@ -20,6 +20,7 @@ import { PenPipe } from '../../../shared/pipes/format.pipes';
 import { CajaSessionService } from '../../../shared/services/caja-session.service';
 import { InventarioSyncService } from '../../../shared/services/inventario-sync.service';
 import { LookupService } from '../../../shared/services/lookup.service';
+import { CanalWebAvisos } from '../../../shared/services/canal-web-avisos.service';
 import { ReportService } from '../../../shared/services/report.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemStatus, problemText } from '../../../shared/utils/feedback';
@@ -43,6 +44,11 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
   private readonly inventario = inject(InventarioSyncService);
   private readonly fraccionesApi = inject(CatalogoFraccionesApiService);
   private readonly destroy$ = new Subject<void>();
+  private readonly canal = inject(CanalWebAvisos);
+  private readonly alLlegarWeb = effect(() => {
+    if (this.canal.revision() === 0) return;
+    untracked(() => this.cargar());
+  });
   private readonly precioFraccion = new Map<string, number>();
   readonly tabs: TabItem[] = [{ id: 'lista', label: 'Cotizaciones' }, { id: 'vencidas', label: 'Vencidas' }];
   tab = 'lista';

@@ -193,7 +193,7 @@ public class CotizacionServiceImpl implements CotizacionService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public List<CotizacionListadoDTO> vencidas() {
         List<Cotizacion> vencidas = new ArrayList<>();
         vencidas.addAll(cotizacionRepository.findByEstadoAndFechaVigenciaBefore(EstadoCotizacion.EMITIDA, LocalDate.now()));

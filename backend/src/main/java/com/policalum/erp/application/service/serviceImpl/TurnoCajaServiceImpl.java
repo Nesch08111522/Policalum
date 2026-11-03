@@ -39,7 +39,7 @@ public class TurnoCajaServiceImpl implements TurnoCajaService {
     private final MovimientoCajaChicaRepository cajaChicaRepository;
     private final TurnoCajaMapper mapper;
 
-    @Override @Transactional
+    @Override @Transactional(rollbackFor = Exception.class)
     public TurnoCajaResponseDTO abrir(AperturaCajaRequestDTO request) {
         User user = usuarioActual();
         Sede sede = sedeRepository.findById(request.sedeId()).orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
@@ -50,7 +50,7 @@ public class TurnoCajaServiceImpl implements TurnoCajaService {
         return mapper.toResponseDto(turnoRepository.save(turno));
     }
 
-    @Override @Transactional
+    @Override @Transactional(rollbackFor = Exception.class)
     public ResumenCierreCajaDTO cerrar(UUID turnoId, CierreCajaRequestDTO request) {
         TurnoCaja turno = obtenerPropioAbierto(turnoId);
         ResumenCierreCajaDTO resumen = construirResumen(turno, request.montoFinalDeclarado());

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FichaProductoComponent } from '../components/ficha-producto.component';
 import { LINEAS_OBRA } from '../core/obras';
@@ -22,7 +22,7 @@ export class InicioComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.api.destacados().subscribe({ next: (lista) => this.destacados.set(lista), error: () => this.destacados.set([]) });
+    this.cargarDestacados();
     this.api.portafolio().subscribe({
       next: (lista) => {
         if (lista.length) {
@@ -31,6 +31,20 @@ export class InicioComponent implements OnInit {
         }
       },
       error: () => undefined,
+    });
+  }
+
+  @HostListener('document:visibilitychange')
+  alVolver(): void {
+    if (document.visibilityState === 'visible') this.cargarDestacados(true);
+  }
+
+  private cargarDestacados(conservarSiFalla = false): void {
+    this.api.destacados().subscribe({
+      next: (lista) => this.destacados.set(lista),
+      error: () => {
+        if (!conservarSiFalla) this.destacados.set([]);
+      },
     });
   }
 

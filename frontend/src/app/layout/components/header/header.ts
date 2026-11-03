@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -13,6 +13,7 @@ import { LookupService } from '../../../shared/services/lookup.service';
 import { CajaGateService } from '../../../shared/services/caja-gate.service';
 import { AvatarService } from '../../../shared/services/avatar.service';
 import { SedeFiltroService } from '../../../shared/services/sede-filtro.service';
+import { CanalWebAvisos } from '../../../shared/services/canal-web-avisos.service';
 import { environment } from '../../../../environments/environment';
 
 import { NAV_SECTIONS, NavItem } from '../../navigation';
@@ -37,6 +38,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   sedes: Api.SedeResponseDTO[] = [];
   private items: NavItem[] = [];
   private eventos?: EventSource;
+  private readonly canal = inject(CanalWebAvisos);
 
   constructor(
     readonly sedeFiltro: SedeFiltroService,
@@ -77,7 +79,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
     if (!token || typeof EventSource === 'undefined') return;
     const url = `${environment.apiUrl}/api/v1/canal-web/eventos?access_token=${encodeURIComponent(token)}`;
     this.eventos = new EventSource(url);
-    this.eventos.addEventListener('aviso', () => this.cargarAvisos());
+    this.eventos.addEventListener('aviso', () => {
+      this.cargarAvisos();
+      this.canal.avisar();
+    });
   }
 
   abrirAviso(aviso: Notificacion): void {
