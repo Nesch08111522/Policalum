@@ -72,6 +72,14 @@ public class Producto {
     @Column(name = "destacado")
     private Boolean destacado = false;
 
+    /** Oferta visible en la web. La marca el admin o la sincronización de productos sin rotación. */
+    @Column(name = "oferta")
+    private Boolean oferta = false;
+
+    /** Si es true, la sincronización automática no pisa la decisión del admin. */
+    @Column(name = "oferta_manual")
+    private Boolean ofertaManual = false;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -122,6 +130,8 @@ public class Producto {
         if (this.esFraccionable == null) this.esFraccionable = false;
         if (this.activo == null) this.activo = true;
         if (this.destacado == null) this.destacado = false;
+        if (this.oferta == null) this.oferta = false;
+        if (this.ofertaManual == null) this.ofertaManual = false;
         if (this.createdAt == null) this.createdAt = LocalDateTime.now();
         if (this.incluyeIgv == null) this.incluyeIgv = true;
         if (this.tipoAfectacion == null) this.tipoAfectacion = "10";

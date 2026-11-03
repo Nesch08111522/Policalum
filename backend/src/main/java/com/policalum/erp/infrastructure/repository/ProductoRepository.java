@@ -1,5 +1,6 @@
 package com.policalum.erp.infrastructure.repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -7,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -111,4 +113,28 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
             THEN TRUE ELSE FALSE END
             """)
     boolean tieneHistorial(@Param("id") UUID id);
+
+    @Modifying(clearAutomatically = true)
+    @Query("""
+            UPDATE Producto p SET p.oferta = true
+            WHERE p.activo = true AND (p.ofertaManual = false OR p.ofertaManual IS NULL)
+            AND NOT EXISTS (
+                SELECT 1 FROM KardexMovimiento k
+                WHERE k.producto = p
+                AND k.tipoMovimiento = com.policalum.erp.domain.enums.TipoMovimiento.SALIDA
+                AND k.createdAt >= :desde)
+            """)
+    int marcarOfertasEstancadas(@Param("desde") LocalDateTime desde);
+
+    @Modifying(clearAutomatically = true)
+    @Query("""
+            UPDATE Producto p SET p.oferta = false
+            WHERE (p.ofertaManual = false OR p.ofertaManual IS NULL)
+            AND EXISTS (
+                SELECT 1 FROM KardexMovimiento k
+                WHERE k.producto = p
+                AND k.tipoMovimiento = com.policalum.erp.domain.enums.TipoMovimiento.SALIDA
+                AND k.createdAt >= :desde)
+            """)
+    int quitarOfertasConRotacion(@Param("desde") LocalDateTime desde);
 }

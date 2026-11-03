@@ -18,6 +18,7 @@ import { ProductoPublico } from '../core/models';
       <div class="card-body">
         <p class="muted">{{ producto.categoriaNombre || 'Catálogo' }}</p>
         <h3><a [routerLink]="['/catalogo', producto.id]">{{ producto.nombre }}</a></h3>
+        @if (producto.oferta) { <span class="tag">Oferta</span> }
         <p class="price">{{ precio }}</p>
         <p class="stock" [class.on]="producto.disponible" [class.off]="!producto.disponible">
           {{ producto.disponible ? 'Disponible' : 'Agotado' }}

@@ -18,6 +18,7 @@ export interface ProductoPublico {
   categoriaId?: string;
   categoriaNombre?: string;
   imagenUrl?: string;
+  oferta?: boolean;
   fracciones: FraccionPublica[];
 }
 
@@ -50,6 +51,7 @@ export interface ProyectoPublico {
   descripcion: string;
   imagenUrl?: string;
   orden: number;
+  cliente?: string;
 }
 
 export interface LineaCarrito {

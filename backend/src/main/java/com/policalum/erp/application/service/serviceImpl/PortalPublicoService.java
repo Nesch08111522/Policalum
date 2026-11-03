@@ -94,7 +94,7 @@ public class PortalPublicoService {
 
     private ProyectoPortafolioResponseDTO proyecto(ProyectoPortafolio proyecto) {
         return new ProyectoPortafolioResponseDTO(proyecto.getId(), proyecto.getTitulo(), proyecto.getDescripcion(),
-                proyecto.getImagenUrl(), proyecto.getOrden(), proyecto.getPublicado(), proyecto.getCreatedAt());
+                proyecto.getImagenUrl(), proyecto.getOrden(), proyecto.getPublicado(), proyecto.getCreatedAt(), proyecto.getCliente());
     }
 
     private Map<UUID, BigDecimal> saldos(List<Producto> productos) {
@@ -130,7 +130,8 @@ public class PortalPublicoService {
                 categoria == null ? null : categoria.getId(),
                 categoria == null ? null : categoria.getNombre(),
                 imagen(producto.getImagen()),
-                fracciones);
+                fracciones,
+                Boolean.TRUE.equals(producto.getOferta()));
     }
 
     private static String imagen(String ruta) {

@@ -3,6 +3,7 @@ import { Component, HostListener, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CarritoService } from './core/carrito.service';
 import { AvisoService } from './core/aviso.service';
+import { CmsStore } from './core/cms.store';
 import { EmpresaStore } from './core/empresa.store';
 
 @Component({
@@ -13,6 +14,7 @@ import { EmpresaStore } from './core/empresa.store';
 export class App {
   readonly carrito = inject(CarritoService);
   readonly marca = inject(EmpresaStore);
+  readonly cms = inject(CmsStore);
   readonly avisos = inject(AvisoService);
   readonly menu = signal(false);
   readonly scrolled = signal(false);

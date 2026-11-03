@@ -10,6 +10,7 @@
       <div class="veil"></div>
       <div>
         <h3>{{ obra.titulo }}</h3>
+        @if (obra.cliente) { <p class="kicker">{{ obra.cliente }}</p> }
         <p>{{ obra.descripcion }}</p>
       </div>
     </article>

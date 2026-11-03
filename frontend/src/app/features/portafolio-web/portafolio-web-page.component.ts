@@ -15,6 +15,7 @@ export interface ProyectoWeb {
   titulo: string;
   descripcion: string;
   imagenUrl?: string;
+  cliente?: string;
   orden: number;
   publicado: boolean;
 }
@@ -36,6 +37,7 @@ export class PortafolioWebPageComponent implements OnInit {
     titulo: ['', [Validators.required, Validators.maxLength(160)]],
     descripcion: ['', [Validators.required, Validators.maxLength(800)]],
     imagenUrl: ['', Validators.maxLength(500)],
+    cliente: ['', Validators.maxLength(160)],
     orden: [0, Validators.required],
     publicado: [true],
   });
@@ -64,6 +66,7 @@ export class PortafolioWebPageComponent implements OnInit {
       titulo: proyecto.titulo,
       descripcion: proyecto.descripcion,
       imagenUrl: proyecto.imagenUrl ?? '',
+      cliente: proyecto.cliente ?? '',
       orden: proyecto.orden ?? 0,
       publicado: proyecto.publicado !== false,
     });

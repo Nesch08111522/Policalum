@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PortafolioService {
 
     private final ProyectoPortafolioRepository repository;
+    private final CmsPublicador publicador;
 
     @Transactional(readOnly = true)
     public List<ProyectoPortafolioResponseDTO> listar() {
@@ -30,8 +31,11 @@ public class PortafolioService {
                 .imagenUrl(url(request.imagenUrl()))
                 .orden(request.orden())
                 .publicado(request.publicado())
+                .cliente(limpio(request.cliente()))
                 .build();
-        return dto(repository.save(proyecto));
+        ProyectoPortafolioResponseDTO respuesta = dto(repository.save(proyecto));
+        publicador.publicar("portafolio");
+        return respuesta;
     }
 
     @Transactional
@@ -42,12 +46,15 @@ public class PortafolioService {
         proyecto.setImagenUrl(url(request.imagenUrl()));
         proyecto.setOrden(request.orden());
         proyecto.setPublicado(request.publicado());
+        proyecto.setCliente(limpio(request.cliente()));
+        publicador.publicar("portafolio");
         return dto(proyecto);
     }
 
     @Transactional
     public void eliminar(UUID id) {
         repository.delete(buscar(id));
+        publicador.publicar("portafolio");
     }
 
     private ProyectoPortafolio buscar(UUID id) {
@@ -56,7 +63,7 @@ public class PortafolioService {
 
     private ProyectoPortafolioResponseDTO dto(ProyectoPortafolio proyecto) {
         return new ProyectoPortafolioResponseDTO(proyecto.getId(), proyecto.getTitulo(), proyecto.getDescripcion(),
-                proyecto.getImagenUrl(), proyecto.getOrden(), proyecto.getPublicado(), proyecto.getCreatedAt());
+                proyecto.getImagenUrl(), proyecto.getOrden(), proyecto.getPublicado(), proyecto.getCreatedAt(), proyecto.getCliente());
     }
 
     private static String url(String valor) {
@@ -66,5 +73,10 @@ public class PortafolioService {
             throw new IllegalArgumentException("La imagen del proyecto debe ser una URL http(s)");
         }
         return limpio;
+    }
+
+    private static String limpio(String valor) {
+        if (valor == null || valor.isBlank()) return null;
+        return valor.trim();
     }
 }

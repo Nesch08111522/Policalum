@@ -10,5 +10,6 @@ public record ProyectoPortafolioResponseDTO(
         String imagenUrl,
         Integer orden,
         Boolean publicado,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String cliente
 ) {}

@@ -30,6 +30,7 @@ export const MODULE_ROUTES: Routes = [
   { path: 'modules/auditoria', loadChildren: () => import('./features/auditoria/pages/auditoria-page.component').then((m) => m.AUDITORIA_ROUTES) },
   { path: 'modules/configuracion', loadChildren: () => import('./features/configuracion/pages/configuracion-page.component').then((m) => m.CONFIGURACION_ROUTES) },
   { path: 'modules/portafolio-web', loadChildren: () => import('./features/portafolio-web/portafolio-web-page.component').then((m) => m.PORTAFOLIO_WEB_ROUTES) },
+  { path: 'modules/gestor-web', loadChildren: () => import('./features/gestor-web/gestor-web-page.component').then((m) => m.GESTOR_WEB_ROUTES) },
   { path: 'modules/users', loadChildren: () => import('./features/users/pages/users-page.component').then((m) => m.USERS_ROUTES) },
   { path: 'modules/roles', loadChildren: () => import('./features/roles/pages/roles-page.component').then((m) => m.ROLES_ROUTES) },
   { path: 'modules/sedes', loadChildren: () => import('./features/sedes/pages/sedes-page.component').then((m) => m.SEDES_ROUTES) },

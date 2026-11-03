@@ -20,8 +20,8 @@ public class PlataformaConfig {
 
     @Bean
     public CacheManager cacheManager() {
-        CaffeineCacheManager manager = new CaffeineCacheManager("configuracion-publica", "categorias", "sedes");
-        manager.setCaffeine(Caffeine.newBuilder().expireAfterWrite(Duration.ofMinutes(10)).maximumSize(300));
+        CaffeineCacheManager manager = new CaffeineCacheManager("configuracion-publica", "categorias", "sedes", "cms-publico");
+        manager.setCaffeine(Caffeine.newBuilder().expireAfterWrite(Duration.ofMinutes(2)).maximumSize(300));
         return manager;
     }
 

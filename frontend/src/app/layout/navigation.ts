@@ -92,6 +92,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { id: 'sedes', label: 'Sedes', path: '/modules/sedes', icon: 'map', roles: admin },
       { id: 'configuracion', label: 'Configuración', path: '/modules/configuracion', icon: 'settings', roles: admin },
       { id: 'portafolio-web', label: 'Portafolio web', path: '/modules/portafolio-web', icon: 'image', roles: admin },
+      { id: 'gestor-web', label: 'Gestor web', path: '/modules/gestor-web', icon: 'settings', roles: admin },
     ],
   },
 ];

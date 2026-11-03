@@ -9,5 +9,6 @@ public record ProyectoPortafolioRequestDTO(
         @NotBlank @Size(max = 800) String descripcion,
         @Size(max = 500) String imagenUrl,
         @NotNull Integer orden,
-        @NotNull Boolean publicado
+        @NotNull Boolean publicado,
+        @Size(max = 160) String cliente
 ) {}

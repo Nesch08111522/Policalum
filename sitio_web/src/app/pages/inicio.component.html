@@ -1,4 +1,5 @@
 <section class="hero">
+  <canvas #cielo class="hero-canvas" aria-hidden="true"></canvas>
   <div>
     <p class="kicker">Policarbonato para obras reales</p>
     <h1>Cubiertas que aguantan el clima y dejan entrar la luz.</h1>
@@ -8,7 +9,7 @@
       <a class="btn btn-sun" routerLink="/cotizar">Solicitar cotización</a>
     </div>
   </div>
-  <div class="slides" aria-live="polite">
+  <div class="slides bento" aria-live="polite">
     @for (item of slides; track item.titulo) {
       <article class="slide">
         <strong>{{ item.titulo }}</strong>
@@ -58,6 +59,7 @@
         <div class="veil"></div>
         <div>
           <h3>{{ obra.titulo }}</h3>
+          @if (obra.cliente) { <p class="kicker">{{ obra.cliente }}</p> }
           <p>{{ obra.descripcion }}</p>
         </div>
       </article>

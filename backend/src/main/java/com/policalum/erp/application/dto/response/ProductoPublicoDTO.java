@@ -18,5 +18,6 @@ public record ProductoPublicoDTO(
         UUID categoriaId,
         String categoriaNombre,
         String imagenUrl,
-        List<FraccionPublicaDTO> fracciones
+        List<FraccionPublicaDTO> fracciones,
+        boolean oferta
 ) {}

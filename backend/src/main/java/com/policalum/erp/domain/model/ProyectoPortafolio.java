@@ -42,6 +42,9 @@ public class ProyectoPortafolio {
     @Column(nullable = false)
     private Boolean publicado = true;
 
+    @Column(length = 160)
+    private String cliente;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
