@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  { path: '', loadComponent: () => import('./pages/inicio.component').then((m) => m.InicioComponent), title: 'POLICALUM | Policarbonatos y cubiertas' },
+  { path: '', loadComponent: () => import('./pages/catalogo.component').then((m) => m.CatalogoComponent), title: 'POLICALUM | Policarbonatos y cubiertas' },
   { path: 'catalogo', loadComponent: () => import('./pages/catalogo.component').then((m) => m.CatalogoComponent), title: 'Catálogo | POLICALUM' },
   { path: 'catalogo/:id', loadComponent: () => import('./pages/producto.component').then((m) => m.ProductoComponent), title: 'Producto | POLICALUM' },
   { path: 'carrito', loadComponent: () => import('./pages/carrito.component').then((m) => m.CarritoComponent), title: 'Carrito | POLICALUM' },

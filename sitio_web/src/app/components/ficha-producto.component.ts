@@ -1,30 +1,30 @@
 import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { media, pen } from '../core/portal.api';
 import { ProductoPublico } from '../core/models';
+import { media, pen } from '../core/portal.api';
 
 @Component({
   selector: 'app-ficha',
   imports: [RouterLink],
   template: `
-    <article class="card">
-      <a class="card-media" [routerLink]="['/catalogo', producto.id]" [attr.aria-label]="producto.nombre">
+    <article class="tile">
+      <a class="tile-photo" [routerLink]="['/catalogo', producto.id]" [attr.aria-label]="producto.nombre">
         @if (foto) {
           <img [src]="foto" [alt]="producto.nombre" />
         } @else {
           <span class="swatch">{{ inicial }}</span>
         }
+        @if (producto.oferta) {
+          <span class="tile-badge">Oferta</span>
+        } @else if (producto.destacado) {
+          <span class="tile-badge">Destacado</span>
+        }
       </a>
-      <div class="card-body">
-        <p class="muted">{{ producto.categoriaNombre || 'Catálogo' }}</p>
-        <h3><a [routerLink]="['/catalogo', producto.id]">{{ producto.nombre }}</a></h3>
-        @if (producto.oferta) { <span class="tag">Oferta</span> }
-        <p class="price">{{ precio }}</p>
-        <p class="stock" [class.on]="producto.disponible" [class.off]="!producto.disponible">
-          {{ producto.disponible ? 'Disponible' : 'Agotado' }}
-        </p>
-        <a class="btn btn-line btn-sm" [routerLink]="['/catalogo', producto.id]">Ver opciones</a>
+      <div class="tile-row">
+        <p class="eyebrow">{{ producto.categoriaNombre || 'Catálogo' }}</p>
+        <p class="tile-price">{{ precio }}</p>
       </div>
+      <h3><a [routerLink]="['/catalogo', producto.id]">{{ producto.nombre }}</a></h3>
     </article>
   `,
 })
