@@ -114,27 +114,32 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
             """)
     boolean tieneHistorial(@Param("id") UUID id);
 
-    @Modifying(clearAutomatically = true)
-    @Query("""
-            UPDATE Producto p SET p.oferta = true
-            WHERE p.activo = true AND (p.ofertaManual = false OR p.ofertaManual IS NULL)
+    /**
+     * SQL nativo: el UPDATE masivo con NOT EXISTS no es fiable en JPQL y PostgreSQL
+     * compara {@code created_at} como timestamp. :desde lo calcula el servicio (ahora − 90 días).
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+            UPDATE productos p SET oferta = TRUE
+            WHERE p.activo = TRUE
+            AND (p.oferta_manual = FALSE OR p.oferta_manual IS NULL)
             AND NOT EXISTS (
-                SELECT 1 FROM KardexMovimiento k
-                WHERE k.producto = p
-                AND k.tipoMovimiento = com.policalum.erp.domain.enums.TipoMovimiento.SALIDA
-                AND k.createdAt >= :desde)
-            """)
+                SELECT 1 FROM kardex_movimientos k
+                WHERE k.producto_id = p.id
+                AND k.tipo_movimiento = 'SALIDA'
+                AND k.created_at >= :desde)
+            """, nativeQuery = true)
     int marcarOfertasEstancadas(@Param("desde") LocalDateTime desde);
 
-    @Modifying(clearAutomatically = true)
-    @Query("""
-            UPDATE Producto p SET p.oferta = false
-            WHERE (p.ofertaManual = false OR p.ofertaManual IS NULL)
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+            UPDATE productos p SET oferta = FALSE
+            WHERE (p.oferta_manual = FALSE OR p.oferta_manual IS NULL)
             AND EXISTS (
-                SELECT 1 FROM KardexMovimiento k
-                WHERE k.producto = p
-                AND k.tipoMovimiento = com.policalum.erp.domain.enums.TipoMovimiento.SALIDA
-                AND k.createdAt >= :desde)
-            """)
+                SELECT 1 FROM kardex_movimientos k
+                WHERE k.producto_id = p.id
+                AND k.tipo_movimiento = 'SALIDA'
+                AND k.created_at >= :desde)
+            """, nativeQuery = true)
     int quitarOfertasConRotacion(@Param("desde") LocalDateTime desde);
 }

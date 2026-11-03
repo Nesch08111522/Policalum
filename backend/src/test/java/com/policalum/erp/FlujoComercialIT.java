@@ -10,13 +10,17 @@ import com.policalum.erp.application.dto.request.RegistrarVentaRequestDTO;
 import com.policalum.erp.application.service.CompraService;
 import com.policalum.erp.application.service.TurnoCajaService;
 import com.policalum.erp.application.service.VentaService;
+import com.policalum.erp.application.service.serviceImpl.CmsService;
 import com.policalum.erp.domain.enums.EstadoCompra;
 import com.policalum.erp.domain.enums.MetodoPago;
 import com.policalum.erp.domain.enums.Moneda;
 import com.policalum.erp.domain.enums.RolNombre;
 import com.policalum.erp.domain.enums.TipoComprobante;
+import com.policalum.erp.domain.enums.TipoMovimiento;
 import com.policalum.erp.domain.enums.TipoProducto;
+import com.policalum.erp.domain.enums.TipoReferencia;
 import com.policalum.erp.domain.model.Almacen;
+import com.policalum.erp.domain.model.KardexMovimiento;
 import com.policalum.erp.domain.model.Producto;
 import com.policalum.erp.domain.model.Proveedor;
 import com.policalum.erp.domain.model.Rol;
@@ -34,6 +38,7 @@ import com.policalum.erp.infrastructure.repository.StockRepository;
 import com.policalum.erp.infrastructure.repository.UserRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -90,6 +95,7 @@ class FlujoComercialIT {
     @Autowired UserRepository userRepository;
     @Autowired StockRepository stockRepository;
     @Autowired KardexRepository kardexRepository;
+    @Autowired CmsService cmsService;
 
     private static final String EMAIL = "it-admin@policalum.test";
 
@@ -146,6 +152,26 @@ class FlujoComercialIT {
         assertThat(kardexRepository.count()).isEqualTo(2);
         assertThat(turnoCajaService.resumen(turno.id()).ventasEfectivo()).isEqualByComparingTo("20.00");
         assertThat(turnoCajaService.resumen(turno.id()).esperado()).isEqualByComparingTo("120.00");
+    }
+
+    @Test
+    void productoSinSalidaEn90DiasQuedaEnOferta() {
+        User usuario = userRepository.findByEmail(EMAIL).orElseThrow();
+        kardexRepository.saveAndFlush(KardexMovimiento.builder()
+                .producto(producto)
+                .almacen(almacen)
+                .tipoReferencia(TipoReferencia.VENTA)
+                .tipoMovimiento(TipoMovimiento.SALIDA)
+                .cantidadMovida(new BigDecimal("1.0000"))
+                .stockResultante(BigDecimal.ZERO)
+                .user(usuario)
+                .createdAt(LocalDateTime.now().minusDays(95))
+                .build());
+
+        cmsService.sincronizarOfertas();
+
+        Producto recargado = productoRepository.findById(producto.getId()).orElseThrow();
+        assertThat(recargado.getOferta()).isTrue();
     }
 
     private BigDecimal cantidad() {

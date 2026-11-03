@@ -19,5 +19,8 @@
     "strictTemplates": true
   },
   "files": [],
-  "references": [{ "path": "./tsconfig.app.json" }]
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.spec.json" }
+  ]
 }
