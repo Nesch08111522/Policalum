@@ -1,8 +1,10 @@
 package com.policalum.erp.application.service.serviceImpl;
 
 import org.springframework.data.domain.*;
+import com.policalum.erp.exception.BusinessException;
 import com.policalum.erp.exception.ResourceNotFoundException;
 import com.policalum.erp.application.dto.response.CotizacionResponseDTO;
+import com.policalum.erp.application.dto.response.EmpresaResponseDTO;
 import com.policalum.erp.application.dto.response.CotizacionListadoDTO;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -209,5 +211,19 @@ class CotizacionServiceImplTest {
         assertEquals(3L, d.get("aceptadas"));
         assertEquals(2L, d.get("convertidas"));
         assertEquals(1L, d.get("vencidas"));
+    }
+
+    @Test
+    void crearDesdeWeb_rucDeLaEmpresa_rechazaSinGuardar() {
+        when(configuracionService.obtenerEmpresa()).thenReturn(new EmpresaResponseDTO(
+                "20111111111", "POLICALUM", "POLICALUM", null, null, null, null, null, true, null, null));
+        CotizacionWebRequestDTO pedido = new CotizacionWebRequestDTO(
+                "20111111111", "POLICALUM", "web@policalum.pe", "999888777", null,
+                List.of(new DetalleCotizacionCommandDTO(productoId, null, null, BigDecimal.ONE)), null);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.crearDesdeWeb(pedido));
+
+        assertTrue(ex.getMessage().contains("propia empresa"));
+        verify(cotizacionRepository, never()).save(any());
     }
 }

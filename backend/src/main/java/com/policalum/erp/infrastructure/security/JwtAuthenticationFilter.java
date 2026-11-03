@@ -1,6 +1,8 @@
 package com.policalum.erp.infrastructure.security;
 
 import com.policalum.erp.infrastructure.security.SesionUsuarioCache.Estado;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,7 +15,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -43,45 +44,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-
-            if (jwtUtil.validateToken(token)) {
-                if (tokenDenylist.revocado(token)) {
-                    rechazar(request, response);
-                    return;
-                }
-                String email = jwtUtil.getEmailFromToken(token);
-                String rol = jwtUtil.getRolFromToken(token);
-
-                Estado sesion = sesionUsuarioCache.consultar(email);
-
-                int sesionToken = jwtUtil.getSesionVersion(token);
-                if (!sesion.existe() || !sesion.activo() || sesionToken != sesion.version()) {
-                    rechazar(request, response);
-                    return;
-                }
-
-                // Crear autenticación solo si el usuario está activo
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                email,
-                                null,
-                                List.of(new SimpleGrantedAuthority(normalizarRol(rol)))
-                        );
-                SecurityContextHolder.getContext().setAuthentication(auth);
+            try {
+                jwtUtil.getClaims(token);
+            } catch (ExpiredJwtException ex) {
+                RespuestaNoAutorizado.escribir(request, response, "Sesión expirada o token no válido");
+                return;
+            } catch (JwtException | IllegalArgumentException ex) {
+                RespuestaNoAutorizado.escribir(request, response, "Sesión expirada o token no válido");
+                return;
             }
+            if (tokenDenylist.revocado(token)) {
+                RespuestaNoAutorizado.escribir(request, response, "Usuario inactivo o sesión cerrada");
+                return;
+            }
+            String email = jwtUtil.getEmailFromToken(token);
+            String rol = jwtUtil.getRolFromToken(token);
+
+            Estado sesion = sesionUsuarioCache.consultar(email);
+
+            int sesionToken = jwtUtil.getSesionVersion(token);
+            if (!sesion.existe() || !sesion.activo() || sesionToken != sesion.version()) {
+                RespuestaNoAutorizado.escribir(request, response, "Usuario inactivo o sesión cerrada");
+                return;
+            }
+
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(
+                            email,
+                            null,
+                            List.of(new SimpleGrantedAuthority(normalizarRol(rol)))
+                    );
+            SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
         chain.doFilter(request, response);
-    }
-
-    private static void rechazar(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        String ruta = request.getRequestURI() == null ? "" : request.getRequestURI().replace("\\", "\\\\").replace("\"", "\\\"");
-        response.getWriter().write("{\"timestamp\":\"" + LocalDateTime.now()
-                + "\",\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Usuario inactivo o sesión cerrada\",\"path\":\""
-                + ruta + "\"}");
     }
 
     /**

@@ -11,6 +11,7 @@ import com.policalum.erp.application.service.VentaService;
 import com.policalum.erp.application.service.support.RangosConsulta;
 import com.policalum.erp.domain.enums.*;
 import com.policalum.erp.domain.model.*;
+import com.policalum.erp.exception.BusinessException;
 import com.policalum.erp.exception.ResourceNotFoundException;
 import com.policalum.erp.infrastructure.repository.*;
 import java.math.BigDecimal;
@@ -69,6 +70,10 @@ public class CotizacionServiceImpl implements CotizacionService {
 
     @Override
     public CotizacionResponseDTO crearDesdeWeb(CotizacionWebRequestDTO request) {
+        String rucEmpresa = configuracionService.obtenerEmpresa().ruc();
+        if (rucEmpresa != null && request.ruc().trim().equals(rucEmpresa.trim())) {
+            throw new BusinessException("No puedes cotizar a nombre de la propia empresa");
+        }
         Sede sede = sedeRecepcionWeb();
         User receptor = userRepository.findFirstByActivoTrueAndRol_NombreOrderByEmailAsc(RolNombre.ROLE_ADMIN)
                 .orElseThrow(() -> new IllegalStateException("Registra un administrador activo para recibir cotizaciones de la web"));
