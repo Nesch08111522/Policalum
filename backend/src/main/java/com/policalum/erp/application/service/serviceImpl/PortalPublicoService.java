@@ -7,18 +7,21 @@ import com.policalum.erp.application.dto.response.PaginaPublicaDTO;
 import com.policalum.erp.application.dto.response.ProductoPublicoDTO;
 import com.policalum.erp.application.dto.response.ProyectoPortafolioResponseDTO;
 import com.policalum.erp.application.dto.response.SedePublicaDTO;
+import com.policalum.erp.application.dto.response.ServicioPublicoDTO;
 import com.policalum.erp.domain.model.CatalogoFraccion;
 import com.policalum.erp.domain.model.Categoria;
 import com.policalum.erp.domain.model.ConfiguracionEmpresa;
 import com.policalum.erp.domain.model.Producto;
 import com.policalum.erp.domain.model.ProyectoPortafolio;
 import com.policalum.erp.domain.model.Sede;
+import com.policalum.erp.domain.model.Servicio;
 import com.policalum.erp.exception.ResourceNotFoundException;
 import com.policalum.erp.infrastructure.repository.CategoriaRepository;
 import com.policalum.erp.infrastructure.repository.ConfiguracionEmpresaRepository;
 import com.policalum.erp.infrastructure.repository.ProductoRepository;
 import com.policalum.erp.infrastructure.repository.ProyectoPortafolioRepository;
 import com.policalum.erp.infrastructure.repository.SedeRepository;
+import com.policalum.erp.infrastructure.repository.ServicioRepository;
 import com.policalum.erp.infrastructure.repository.StockRepository;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
@@ -46,6 +49,7 @@ public class PortalPublicoService {
     private final ConfiguracionEmpresaRepository empresaRepository;
     private final ProyectoPortafolioRepository portafolioRepository;
     private final SedeRepository sedeRepository;
+    private final ServicioRepository servicioRepository;
 
     public PaginaPublicaDTO<ProductoPublicoDTO> catalogo(UUID categoriaId, String busqueda, boolean soloDestacados, Pageable pageable) {
         int tamano = Math.min(Math.max(pageable.getPageSize(), 1), 48);
@@ -75,6 +79,18 @@ public class PortalPublicoService {
                 .toList();
     }
 
+    public List<ProductoPublicoDTO> ofertas() {
+        List<Producto> productos = productoRepository.findTop8ByActivoTrueAndOfertaTrueOrderByNombreAsc();
+        Map<UUID, BigDecimal> saldos = saldos(productos);
+        return productos.stream().map(producto -> ficha(producto, saldos)).toList();
+    }
+
+    public List<ServicioPublicoDTO> servicios() {
+        return servicioRepository.findByActivoTrueOrderByNombreAsc().stream()
+                .map(this::servicioPublico)
+                .toList();
+    }
+
     public List<ProductoPublicoDTO> destacados() {
         PaginaPublicaDTO<ProductoPublicoDTO> pagina = catalogo(null, null, true, PageRequest.of(0, 8));
         return pagina.content();
@@ -84,18 +100,26 @@ public class PortalPublicoService {
         ConfiguracionEmpresa empresa = empresaRepository.findById(ConfiguracionEmpresa.ID_UNICO).orElse(null);
         String nombre = empresa == null || empresa.getNombreComercial() == null || empresa.getNombreComercial().isBlank()
                 ? "POLICALUM" : empresa.getNombreComercial();
+        Sede sede = sedeRepository.findByActivaTrueOrderByNombreAsc().stream().findFirst().orElse(null);
         String telefono = empresa == null ? null : empresa.getTelefono();
+        if (telefono == null || telefono.isBlank()) telefono = sede == null ? null : sede.getCelularSede();
+        String direccion = empresa == null ? null : empresa.getDireccionFiscal();
+        if (direccion == null || direccion.isBlank()) {
+            direccion = sede == null ? null : unir(sede.getDireccion(), sede.getCiudad());
+        }
         String logo = empresa == null ? null : empresa.getLogoUrl();
         if (logo != null && !logo.startsWith("http://") && !logo.startsWith("https://")) {
             logo = "/api/v1/configuracion/logo";
         }
         return new EmpresaPublicaDTO(
                 nombre,
-                empresa == null ? null : empresa.getDireccionFiscal(),
+                direccion,
                 telefono,
                 empresa == null ? null : empresa.getEmail(),
                 whatsapp(telefono),
-                logo);
+                logo,
+                empresa == null ? null : empresa.getRuc(),
+                empresa == null ? null : empresa.getRazonSocial());
     }
 
     public List<ProyectoPortafolioResponseDTO> portafolio() {
@@ -141,7 +165,18 @@ public class PortalPublicoService {
                 categoria == null ? null : categoria.getNombre(),
                 imagen(producto.getImagen()),
                 fracciones,
-                Boolean.TRUE.equals(producto.getOferta()));
+                Boolean.TRUE.equals(producto.getOferta()),
+                saldo);
+    }
+
+    private ServicioPublicoDTO servicioPublico(Servicio servicio) {
+        return new ServicioPublicoDTO(servicio.getId(), servicio.getNombre(), servicio.getDescripcion(), servicio.getPrecio());
+    }
+
+    private static String unir(String direccion, String ciudad) {
+        if (direccion == null || direccion.isBlank()) return ciudad;
+        if (ciudad == null || ciudad.isBlank()) return direccion;
+        return direccion + ", " + ciudad;
     }
 
     private SedePublicaDTO sedePublica(Sede sede) {

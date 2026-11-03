@@ -71,6 +71,36 @@ public class Cotizacion {
     @Column(name = "contacto_telefono", length = 20)
     private String contactoTelefono;
 
+    @Column(length = 80)
+    private String distrito;
+
+    @Column(name = "cantidad_piezas", precision = 12, scale = 4)
+    private BigDecimal cantidadPiezas;
+
+    @Column(name = "subtotal_materiales", precision = 12, scale = 2)
+    private BigDecimal subtotalMateriales;
+
+    @Column(name = "utilidad_porcentaje", precision = 6, scale = 2)
+    private BigDecimal utilidadPorcentaje;
+
+    @Column(name = "utilidad_monto", precision = 12, scale = 2)
+    private BigDecimal utilidadMonto;
+
+    @Column(name = "movilidad_monto", precision = 12, scale = 2)
+    private BigDecimal movilidadMonto;
+
+    @Column(name = "otros_monto", precision = 12, scale = 2)
+    private BigDecimal otrosMonto;
+
+    @Column(name = "otros_detalle", columnDefinition = "TEXT")
+    private String otrosDetalle;
+
+    @Column(nullable = false)
+    private Boolean modificada = false;
+
+    @Column(name = "nota_cambio", columnDefinition = "TEXT")
+    private String notaCambio;
+
     @Column(precision = 12, scale = 2)
     private BigDecimal total = BigDecimal.ZERO;
 
@@ -94,6 +124,7 @@ public class Cotizacion {
         if (this.estado == null) this.estado = EstadoCotizacion.EMITIDA;
         if (this.canal == null) this.canal = CanalCotizacion.INTERNO;
         if (this.total == null) this.total = BigDecimal.ZERO;
+        if (this.modificada == null) this.modificada = false;
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }

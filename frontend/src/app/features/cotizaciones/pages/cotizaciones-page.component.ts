@@ -55,7 +55,7 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
   readonly state = new PageState<Api.CotizacionListadoDTO>();
   readonly columns: ColumnDef[] = [
     { key: 'clienteNombre', label: 'Cliente' },
-    { key: 'origen', label: 'Origen', kind: 'badge', badge: { 'NUEVO (WEB)': 'info', WEB: 'info', INTERNO: 'neutral' } },
+    { key: 'origen', label: 'Origen', kind: 'badge', badge: { 'NUEVO (WEB)': 'info', MODIFICADA: 'warning', WEB: 'info', INTERNO: 'neutral' } },
     { key: 'estado', label: 'Estado', kind: 'badge', badge: { PENDIENTE: 'warning', EMITIDA: 'info', ACEPTADA: 'success', RECHAZADA: 'danger', VENCIDA: 'warning', CONVERTIDA: 'neutral', NO_COMPRADO: 'warning' } },
     { key: 'fechaVigencia', label: 'Vigencia', kind: 'date' },
     { key: 'createdAt', label: 'Creada', kind: 'date', sortable: true },
@@ -97,6 +97,14 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
   eliminando = false;
   seleccionado: Api.CotizacionListadoDTO | null = null;
   documentoId = '';
+  nuevasWeb = 0;
+  readonly ajuste = this.fb.nonNullable.group({
+    utilidadPorcentaje: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
+    movilidadMonto: [0, [Validators.required, Validators.min(0)]],
+    otrosMonto: [0, [Validators.required, Validators.min(0)]],
+    otrosDetalle: ['', Validators.maxLength(500)],
+    notaCambio: ['', [Validators.required, Validators.maxLength(500)]],
+  });
   constructor(private readonly api: CotizacionesApiService, private readonly lookup: LookupService, private readonly toast: ToastService, private readonly reportes: ReportService, private readonly http: HttpClient) {}
 
   ngOnInit(): void {
@@ -131,6 +139,10 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
     this.api.GetApiV1Cotizaciones(this.state.query(rangoFechaFiltro(this.filtros.getRawValue()))).pipe(ignoreStale(this.state), takeUntil(this.destroy$)).subscribe({
       next: (page) => this.state.apply(page),
       error: (error: unknown) => this.state.fail(problemText(error), problemStatus(error)),
+    });
+    this.api.GetApiV1CotizacionesDashboard().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (data) => { this.nuevasWeb = Number(data['pendientesWeb'] ?? 0); },
+      error: () => { this.nuevasWeb = 0; },
     });
   }
 
@@ -193,7 +205,18 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
     const item = row as Api.CotizacionListadoDTO;
     if (!item.id) return;
     this.api.GetApiV1CotizacionesId({ id: item.id }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (data) => { this.detalle = data; this.detalleAbierto = true; },
+      next: (data) => {
+        this.detalle = data;
+        const cargos = data.cargos;
+        this.ajuste.reset({
+          utilidadPorcentaje: Number(cargos?.utilidadPorcentaje ?? 0),
+          movilidadMonto: Number(cargos?.movilidadMonto ?? 0),
+          otrosMonto: Number(cargos?.otrosMonto ?? 0),
+          otrosDetalle: cargos?.otrosDetalle ?? '',
+          notaCambio: '',
+        });
+        this.detalleAbierto = true;
+      },
       error: (error: unknown) => this.toast.error(problemText(error)),
     });
   }
@@ -273,6 +296,35 @@ export class CotizacionesPageComponent implements OnInit, OnDestroy {
       next: () => { this.toast.success('La cotización quedó como no comprada. El stock no se movió.'); this.cargar(); },
       error: (error: unknown) => this.toast.error(problemText(error)),
     });
+  }
+
+  guardarCargos(): void {
+    if (!this.detalle?.id || this.guardando) return;
+    this.ajuste.markAllAsTouched();
+    if (this.ajuste.invalid) return;
+    const value = this.ajuste.getRawValue();
+    this.guardando = true;
+    this.http.put<Api.CotizacionResponseDTO>(`${environment.apiUrl}/api/v1/cotizaciones/${this.detalle.id}/cargos`, {
+      utilidadPorcentaje: Number(value.utilidadPorcentaje),
+      movilidadMonto: Number(value.movilidadMonto),
+      otrosMonto: Number(value.otrosMonto),
+      otrosDetalle: value.otrosDetalle.trim() || undefined,
+      notaCambio: value.notaCambio.trim(),
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (data) => {
+        this.guardando = false;
+        this.detalle = data;
+        this.ajuste.controls.notaCambio.setValue('');
+        this.toast.success('La cotización quedó modificada. El cliente verá el cambio en el documento.');
+        this.cargar();
+      },
+      error: (error: unknown) => { this.guardando = false; this.toast.error(problemText(error)); },
+    });
+  }
+
+  puedeAjustar(): boolean {
+    const estado = this.detalle?.estado;
+    return estado === 'PENDIENTE' || estado === 'EMITIDA';
   }
 
   esEmitida(row: unknown): boolean { return (row as Api.CotizacionListadoDTO).estado === 'EMITIDA'; }

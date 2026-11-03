@@ -6,5 +6,18 @@ public record CmsPublicoDTO(
         int baseFontSize,
         String themeMode,
         String aviso,
-        boolean avisoActivo
+        boolean avisoActivo,
+        String banner,
+        String resumen,
+        String horarioSemana,
+        String horarioSabado,
+        String facebook,
+        String instagram,
+        String linkedin,
+        String youtube,
+        String correoSoporte,
+        String textoPrivacidad,
+        String textoTerminos,
+        String textoGarantia,
+        String textoFaq
 ) {}

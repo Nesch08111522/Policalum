@@ -48,4 +48,6 @@ public interface ServicioRepository extends JpaRepository<Servicio, UUID> {
      * Métricas rápidas para paneles de control / facturación.
      */
     long countByActivoTrue();
+
+    java.util.List<Servicio> findByActivoTrueOrderByNombreAsc();
 }

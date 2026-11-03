@@ -32,4 +32,43 @@ public class CmsAjuste {
 
     @Column(nullable = false, length = 20)
     private String modo = "aether";
+
+    @Column(length = 180)
+    private String banner;
+
+    @Column(length = 500)
+    private String resumen;
+
+    @Column(name = "horario_semana", length = 80)
+    private String horarioSemana;
+
+    @Column(name = "horario_sabado", length = 80)
+    private String horarioSabado;
+
+    @Column(length = 200)
+    private String facebook;
+
+    @Column(length = 200)
+    private String instagram;
+
+    @Column(length = 200)
+    private String linkedin;
+
+    @Column(length = 200)
+    private String youtube;
+
+    @Column(name = "correo_soporte", length = 150)
+    private String correoSoporte;
+
+    @Column(name = "texto_privacidad", columnDefinition = "TEXT")
+    private String textoPrivacidad;
+
+    @Column(name = "texto_terminos", columnDefinition = "TEXT")
+    private String textoTerminos;
+
+    @Column(name = "texto_garantia", columnDefinition = "TEXT")
+    private String textoGarantia;
+
+    @Column(name = "texto_faq", columnDefinition = "TEXT")
+    private String textoFaq;
 }

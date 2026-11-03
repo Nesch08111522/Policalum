@@ -1,5 +1,6 @@
 <section class="module-page">
   <app-page-header title="Cotizaciones" subtitle="La cotización no mueve stock. Si el cliente no compra queda como no comprada; si acepta, se convierte en venta con la caja abierta." actionLabel="Nueva cotización" (action)="abrirCrear()"></app-page-header>
+  <div *ngIf="nuevasWeb > 0" class="alert">Tienes una nueva cotización para visualizar.</div>
   <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
   <app-filter-bar *ngIf="tab === 'lista'">
     <app-form-field label="Cliente" inputId="cot-cli"><app-select inputId="cot-cli" [options]="clientes" placeholder="Todos" [formControl]="filtros.controls.clienteId"></app-select></app-form-field>
@@ -58,6 +59,27 @@
     <table class="table table-compact"><thead><tr><th>Ítem</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr></thead>
       <tbody><tr *ngFor="let linea of detalle.lineas"><td>{{ linea.productoNombre || linea.servicioNombre }}</td><td>{{ linea.cantidad }}</td><td>{{ linea.precioUnitarioConIgv | pen }}</td><td>{{ linea.subtotal | pen }}</td></tr></tbody>
     </table>
+    <table class="table table-compact" *ngIf="detalle.cargos">
+      <tbody>
+        <tr><td>Materiales</td><td>{{ detalle.cargos.subtotalMateriales | pen }}</td></tr>
+        <tr><td>Utilidad {{ detalle.cargos.utilidadPorcentaje }}%</td><td>{{ detalle.cargos.utilidadMonto | pen }}</td></tr>
+        <tr><td>Movilidad {{ detalle.cargos.distrito }}</td><td>{{ detalle.cargos.movilidadMonto | pen }}</td></tr>
+        <tr><td>Otros cargos</td><td>{{ detalle.cargos.otrosMonto | pen }}</td></tr>
+        <tr *ngIf="detalle.cargos.otrosDetalle"><td colspan="2">{{ detalle.cargos.otrosDetalle }}</td></tr>
+      </tbody>
+    </table>
+    <div *ngIf="detalle.cargos?.modificada" class="alert">La empresa modificó esta cotización. {{ detalle.cargos?.notaCambio }}</div>
+    <form *ngIf="puedeAjustar()" class="form-grid" [formGroup]="ajuste">
+      <p class="span-2">Si el cálculo no cuadra, ajusta utilidad, pasaje u otros cargos y escribe qué cambió.</p>
+      <app-form-field label="Utilidad %" inputId="cot-util"><input id="cot-util" class="input" type="number" min="0" max="100" step="0.01" formControlName="utilidadPorcentaje" /></app-form-field>
+      <app-form-field label="Movilidad S/" inputId="cot-mov"><input id="cot-mov" class="input" type="number" min="0" step="0.01" formControlName="movilidadMonto" /></app-form-field>
+      <app-form-field label="Otros cargos S/" inputId="cot-otros"><input id="cot-otros" class="input" type="number" min="0" step="0.01" formControlName="otrosMonto" /></app-form-field>
+      <app-form-field class="span-2" label="Detalle de otros cargos" inputId="cot-odet"><textarea id="cot-odet" class="textarea" formControlName="otrosDetalle"></textarea></app-form-field>
+      <app-form-field class="span-2" label="Qué cambió" inputId="cot-nota" [required]="true"><textarea id="cot-nota" class="textarea" formControlName="notaCambio"></textarea></app-form-field>
+    </form>
+  </div>
+  <div modalFooter *ngIf="puedeAjustar()">
+    <button type="button" class="btn btn-primary" (click)="guardarCargos()" [disabled]="guardando || ajuste.invalid">Guardar cambio</button>
   </div>
 </app-modal>
 

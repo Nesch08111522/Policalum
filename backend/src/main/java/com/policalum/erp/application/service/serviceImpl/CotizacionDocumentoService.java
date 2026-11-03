@@ -45,11 +45,11 @@ public class CotizacionDocumentoService {
     }
 
     private ReporteSolicitud armar(CotizacionResponseDTO cotizacion) {
-        List<String> filtros = List.of(
+        List<String> filtros = new ArrayList<>(List.of(
                 "Cliente: " + (cotizacion.clienteNombre() == null ? "Público" : cotizacion.clienteNombre()),
                 "Estado: " + cotizacion.estado(),
                 "Vigencia: " + cotizacion.fechaVigencia(),
-                "Sede: " + (cotizacion.sedeNombre() == null ? "" : cotizacion.sedeNombre()));
+                "Sede: " + (cotizacion.sedeNombre() == null ? "" : cotizacion.sedeNombre())));
         List<List<Object>> filas = new ArrayList<>();
         if (cotizacion.lineas() != null) {
             for (DetalleCotizacionResponseDTO linea : cotizacion.lineas()) {
@@ -57,6 +57,16 @@ public class CotizacionDocumentoService {
                         : linea.servicioNombre() != null ? linea.servicioNombre()
                         : linea.fraccionNombre() != null ? linea.fraccionNombre() : "Ítem";
                 filas.add(List.of(concepto, linea.cantidad(), ReporteSolicitud.dinero(linea.precioUnitarioConIgv()), ReporteSolicitud.dinero(linea.subtotal())));
+            }
+        }
+        if (cotizacion.cargos() != null) {
+            var cargos = cotizacion.cargos();
+            filas.add(List.of("Subtotal materiales", null, null, ReporteSolicitud.dinero(cargos.subtotalMateriales())));
+            filas.add(List.of("Utilidad " + cargos.utilidadPorcentaje() + "%", null, null, ReporteSolicitud.dinero(cargos.utilidadMonto())));
+            filas.add(List.of("Movilidad " + (cargos.distrito() == null ? "" : cargos.distrito()), null, null, ReporteSolicitud.dinero(cargos.movilidadMonto())));
+            filas.add(List.of("Otros cargos", null, null, ReporteSolicitud.dinero(cargos.otrosMonto())));
+            if (cargos.modificada() && cargos.notaCambio() != null) {
+                filtros.add("La empresa modificó esta cotización: " + cargos.notaCambio());
             }
         }
         filas.add(List.of("Total", null, null, ReporteSolicitud.dinero(cotizacion.total())));

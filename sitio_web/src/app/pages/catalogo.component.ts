@@ -1,13 +1,13 @@
 import { Component, DestroyRef, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FichaProductoComponent } from '../components/ficha-producto.component';
 import { CategoriaPublica, ProductoPublico } from '../core/models';
 import { PortalApi, mensajeError } from '../core/portal.api';
 
 @Component({
   selector: 'app-catalogo',
-  imports: [FichaProductoComponent],
+  imports: [FichaProductoComponent, RouterLink],
   templateUrl: './catalogo.component.html',
 })
 export class CatalogoComponent implements OnInit {
@@ -24,8 +24,11 @@ export class CatalogoComponent implements OnInit {
   readonly vista = signal('');
   readonly q = signal('');
   readonly orden = signal<'reciente' | 'precio' | 'nombre'>('reciente');
+  readonly soloStock = signal(false);
+  readonly espesor = signal('');
   readonly cargando = signal(true);
   readonly error = signal('');
+  readonly enCache = signal(false);
   readonly titulo = computed(() => {
     if (this.q()) return 'Resultados';
     if (this.vista() === 'destacados') return 'Destacados';
@@ -33,8 +36,19 @@ export class CatalogoComponent implements OnInit {
     if (!id) return 'Todos los productos';
     return this.categorias().find((categoria) => categoria.id === id)?.nombre ?? 'Colección';
   });
+  readonly espesores = computed(() => {
+    const hallados = new Set<string>();
+    for (const producto of this.productos()) {
+      const coincide = producto.nombre.match(/(\d+(?:[.,]\d+)?)\s*mm/i);
+      if (coincide) hallados.add(coincide[1].replace(',', '.'));
+    }
+    return [...hallados].sort((a, b) => Number(a) - Number(b));
+  });
   readonly visibles = computed(() => {
-    const lista = [...this.productos()];
+    let lista = [...this.productos()];
+    if (this.soloStock()) lista = lista.filter((producto) => producto.disponible);
+    const mm = this.espesor();
+    if (mm) lista = lista.filter((producto) => new RegExp(`(?:^|\\D)${mm}\\s*mm`, 'i').test(producto.nombre));
     if (this.orden() === 'precio') lista.sort((a, b) => a.precioPublico - b.precioPublico);
     if (this.orden() === 'nombre') lista.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
     return lista;
@@ -70,6 +84,10 @@ export class CatalogoComponent implements OnInit {
     });
   }
 
+  reintentar(): void {
+    this.cargar();
+  }
+
   private cargar(silencioso = false): void {
     if (!silencioso) {
       this.cargando.set(true);
@@ -78,6 +96,7 @@ export class CatalogoComponent implements OnInit {
     if (this.vista() === 'destacados' && !this.q() && !this.categoriaId()) {
       this.api.destacados().subscribe({
         next: (lista) => {
+          this.enCache.set(false);
           this.productos.set(lista);
           this.paginas.set(1);
           this.total.set(lista.length);
@@ -94,12 +113,15 @@ export class CatalogoComponent implements OnInit {
       categoriaId: this.categoriaId() || undefined,
       q: this.q().trim() || undefined,
       page: this.pagina(),
+      size: 24,
     }).subscribe({
       next: (pagina) => {
+        this.enCache.set(Boolean(pagina.enCache));
         this.productos.set(pagina.content ?? []);
         this.paginas.set(pagina.totalPages ?? 0);
         this.total.set(pagina.totalElements ?? 0);
         this.cargando.set(false);
+        if (pagina.enCache) this.error.set('Sin conexión con el servidor. Sigues viendo el último catálogo guardado en este navegador.');
       },
       error: (error: unknown) => {
         this.cargando.set(false);

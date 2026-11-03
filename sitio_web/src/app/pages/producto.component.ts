@@ -1,13 +1,15 @@
 import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FichaProductoComponent } from '../components/ficha-producto.component';
+import { VisorProductoComponent } from '../components/visor-producto.component';
 import { CarritoService } from '../core/carrito.service';
 import { PortalApi, media, mensajeError, pen } from '../core/portal.api';
 import { ProductoPublico } from '../core/models';
 
 @Component({
   selector: 'app-producto',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, VisorProductoComponent, FichaProductoComponent],
   templateUrl: './producto.component.html',
 })
 export class ProductoComponent implements OnInit {
@@ -16,6 +18,9 @@ export class ProductoComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly carrito = inject(CarritoService);
   readonly producto = signal<ProductoPublico | null>(null);
+  readonly relacionados = signal<ProductoPublico[]>([]);
+  readonly interes = signal<ProductoPublico[]>([]);
+  readonly nuevos = signal<ProductoPublico[]>([]);
   readonly error = signal('');
   readonly aviso = signal('');
   readonly form = this.fb.nonNullable.group({
@@ -44,9 +49,29 @@ export class ProductoComponent implements OnInit {
           this.producto.set(producto);
           const primera = producto.fracciones[0]?.id ?? '';
           this.form.patchValue({ fraccionId: producto.esFraccionable ? primera : '', cantidad: 1 });
+          this.cargarCercanos(producto);
         },
         error: (error: unknown) => this.error.set(mensajeError(error)),
       });
+    });
+  }
+
+  private cargarCercanos(actual: ProductoPublico): void {
+    this.api.productos({ page: 0, size: 48 }).subscribe({
+      next: (pagina) => {
+        const todos = pagina.content ?? [];
+        const relacionados = todos.filter((item) => item.id !== actual.id && item.categoriaId === actual.categoriaId).slice(0, 4);
+        const usados = new Set(relacionados.map((item) => item.id));
+        const interes = todos.filter((item) => item.id !== actual.id && !usados.has(item.id)).slice(0, 4);
+        interes.forEach((item) => usados.add(item.id));
+        this.relacionados.set(relacionados);
+        this.interes.set(interes);
+        this.api.productos({ page: 0, size: 12, sort: 'createdAt,desc' }).subscribe({
+          next: (recientes) => this.nuevos.set((recientes.content ?? []).filter((item) => item.id !== actual.id && !usados.has(item.id)).slice(0, 4)),
+          error: () => this.nuevos.set([]),
+        });
+      },
+      error: () => undefined,
     });
   }
 

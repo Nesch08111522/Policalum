@@ -1,5 +1,5 @@
 <section class="module-page">
-  <app-page-header title="Configuración" subtitle="Datos de la empresa, parámetros operativos y series de comprobante."></app-page-header>
+  <app-page-header title="Configuración" subtitle="Datos de la empresa, parámetros operativos, series y el formato de cotización."></app-page-header>
   <app-tabs [tabs]="tabs" [active]="tab" (activeChange)="cambiarTab($event)"></app-tabs>
   <div *ngIf="error && tab === 'empresa'" class="alert alert-error"><div><strong>No se cargó la empresa</strong><p>{{ error }}</p></div><button type="button" class="btn btn-ghost btn-sm" (click)="cargar()">Reintentar</button></div>
 
@@ -60,4 +60,5 @@
       <ng-template #rowActions let-row><button type="button" class="btn btn-danger btn-sm" (click)="quitarSerie(row)">Quitar</button></ng-template>
     </app-data-table>
   </ng-container>
+  <app-formato-cotizacion *ngIf="tab === 'cotizacion'"></app-formato-cotizacion>
 </section>

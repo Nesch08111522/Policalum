@@ -19,7 +19,15 @@ export interface ProductoPublico {
   categoriaNombre?: string;
   imagenUrl?: string;
   oferta?: boolean;
+  stock?: number;
   fracciones: FraccionPublica[];
+}
+
+export interface ServicioPublico {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  precio: number;
 }
 
 export interface CategoriaPublica {
@@ -42,6 +50,7 @@ export interface PaginaPublica<T> {
   size: number;
   totalElements: number;
   totalPages: number;
+  enCache?: boolean;
 }
 
 export interface EmpresaPublica {
@@ -51,6 +60,8 @@ export interface EmpresaPublica {
   email?: string;
   whatsapp?: string;
   logoUrl?: string;
+  ruc?: string;
+  razonSocial?: string;
 }
 
 export interface ProyectoPublico {
@@ -82,6 +93,31 @@ export interface LineaCotizacion {
   subtotal: number;
 }
 
+export interface CargosCotizacion {
+  distrito?: string;
+  cantidadPiezas?: number;
+  subtotalMateriales?: number;
+  utilidadPorcentaje?: number;
+  utilidadMonto?: number;
+  movilidadMonto?: number;
+  otrosMonto?: number;
+  otrosDetalle?: string;
+  modificada?: boolean;
+  notaCambio?: string;
+}
+
+export interface FormatoCotizacion {
+  utilidadPorcentaje: number;
+  distritos: { distrito: string; precioBase: number; unidadesIncluidas: number; precioUnidadExtra: number; activo?: boolean }[];
+  conceptos: { nombre: string; tipo: 'MONTO' | 'PORCENTAJE'; valor: number; activo?: boolean }[];
+}
+
+export interface VistaCotizacion {
+  total: number;
+  cargos: CargosCotizacion;
+  lineas: LineaCotizacion[];
+}
+
 export interface CotizacionCreada {
   id: string;
   clienteNombre?: string;
@@ -90,6 +126,7 @@ export interface CotizacionCreada {
   total: number;
   fechaVigencia?: string;
   lineas: LineaCotizacion[];
+  cargos?: CargosCotizacion;
 }
 
 export interface ContactoCreado {

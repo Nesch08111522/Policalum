@@ -14,7 +14,26 @@
   </div>
 </section>
 
-@if (error()) { <p class="alert">{{ error() }}</p> }
+<div class="catalogo">
+  <aside class="filtros">
+    <p class="kicker">Categorías</p>
+    <a [class.on]="!categoriaId()" routerLink="/catalogo">Todas</a>
+    @for (categoria of categorias(); track categoria.id) {
+      <a [class.on]="categoriaId() === categoria.id" routerLink="/catalogo" [queryParams]="{ categoria: categoria.id }">{{ categoria.nombre }}</a>
+    }
+    @if (espesores().length) {
+      <p class="kicker">Espesor</p>
+      <div class="chips">
+        <button type="button" class="chip-btn" [class.on]="!espesor()" (click)="espesor.set('')">Todos</button>
+        @for (mm of espesores(); track mm) {
+          <button type="button" class="chip-btn" [class.on]="espesor() === mm" (click)="espesor.set(mm)">{{ mm }} mm</button>
+        }
+      </div>
+    }
+    <label class="check"><input type="checkbox" [checked]="soloStock()" (change)="soloStock.set($any($event.target).checked)" /> Solo con stock</label>
+  </aside>
+  <div>
+@if (error()) { <p class="alert" role="alert">{{ error() }} <button type="button" class="btn btn-line btn-sm" (click)="reintentar()">Reintentar</button></p> }
 @if (cargando()) { <p class="muted">Cargando catálogo...</p> }
 @if (!cargando() && !visibles().length) { <p class="muted">No hay productos con ese filtro.</p> }
 
@@ -31,3 +50,5 @@
     <button type="button" class="btn btn-line btn-sm" (click)="mover(1)" [disabled]="pagina() + 1 >= paginas()">Siguiente</button>
   </div>
 }
+  </div>
+</div>

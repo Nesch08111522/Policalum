@@ -7,5 +7,7 @@ public record EmpresaPublicaDTO(
         String telefono,
         String email,
         String whatsapp,
-        String logoUrl
+        String logoUrl,
+        String ruc,
+        String razonSocial
 ) {}

@@ -8,6 +8,7 @@ import com.policalum.erp.application.service.AuditService;
 import com.policalum.erp.application.service.ConfiguracionService;
 import com.policalum.erp.application.service.CotizacionService;
 import com.policalum.erp.application.service.VentaService;
+import com.policalum.erp.application.service.support.CalculoCotizacion;
 import com.policalum.erp.application.service.support.RangosConsulta;
 import com.policalum.erp.domain.enums.*;
 import com.policalum.erp.domain.model.*;
@@ -48,6 +49,7 @@ public class CotizacionServiceImpl implements CotizacionService {
     private final VentaRepository ventaRepository;
     private final AuditService auditService;
     private final ConfiguracionService configuracionService;
+    private final FormatoCotizacionService formatoCotizacion;
 
     @Override
     public CotizacionResponseDTO create(CotizacionRequestDTO request) {
@@ -93,10 +95,82 @@ public class CotizacionServiceImpl implements CotizacionService {
                 .build();
         Cotizacion guardada = cotizacionRepository.save(cotizacion);
         recalcularLineas(guardada, request.lineas());
+        BigDecimal piezas = request.lineas().stream().map(DetalleCotizacionCommandDTO::cantidad).reduce(BigDecimal.ZERO, BigDecimal::add);
+        aplicarCargos(guardada, formatoCotizacion.calcular(guardada.getTotal(), piezas, request.distrito()));
         auditService.registrar("cotizaciones", guardada.getId(), AccionAudit.INSERT,
                 Map.of("estado", guardada.getEstado().name(), "canal", CanalCotizacion.WEB.name(), "total", guardada.getTotal()));
         log.info("Cotización web {} de {} por {}", guardada.getId(), request.razonSocial(), guardada.getTotal());
         return response(guardada);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FormatoCotizacionDTO formatoPublico() {
+        return formatoCotizacion.actual(true);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FormatoCotizacionDTO formatoErp() {
+        return formatoCotizacion.actual(false);
+    }
+
+    @Override
+    public FormatoCotizacionDTO guardarFormato(FormatoCotizacionRequestDTO request) {
+        return formatoCotizacion.guardar(request);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public VistaCotizacionDTO vista(VistaCotizacionRequestDTO request) {
+        List<DetalleCotizacionResponseDTO> lineas = new ArrayList<>();
+        BigDecimal subtotal = BigDecimal.ZERO;
+        BigDecimal piezas = BigDecimal.ZERO;
+        for (DetalleCotizacionCommandDTO linea : request.lineas()) {
+            Calculada calculada = calcular(linea);
+            piezas = piezas.add(linea.cantidad());
+            subtotal = subtotal.add(calculada.total());
+            lineas.add(new DetalleCotizacionResponseDTO(null,
+                    calculada.producto() == null ? null : calculada.producto().getId(),
+                    calculada.producto() == null ? null : calculada.producto().getNombre(),
+                    calculada.fraccion() == null ? null : calculada.fraccion().getId(),
+                    calculada.fraccion() == null ? null : calculada.fraccion().getNombreFraccion(),
+                    calculada.servicio() == null ? null : calculada.servicio().getId(),
+                    calculada.servicio() == null ? null : calculada.servicio().getNombre(),
+                    linea.cantidad(), calculada.precio(), calculada.neto(), calculada.igv(), IGV_PORCENTAJE, calculada.total()));
+        }
+        CargosCotizacionDTO cargos = formatoCotizacion.calcular(subtotal, piezas, request.distrito());
+        return new VistaCotizacionDTO(totalConCargos(cargos), cargos, lineas);
+    }
+
+    @Override
+    public CotizacionResponseDTO ajustarCargos(UUID id, AjusteCargoCotizacionRequestDTO request) {
+        Cotizacion cotizacion = obtener(id);
+        exigirEstados(cotizacion, "ajustar los cargos", EstadoCotizacion.EMITIDA, EstadoCotizacion.PENDIENTE);
+        exigirCreadorOAdmin(cotizacion);
+        BigDecimal materiales = cotizacion.getSubtotalMateriales();
+        if (materiales == null) {
+            materiales = detalleRepository.findByCotizacion_Id(id).stream()
+                    .map(DetalleCotizacion::getSubtotal)
+                    .filter(java.util.Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            cotizacion.setSubtotalMateriales(CalculoCotizacion.dinero(materiales));
+        }
+        BigDecimal utilidad = CalculoCotizacion.porcentaje(cotizacion.getSubtotalMateriales(), request.utilidadPorcentaje());
+        cotizacion.setUtilidadPorcentaje(CalculoCotizacion.dinero(request.utilidadPorcentaje()));
+        cotizacion.setUtilidadMonto(utilidad);
+        cotizacion.setMovilidadMonto(CalculoCotizacion.dinero(request.movilidadMonto()));
+        cotizacion.setOtrosMonto(CalculoCotizacion.dinero(request.otrosMonto()));
+        String detalle = request.otrosDetalle() == null ? null : request.otrosDetalle().trim();
+        cotizacion.setOtrosDetalle(detalle == null || detalle.isBlank() ? null : detalle);
+        cotizacion.setNotaCambio(request.notaCambio().trim());
+        cotizacion.setModificada(true);
+        cotizacion.setTotal(totalDe(cotizacion.getSubtotalMateriales(), utilidad, cotizacion.getMovilidadMonto(), cotizacion.getOtrosMonto()));
+        cotizacionRepository.save(cotizacion);
+        auditService.registrar("cotizaciones", id, AccionAudit.UPDATE, Map.of(
+                "operacion", "ajuste_cargos", "total", cotizacion.getTotal(), "nota", cotizacion.getNotaCambio()));
+        log.info("Cotización {} ajustada por ventas. Total {}", id, cotizacion.getTotal());
+        return response(cotizacion);
     }
 
     @Override
@@ -301,6 +375,7 @@ public class CotizacionServiceImpl implements CotizacionService {
     }
     private String origenDe(Cotizacion c) {
         CanalCotizacion canal = c.getCanal() == null ? CanalCotizacion.INTERNO : c.getCanal();
+        if (canal == CanalCotizacion.WEB && c.getEstado() == EstadoCotizacion.PENDIENTE && Boolean.TRUE.equals(c.getModificada())) return "MODIFICADA";
         if (canal == CanalCotizacion.WEB && c.getEstado() == EstadoCotizacion.PENDIENTE) return "NUEVO (WEB)";
         return canal == CanalCotizacion.WEB ? "WEB" : "INTERNO";
     }
@@ -313,7 +388,34 @@ public class CotizacionServiceImpl implements CotizacionService {
         CanalCotizacion canal = c.getCanal() == null ? CanalCotizacion.INTERNO : c.getCanal();
         UUID usuarioId = c.getUser() == null ? null : c.getUser().getId();
         String usuarioNombre = c.getUser() == null ? "Canal web" : ((c.getUser().getNombre() == null ? "" : c.getUser().getNombre()) + " " + (c.getUser().getApellido() == null ? "" : c.getUser().getApellido())).trim();
-        return new CotizacionResponseDTO(c.getId(), c.getSede().getId(), c.getSede().getNombre(), usuarioId, usuarioNombre, c.getCliente() == null ? null : c.getCliente().getId(), c.getCliente() == null ? null : c.getCliente().getNombre(), c.getEstado(), c.getTotal(), c.getFechaVigencia(), c.getObservaciones(), c.getVenta() == null ? null : c.getVenta().getId(), c.getCreatedAt(), lineas, canal, origenDe(c));
+        return new CotizacionResponseDTO(c.getId(), c.getSede().getId(), c.getSede().getNombre(), usuarioId, usuarioNombre, c.getCliente() == null ? null : c.getCliente().getId(), c.getCliente() == null ? null : c.getCliente().getNombre(), c.getEstado(), c.getTotal(), c.getFechaVigencia(), c.getObservaciones(), c.getVenta() == null ? null : c.getVenta().getId(), c.getCreatedAt(), lineas, canal, origenDe(c), cargosDe(c));
+    }
+    private void aplicarCargos(Cotizacion cotizacion, CargosCotizacionDTO cargos) {
+        cotizacion.setDistrito(cargos.distrito());
+        cotizacion.setCantidadPiezas(cargos.cantidadPiezas());
+        cotizacion.setSubtotalMateriales(cargos.subtotalMateriales());
+        cotizacion.setUtilidadPorcentaje(cargos.utilidadPorcentaje());
+        cotizacion.setUtilidadMonto(cargos.utilidadMonto());
+        cotizacion.setMovilidadMonto(cargos.movilidadMonto());
+        cotizacion.setOtrosMonto(cargos.otrosMonto());
+        cotizacion.setOtrosDetalle(cargos.otrosDetalle());
+        cotizacion.setModificada(false);
+        cotizacion.setNotaCambio(null);
+        cotizacion.setTotal(totalConCargos(cargos));
+        cotizacionRepository.save(cotizacion);
+    }
+    private CargosCotizacionDTO cargosDe(Cotizacion c) {
+        if (c.getDistrito() == null && c.getSubtotalMateriales() == null) return null;
+        return new CargosCotizacionDTO(c.getDistrito(), c.getCantidadPiezas(), c.getSubtotalMateriales(), c.getUtilidadPorcentaje(),
+                c.getUtilidadMonto(), c.getMovilidadMonto(), c.getOtrosMonto(), c.getOtrosDetalle(),
+                Boolean.TRUE.equals(c.getModificada()), c.getNotaCambio());
+    }
+    private BigDecimal totalConCargos(CargosCotizacionDTO cargos) {
+        return totalDe(cargos.subtotalMateriales(), cargos.utilidadMonto(), cargos.movilidadMonto(), cargos.otrosMonto());
+    }
+    private BigDecimal totalDe(BigDecimal materiales, BigDecimal utilidad, BigDecimal movilidad, BigDecimal otros) {
+        return CalculoCotizacion.dinero(materiales).add(CalculoCotizacion.dinero(utilidad))
+                .add(CalculoCotizacion.dinero(movilidad)).add(CalculoCotizacion.dinero(otros));
     }
     private record Calculada(Producto producto, Servicio servicio, CatalogoFraccion fraccion, BigDecimal precio, BigDecimal neto, BigDecimal igv, BigDecimal total) { }
 }

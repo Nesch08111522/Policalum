@@ -19,5 +19,6 @@ public record ProductoPublicoDTO(
         String categoriaNombre,
         String imagenUrl,
         List<FraccionPublicaDTO> fracciones,
-        boolean oferta
+        boolean oferta,
+        BigDecimal stock
 ) {}

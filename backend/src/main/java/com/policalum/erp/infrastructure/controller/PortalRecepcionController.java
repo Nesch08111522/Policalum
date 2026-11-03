@@ -2,8 +2,11 @@ package com.policalum.erp.infrastructure.controller;
 
 import com.policalum.erp.application.dto.request.ContactoWebRequestDTO;
 import com.policalum.erp.application.dto.request.CotizacionWebRequestDTO;
+import com.policalum.erp.application.dto.request.VistaCotizacionRequestDTO;
 import com.policalum.erp.application.dto.response.CotizacionResponseDTO;
+import com.policalum.erp.application.dto.response.FormatoCotizacionDTO;
 import com.policalum.erp.application.dto.response.MensajeContactoResponseDTO;
+import com.policalum.erp.application.dto.response.VistaCotizacionDTO;
 import com.policalum.erp.application.service.CotizacionService;
 import com.policalum.erp.application.service.serviceImpl.CanalWebNotificador;
 import com.policalum.erp.application.service.serviceImpl.CotizacionDocumentoService;
@@ -37,6 +40,17 @@ public class PortalRecepcionController {
     private final MensajeWebService mensajes;
     private final CanalWebNotificador notificador;
     private final LimitePublico limite;
+
+    @GetMapping("/cotizaciones/formato")
+    public ResponseEntity<FormatoCotizacionDTO> formato() {
+        return ResponseEntity.ok(cotizacionService.formatoPublico());
+    }
+
+    @PostMapping("/cotizaciones/vista")
+    public ResponseEntity<VistaCotizacionDTO> vista(@Valid @RequestBody VistaCotizacionRequestDTO request, HttpServletRequest http) {
+        exigirCupo("vista:" + http.getRemoteAddr());
+        return ResponseEntity.ok(cotizacionService.vista(request));
+    }
 
     @PostMapping("/cotizaciones")
     public ResponseEntity<CotizacionResponseDTO> cotizar(@Valid @RequestBody CotizacionWebRequestDTO request, HttpServletRequest http) {

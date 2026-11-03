@@ -12,4 +12,4 @@ public record CotizacionResponseDTO(UUID id, UUID sedeId, String sedeNombre, UUI
         String usuarioNombre, UUID clienteId, String clienteNombre, EstadoCotizacion estado,
         BigDecimal total, LocalDate fechaVigencia, String observaciones, UUID ventaId,
         LocalDateTime createdAt, List<DetalleCotizacionResponseDTO> lineas,
-        CanalCotizacion canal, String origen) { }
+        CanalCotizacion canal, String origen, CargosCotizacionDTO cargos) { }

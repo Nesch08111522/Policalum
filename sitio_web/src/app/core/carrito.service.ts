@@ -3,6 +3,7 @@ import { BehaviorSubject, map } from 'rxjs';
 import { LineaCarrito } from './models';
 
 const CLAVE = 'policalum-carrito';
+const CLAVE_DIA = 'policalum-carrito-dia';
 
 @Injectable({ providedIn: 'root' })
 export class CarritoService {
@@ -41,9 +42,25 @@ export class CarritoService {
     this.publicar([]);
   }
 
+  tiene(productoId: string): boolean {
+    return this.lineas$.value.some((linea) => linea.productoId === productoId);
+  }
+
+  /** El carrito quedó de otro día y conviene preguntar si se descarta. */
+  deOtroDia(): boolean {
+    if (!this.lineas$.value.length) return false;
+    const guardado = localStorage.getItem(CLAVE_DIA);
+    return !guardado || guardado !== hoy();
+  }
+
+  confirmarDia(): void {
+    localStorage.setItem(CLAVE_DIA, hoy());
+  }
+
   private publicar(lista: LineaCarrito[]): void {
     this.lineas$.next(lista);
     localStorage.setItem(CLAVE, JSON.stringify(lista));
+    localStorage.setItem(CLAVE_DIA, hoy());
   }
 
   private leer(): LineaCarrito[] {
@@ -59,6 +76,11 @@ export class CarritoService {
 
 function redondear(valor: number): number {
   return Math.round(valor * 10000) / 10000;
+}
+
+function hoy(): string {
+  const fecha = new Date();
+  return `${fecha.getFullYear()}-${fecha.getMonth() + 1}-${fecha.getDate()}`;
 }
 
 export function enlaceWhatsapp(numero: string, lineas: LineaCarrito[], total: number, formato: (valor: number) => string): string {

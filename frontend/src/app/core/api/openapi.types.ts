@@ -500,6 +500,18 @@ export interface CotizacionResponseDTO {
   ventaId?: string;
   canal?: "INTERNO" | "WEB";
   origen?: string;
+  cargos?: {
+    distrito?: string;
+    cantidadPiezas?: number;
+    subtotalMateriales?: number;
+    utilidadPorcentaje?: number;
+    utilidadMonto?: number;
+    movilidadMonto?: number;
+    otrosMonto?: number;
+    otrosDetalle?: string;
+    modificada?: boolean;
+    notaCambio?: string;
+  };
 }
 
 export interface CrearDespachoRequestDTO {

@@ -38,8 +38,9 @@ public class CanalWebNotificador {
 
     public void cotizacion(CotizacionResponseDTO cotizacion) {
         String cliente = cotizacion.clienteNombre() == null ? "un cliente web" : cotizacion.clienteNombre();
-        avisar("WEB-COT-" + cotizacion.id(), "COTIZACION_WEB", "Cotización nueva de la web",
-                cliente + " solicitó una cotización por " + cotizacion.total(), "/modules/cotizaciones");
+        String distrito = cotizacion.cargos() == null || cotizacion.cargos().distrito() == null ? "" : " hacia " + cotizacion.cargos().distrito();
+        avisar("WEB-COT-" + cotizacion.id(), "COTIZACION_WEB", "Tienes una nueva cotización para visualizar",
+                cliente + " envió una cotización por " + cotizacion.total() + distrito, "/modules/cotizaciones");
     }
 
     public void mensaje(MensajeContacto mensaje) {

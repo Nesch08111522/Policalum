@@ -1,70 +1,96 @@
 <section class="section">
   <p class="kicker">Cotización formal</p>
   <h1>Documento para tu empresa</h1>
-  <p class="lead">El ERP recalcula precios e IGV. Al enviarla queda como NUEVO (WEB) en Cotizaciones.</p>
+  <p class="lead">Elige el distrito de entrega. El ERP aplica la utilidad, la movilidad y los cargos publicados, y te muestra el total antes de enviarlo.</p>
 </section>
 
 @if (!lineas().length && !creada()) {
   <p class="muted">Agrega productos antes de cotizar. <a routerLink="/catalogo">Ir al catálogo</a></p>
 } @else if (creada(); as oficial) {
-  <div class="okbox">Cotización registrada. El equipo de ventas ya tiene el aviso.</div>
+  <div class="okbox">Cotización registrada. Ventas ya tiene el aviso: tienes una nueva cotización para visualizar.</div>
   <article class="sheet" style="margin-top:1rem">
     <p class="kicker">{{ marca.empresa().nombreComercial }}</p>
     <h2>Cotización</h2>
     <p>{{ oficial.clienteNombre }} · {{ oficial.origen || oficial.estado }}</p>
-    <p class="muted">Vigente hasta {{ oficial.fechaVigencia }}</p>
-    <table>
-      <thead><tr><th>Ítem</th><th>Cantidad</th><th>Subtotal</th></tr></thead>
-      <tbody>
-        @for (linea of oficial.lineas; track $index) {
-          <tr>
-            <td>{{ linea.productoNombre || linea.servicioNombre }} {{ linea.fraccionNombre }}</td>
-            <td>{{ linea.cantidad }}</td>
-            <td>{{ pen(linea.subtotal) }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+    <p class="muted">Vigente hasta {{ oficial.fechaVigencia }} · Entrega en {{ oficial.cargos?.distrito }}</p>
+    @if (oficial.cargos?.modificada) {
+      <p class="alert">La empresa modificó esta cotización. {{ oficial.cargos.notaCambio }}</p>
+    }
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Ítem</th><th>Cantidad</th><th>Subtotal</th></tr></thead>
+        <tbody>
+          @for (linea of oficial.lineas; track $index) {
+            <tr>
+              <td>{{ linea.productoNombre || linea.servicioNombre }} {{ linea.fraccionNombre }}</td>
+              <td>{{ linea.cantidad }}</td>
+              <td>{{ pen(linea.subtotal) }}</td>
+            </tr>
+          }
+          <tr><td>Materiales</td><td></td><td>{{ pen(oficial.cargos?.subtotalMateriales) }}</td></tr>
+          <tr><td>Utilidad {{ oficial.cargos?.utilidadPorcentaje }}%</td><td></td><td>{{ pen(oficial.cargos?.utilidadMonto) }}</td></tr>
+          <tr><td>Movilidad {{ oficial.cargos?.distrito }}</td><td></td><td>{{ pen(oficial.cargos?.movilidadMonto) }}</td></tr>
+          <tr><td>Otros cargos</td><td></td><td>{{ pen(oficial.cargos?.otrosMonto) }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    @if (oficial.cargos?.otrosDetalle) { <p class="muted">{{ oficial.cargos.otrosDetalle }}</p> }
     <p class="price">Total {{ pen(oficial.total) }}</p>
     <div class="hero-actions no-print">
-      <button type="button" class="btn btn-primary" (click)="pdf()">Descargar PDF</button>
-      <a class="btn btn-line" routerLink="/catalogo">Seguir viendo</a>
+      <button type="button" class="btn btn-primary" (click)="pdf()">Descargar cotización</button>
+      @if (whatsapp(oficial); as enlace) {
+        <a class="btn btn-wa" [href]="enlace" target="_blank" rel="noopener">Contactar a la empresa</a>
+      }
+      <a class="btn btn-line" routerLink="/contacto">Escribir por el sitio</a>
     </div>
   </article>
 } @else {
   <div class="quote-grid">
-    <form class="panel" style="padding:1rem; display:grid; gap:0.7rem" [formGroup]="form" (ngSubmit)="ver()">
+    <form class="panel" style="padding:1rem; display:grid; gap:0.7rem" [formGroup]="form" (ngSubmit)="realizar()">
       <label class="field trap" aria-hidden="true">Web<input class="input" formControlName="website" tabindex="-1" autocomplete="off" /></label>
       <label class="field"><span>RUC</span><input class="input" formControlName="ruc" inputmode="numeric" maxlength="11" /></label>
       <label class="field"><span>Razón social</span><input class="input" formControlName="razonSocial" /></label>
       <label class="field"><span>Correo</span><input class="input" type="email" formControlName="correo" /></label>
       <label class="field"><span>Teléfono</span><input class="input" formControlName="telefono" /></label>
-      <label class="field"><span>Observaciones</span><textarea class="textarea" formControlName="observaciones"></textarea></label>
+      <label class="field"><span>Distrito de Trujillo</span>
+        <select class="input" formControlName="distrito">
+          <option value="">Elige el distrito</option>
+          @for (item of formato()?.distritos ?? []; track item.distrito) {
+            <option [value]="item.distrito">{{ item.distrito }}</option>
+          }
+        </select>
+      </label>
+      <label class="field"><span>Qué necesitas</span><textarea class="textarea" formControlName="observaciones" placeholder="Medidas, obra o fecha de entrega"></textarea></label>
       @if (error()) { <p class="alert">{{ error() }}</p> }
-      <button type="submit" class="btn btn-line no-print">Ver cotización</button>
+      <button type="submit" class="btn btn-line no-print" [disabled]="calculando()">{{ calculando() ? 'Calculando...' : 'Realizar cotización' }}</button>
     </form>
-    @if (vista()) {
+    @if (vista(); as previa) {
       <article class="sheet">
         <p class="kicker">{{ marca.empresa().nombreComercial }}</p>
         <h2>{{ form.controls.razonSocial.value }}</h2>
-        <p class="muted">RUC {{ form.controls.ruc.value }} · {{ form.controls.correo.value }}</p>
-        <table>
+        <p class="muted">RUC {{ form.controls.ruc.value }} · {{ form.controls.correo.value }} · {{ previa.cargos.distrito }}</p>
+        <div class="table-scroll"><table>
           <thead><tr><th>Ítem</th><th>Cantidad</th><th>Subtotal</th></tr></thead>
           <tbody>
-            @for (linea of lineas(); track $index) {
+            @for (linea of previa.lineas; track $index) {
               <tr>
-                <td>{{ linea.nombre }} {{ linea.fraccionNombre }}</td>
+                <td>{{ linea.productoNombre || linea.servicioNombre }} {{ linea.fraccionNombre }}</td>
                 <td>{{ linea.cantidad }}</td>
-                <td>{{ pen(linea.precio * linea.cantidad) }}</td>
+                <td>{{ pen(linea.subtotal) }}</td>
               </tr>
             }
+            <tr><td>Materiales</td><td></td><td>{{ pen(previa.cargos.subtotalMateriales) }}</td></tr>
+            <tr><td>Utilidad {{ previa.cargos.utilidadPorcentaje }}%</td><td></td><td>{{ pen(previa.cargos.utilidadMonto) }}</td></tr>
+            <tr><td>Movilidad {{ previa.cargos.distrito }}</td><td></td><td>{{ pen(previa.cargos.movilidadMonto) }}</td></tr>
+            <tr><td>Otros cargos</td><td></td><td>{{ pen(previa.cargos.otrosMonto) }}</td></tr>
           </tbody>
-        </table>
-        <p class="price">Total aproximado {{ pen(totalLocal()) }}</p>
-        <p class="muted">El total oficial se confirma al enviar, con los precios del ERP.</p>
+        </table></div>
+        @if (previa.cargos.otrosDetalle) { <p class="muted">{{ previa.cargos.otrosDetalle }}</p> }
+        <p class="price">Total {{ pen(previa.total) }}</p>
+        <p class="muted">Este total sale del formato publicado en el ERP. Si ventas lo corrige, el documento indicará qué cambió.</p>
         <div class="hero-actions no-print">
-          <button type="button" class="btn btn-line" (click)="imprimir()">Descargar en PDF</button>
-          <button type="button" class="btn btn-primary" (click)="enviar()" [disabled]="enviando()">{{ enviando() ? 'Enviando...' : 'Enviar a POLICALUM' }}</button>
+          <button type="button" class="btn btn-line" (click)="imprimir()">Descargar cotización</button>
+          <button type="button" class="btn btn-primary" (click)="enviar()" [disabled]="enviando()">{{ enviando() ? 'Enviando...' : 'Enviar cotización a POLICALUM' }}</button>
         </div>
       </article>
     }

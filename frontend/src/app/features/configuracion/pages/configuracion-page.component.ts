@@ -16,12 +16,13 @@ import { MarcaService } from '../../../shared/services/marca.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { applyServerErrors, fieldError, problemText } from '../../../shared/utils/feedback';
 import { ConfiguracionApiService } from '../data-access/configuracion.api';
+import { FormatoCotizacionComponent } from './formato-cotizacion.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Default,
   selector: 'app-configuracion-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, TabsComponent, FormFieldComponent, SelectComponent, DataTableComponent],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, TabsComponent, FormFieldComponent, SelectComponent, DataTableComponent, FormatoCotizacionComponent],
   templateUrl: './configuracion-page.component.html',
   styleUrls: ['./configuracion-page.component.css'],
 })
@@ -31,6 +32,7 @@ export class ConfiguracionPageComponent implements OnInit, OnDestroy {
     { id: 'empresa', label: 'Empresa' },
     { id: 'parametros', label: 'Parámetros' },
     { id: 'series', label: 'Series' },
+    { id: 'cotizacion', label: 'Cotización' },
   ];
   tab = 'empresa';
   readonly marcaForm = this.fb.nonNullable.group({

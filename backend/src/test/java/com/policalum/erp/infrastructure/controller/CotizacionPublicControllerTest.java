@@ -50,12 +50,12 @@ class CotizacionPublicControllerTest {
         when(cotizaciones.crearDesdeWeb(any())).thenReturn(new CotizacionResponseDTO(
                 UUID.randomUUID(), null, null, null, null, null, null,
                 EstadoCotizacion.PENDIENTE, new BigDecimal("10.00"), null, null, null, null, List.of(),
-                CanalCotizacion.WEB, "NUEVO (WEB)"));
+                CanalCotizacion.WEB, "NUEVO (WEB)", null));
 
         mvc.perform(post("/api/v1/public/cotizaciones")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"ruc":"20987654321","razonSocial":"Cliente SAC","correo":"ventas@cliente.pe","telefono":"999888777","lineas":[{"productoId":"%s","cantidad":1}]}
+                                {"ruc":"20987654321","razonSocial":"Cliente SAC","correo":"ventas@cliente.pe","telefono":"999888777","distrito":"Trujillo","lineas":[{"productoId":"%s","cantidad":1}]}
                                 """.formatted(UUID.randomUUID())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.canal").value("WEB"))

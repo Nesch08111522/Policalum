@@ -33,6 +33,19 @@ public class CmsService {
         fila.setColorSecundario(request.secondaryColor().toUpperCase());
         fila.setTamanoBase(request.baseFontSize());
         fila.setModo(request.themeMode());
+        fila.setBanner(limpio(request.banner(), 180));
+        fila.setResumen(limpio(request.resumen(), 500));
+        fila.setHorarioSemana(limpio(request.horarioSemana(), 80));
+        fila.setHorarioSabado(limpio(request.horarioSabado(), 80));
+        fila.setFacebook(limpio(request.facebook(), 200));
+        fila.setInstagram(limpio(request.instagram(), 200));
+        fila.setLinkedin(limpio(request.linkedin(), 200));
+        fila.setYoutube(limpio(request.youtube(), 200));
+        fila.setCorreoSoporte(limpio(request.correoSoporte(), 150));
+        fila.setTextoPrivacidad(limpio(request.textoPrivacidad(), 4000));
+        fila.setTextoTerminos(limpio(request.textoTerminos(), 4000));
+        fila.setTextoGarantia(limpio(request.textoGarantia(), 4000));
+        fila.setTextoFaq(limpio(request.textoFaq(), 4000));
         ajustes.save(fila);
         publicador.publicar("ajustes");
         return publico();
@@ -89,7 +102,27 @@ public class CmsService {
                 ajuste == null || ajuste.getTamanoBase() == null ? 16 : ajuste.getTamanoBase(),
                 ajuste == null || ajuste.getModo() == null ? "aether" : ajuste.getModo(),
                 mensaje,
-                activo);
+                activo,
+                ajuste == null ? null : ajuste.getBanner(),
+                ajuste == null ? null : ajuste.getResumen(),
+                ajuste == null ? null : ajuste.getHorarioSemana(),
+                ajuste == null ? null : ajuste.getHorarioSabado(),
+                ajuste == null ? null : ajuste.getFacebook(),
+                ajuste == null ? null : ajuste.getInstagram(),
+                ajuste == null ? null : ajuste.getLinkedin(),
+                ajuste == null ? null : ajuste.getYoutube(),
+                ajuste == null ? null : ajuste.getCorreoSoporte(),
+                ajuste == null ? null : ajuste.getTextoPrivacidad(),
+                ajuste == null ? null : ajuste.getTextoTerminos(),
+                ajuste == null ? null : ajuste.getTextoGarantia(),
+                ajuste == null ? null : ajuste.getTextoFaq());
+    }
+
+    private String limpio(String valor, int maximo) {
+        if (valor == null) return null;
+        String texto = valor.trim();
+        if (texto.isEmpty()) return null;
+        return texto.length() <= maximo ? texto : texto.substring(0, maximo);
     }
 
     private CmsAjuste asegurarAjuste() {

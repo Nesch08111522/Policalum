@@ -1,6 +1,7 @@
 package com.policalum.erp.infrastructure.repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -82,6 +83,9 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
             WHERE p.id = :id AND p.activo = true
             """)
     Optional<Producto> findActivoParaPortal(@Param("id") UUID id);
+
+    @EntityGraph(attributePaths = { "categoria", "fracciones" })
+    List<Producto> findTop8ByActivoTrueAndOfertaTrueOrderByNombreAsc();
 
     Optional<Producto> findByCodigoSkuIgnoreCase(String codigoSku);
 

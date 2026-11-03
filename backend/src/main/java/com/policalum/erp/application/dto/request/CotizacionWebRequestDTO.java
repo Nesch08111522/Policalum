@@ -14,6 +14,7 @@ public record CotizacionWebRequestDTO(
         @NotBlank @Size(max = 200) String razonSocial,
         @NotBlank @Email @Size(max = 150) String correo,
         @NotBlank @Pattern(regexp = "[0-9+()\\- ]{6,20}", message = "Teléfono inválido") String telefono,
+        @NotBlank @Size(max = 80) String distrito,
         @Size(max = 2000) String observaciones,
         @NotEmpty @Size(max = 40) List<@Valid DetalleCotizacionCommandDTO> lineas,
         /** Campo trampa para bots. El portal lo envía vacío. */

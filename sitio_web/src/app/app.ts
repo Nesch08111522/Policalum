@@ -8,10 +8,12 @@ import { CmsStore } from './core/cms.store';
 import { EmpresaStore } from './core/empresa.store';
 import { CategoriaPublica, ProductoPublico, SedePublica } from './core/models';
 import { PortalApi, media, pen } from './core/portal.api';
+import { TemaService } from './core/tema.service';
+import { AsistenteComponent } from './components/asistente.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, AsyncPipe],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, AsyncPipe, AsistenteComponent],
   templateUrl: './app.html',
 })
 export class App implements OnDestroy {
@@ -19,6 +21,7 @@ export class App implements OnDestroy {
   readonly marca = inject(EmpresaStore);
   readonly cms = inject(CmsStore);
   readonly avisos = inject(AvisoService);
+  readonly tema = inject(TemaService);
   private readonly api = inject(PortalApi);
   private readonly router = inject(Router);
   private readonly navegacion: Subscription;
@@ -26,11 +29,14 @@ export class App implements OnDestroy {
   readonly media = media;
   readonly pen = pen;
   readonly menu = signal(false);
+  readonly preguntarCarrito = signal(false);
+  readonly anio = new Date().getFullYear();
   readonly ruta = signal(this.router.url);
   readonly categorias = signal<CategoriaPublica[]>([]);
   readonly sedes = signal<SedePublica[]>([]);
   readonly vitrina = signal<ProductoPublico[]>([]);
-  readonly vitrinaVisible = signal(4);
+  readonly sugerencias = signal<ProductoPublico[]>([]);
+  private espera = 0;
   @ViewChild('caja') caja?: ElementRef<HTMLInputElement>;
 
   constructor() {
@@ -42,6 +48,7 @@ export class App implements OnDestroy {
     });
     this.api.categorias().subscribe({ next: (lista) => this.categorias.set(lista), error: () => undefined });
     this.api.sedes().subscribe({ next: (lista) => this.sedes.set(lista), error: () => undefined });
+    this.preguntarCarrito.set(this.carrito.deOtroDia());
     this.api.productos({ page: 0 }).subscribe({
       next: (pagina) => this.vitrina.set(pagina.content ?? []),
       error: () => undefined,
@@ -54,6 +61,16 @@ export class App implements OnDestroy {
 
   consulta(): URLSearchParams {
     return new URLSearchParams(this.ruta().split('?')[1] ?? '');
+  }
+
+  conservarCarrito(): void {
+    this.carrito.confirmarDia();
+    this.preguntarCarrito.set(false);
+  }
+
+  descartarCarrito(): void {
+    this.carrito.vaciar();
+    this.preguntarCarrito.set(false);
   }
 
   esCatalogo(): boolean {
@@ -69,9 +86,45 @@ export class App implements OnDestroy {
     return this.consulta().get('vista') ?? '';
   }
 
+  sugerir(valor: string): void {
+    window.clearTimeout(this.espera);
+    const q = valor.trim();
+    if (q.length < 2) {
+      this.sugerencias.set([]);
+      return;
+    }
+    this.espera = window.setTimeout(() => {
+      this.api.productos({ q, page: 0, size: 6 }).subscribe({
+        next: (pagina) => this.sugerencias.set(pagina.content ?? []),
+        error: () => this.sugerencias.set([]),
+      });
+    }, 220);
+  }
+
+  elegirProducto(id: string): void {
+    this.sugerencias.set([]);
+    if (this.caja) this.caja.nativeElement.value = '';
+    this.router.navigate(['/catalogo', id]);
+  }
+
   irBusqueda(texto: string): void {
     const q = texto.trim();
-    this.router.navigate(['/catalogo'], { queryParams: q ? { q } : {} });
+    this.sugerencias.set([]);
+    if (!q) {
+      this.router.navigate(['/catalogo']);
+      return;
+    }
+    this.api.productos({ q, page: 0, size: 8 }).subscribe({
+      next: (pagina) => {
+        const lista = pagina.content ?? [];
+        const exacto = lista.find((producto) =>
+          producto.nombre.toLowerCase() === q.toLowerCase() || (producto.codigoSku ?? '').toLowerCase() === q.toLowerCase());
+        const destino = exacto ?? (lista.length === 1 ? lista[0] : null);
+        if (destino) this.router.navigate(['/catalogo', destino.id]);
+        else this.router.navigate(['/catalogo'], { queryParams: { q } });
+      },
+      error: () => this.router.navigate(['/catalogo'], { queryParams: { q } }),
+    });
   }
 
   enfocarBusqueda(): void {
@@ -91,11 +144,4 @@ export class App implements OnDestroy {
     });
   }
 
-  masVitrina(): void {
-    if (this.vitrinaVisible() >= this.vitrina().length) {
-      this.router.navigate(['/catalogo']);
-      return;
-    }
-    this.vitrinaVisible.update((cantidad) => cantidad + 4);
-  }
 }

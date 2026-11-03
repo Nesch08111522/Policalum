@@ -46,8 +46,20 @@
   .sede-btn span, .sede-btn app-icon:last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
   .search-shell { padding-left: 0.55rem; }
 }
+@media (max-width: 720px) {
+  .web-link span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+}
 @media (max-width: 1180px) {
-  .theme-toggle span, .web-link span {
+  .theme-toggle span {
     position: absolute;
     width: 1px;
     height: 1px;

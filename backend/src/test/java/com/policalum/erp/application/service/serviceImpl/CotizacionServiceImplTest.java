@@ -218,7 +218,7 @@ class CotizacionServiceImplTest {
         when(configuracionService.obtenerEmpresa()).thenReturn(new EmpresaResponseDTO(
                 "20111111111", "POLICALUM", "POLICALUM", null, null, null, null, null, true, null, null));
         CotizacionWebRequestDTO pedido = new CotizacionWebRequestDTO(
-                "20111111111", "POLICALUM", "web@policalum.pe", "999888777", null,
+                "20111111111", "POLICALUM", "web@policalum.pe", "999888777", "Trujillo", null,
                 List.of(new DetalleCotizacionCommandDTO(productoId, null, null, BigDecimal.ONE)), null);
 
         BusinessException ex = assertThrows(BusinessException.class, () -> service.crearDesdeWeb(pedido));

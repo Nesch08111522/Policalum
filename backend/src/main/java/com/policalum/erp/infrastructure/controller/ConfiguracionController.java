@@ -2,9 +2,12 @@ package com.policalum.erp.infrastructure.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.policalum.erp.application.dto.request.EmpresaRequestDTO;
+import com.policalum.erp.application.dto.request.FormatoCotizacionRequestDTO;
+import com.policalum.erp.application.service.CotizacionService;
 import com.policalum.erp.application.dto.request.MarcaRequestDTO;
 import com.policalum.erp.application.dto.request.ParametrosRequestDTO;
 import com.policalum.erp.application.dto.request.SeriesRequestDTO;
+import com.policalum.erp.application.dto.response.FormatoCotizacionDTO;
 import com.policalum.erp.application.dto.response.ConfiguracionPublicaDTO;
 import com.policalum.erp.application.dto.response.EmpresaResponseDTO;
 import com.policalum.erp.application.dto.response.ParametrosResponseDTO;
@@ -42,6 +45,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class ConfiguracionController {
 
     private final ConfiguracionService service;
+    private final CotizacionService cotizaciones;
 
     /** Datos de la empresa. configurada=false mientras no tenga RUC. */
     @GetMapping("/empresa")
@@ -113,6 +117,18 @@ public class ConfiguracionController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + (nombre != null ? nombre : "logo") + "\"")
                 .contentType(tipoLogo(nombre))
                 .body(resource);
+    }
+
+    /** Utilidad, movilidad por distrito y cargos extra que usa el portal. */
+    @GetMapping("/cotizacion")
+    public ResponseEntity<FormatoCotizacionDTO> formatoCotizacion() {
+        return ResponseEntity.ok(cotizaciones.formatoErp());
+    }
+
+    @PutMapping("/cotizacion")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<FormatoCotizacionDTO> guardarFormato(@Valid @RequestBody FormatoCotizacionRequestDTO request) {
+        return ResponseEntity.ok(cotizaciones.guardarFormato(request));
     }
 
     private MediaType tipoLogo(String nombre) {

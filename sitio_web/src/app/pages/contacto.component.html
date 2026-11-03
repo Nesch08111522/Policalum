@@ -1,7 +1,14 @@
 <section class="section">
   <p class="kicker">Contacto</p>
   <h1>Habla con ventas</h1>
-  <p class="lead">El mensaje entra a Mensajes web del ERP, no se queda solo en un correo.</p>
+  <p class="lead">El mensaje entra a Mensajes web del ERP. Deja tus datos para que puedan devolverte la llamada.</p>
+  <div class="contact-facts">
+    @if (marca.empresa().telefono) { <a [href]="'tel:' + marca.empresa().telefono">{{ marca.empresa().telefono }}</a> }
+    @if (marca.empresa().email) { <a [href]="'mailto:' + marca.empresa().email">{{ marca.empresa().email }}</a> }
+    @if (!marca.empresa().telefono && !marca.empresa().email) {
+      <span>El teléfono y el correo se toman de la empresa o de la sede en el ERP.</span>
+    }
+  </div>
 </section>
 <div class="contact">
   <aside class="map-card">

@@ -1,9 +1,9 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, of, throwError } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { CategoriaPublica, ContactoCreado, CotizacionCreada, EmpresaPublica, PaginaPublica, ProductoPublico, ProyectoPublico, SedePublica } from './models';
+import { CategoriaPublica, ContactoCreado, CotizacionCreada, EmpresaPublica, FormatoCotizacion, PaginaPublica, ProductoPublico, ProyectoPublico, SedePublica, ServicioPublico, VistaCotizacion } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class PortalApi {
@@ -27,15 +27,40 @@ export class PortalApi {
     );
   }
 
+  ofertas(): Observable<ProductoPublico[]> {
+    return this.http.get<ProductoPublico[]>(`${this.base}/catalogo/ofertas`);
+  }
+
+  servicios(): Observable<ServicioPublico[]> {
+    return this.http.get<ServicioPublico[]>(`${this.base}/servicios`);
+  }
+
   destacados(): Observable<ProductoPublico[]> {
     return this.http.get<ProductoPublico[]>(`${this.base}/catalogo/destacados`);
   }
 
-  productos(filtro: { categoriaId?: string; q?: string; page?: number }): Observable<PaginaPublica<ProductoPublico>> {
-    let params = new HttpParams().set('size', '12').set('page', String(filtro.page ?? 0));
+  productos(filtro: { categoriaId?: string; q?: string; page?: number; size?: number; sort?: string }): Observable<PaginaPublica<ProductoPublico>> {
+    let params = new HttpParams().set('size', String(filtro.size ?? 12)).set('page', String(filtro.page ?? 0));
     if (filtro.categoriaId) params = params.set('categoriaId', filtro.categoriaId);
     if (filtro.q) params = params.set('q', filtro.q);
-    return this.http.get<PaginaPublica<ProductoPublico>>(`${this.base}/catalogo/productos`, { params });
+    if (filtro.sort) params = params.set('sort', filtro.sort);
+    const guardable = !filtro.q && !filtro.categoriaId && (filtro.page ?? 0) === 0;
+    return this.http.get<PaginaPublica<ProductoPublico>>(`${this.base}/catalogo/productos`, { params }).pipe(
+      tap((pagina) => {
+        if (guardable) localStorage.setItem('policalum-catalogo', JSON.stringify(pagina));
+      }),
+      catchError((error: unknown) => {
+        if (!guardable) return throwError(() => error);
+        try {
+          const crudo = localStorage.getItem('policalum-catalogo');
+          if (!crudo) return throwError(() => error);
+          const pagina = JSON.parse(crudo) as PaginaPublica<ProductoPublico>;
+          return of({ ...pagina, enCache: true });
+        } catch {
+          return throwError(() => error);
+        }
+      }),
+    );
   }
 
   producto(id: string): Observable<ProductoPublico> {
@@ -44,6 +69,14 @@ export class PortalApi {
 
   portafolio(): Observable<ProyectoPublico[]> {
     return this.http.get<ProyectoPublico[]>(`${this.base}/portafolio`);
+  }
+
+  formatoCotizacion(): Observable<FormatoCotizacion> {
+    return this.http.get<FormatoCotizacion>(`${this.base}/cotizaciones/formato`);
+  }
+
+  vistaCotizacion(cuerpo: unknown): Observable<VistaCotizacion> {
+    return this.http.post<VistaCotizacion>(`${this.base}/cotizaciones/vista`, cuerpo);
   }
 
   cotizar(cuerpo: unknown): Observable<CotizacionCreada> {

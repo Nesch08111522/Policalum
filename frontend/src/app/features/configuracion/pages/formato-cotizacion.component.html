@@ -1,0 +1,44 @@
+<form class="card card-body" [formGroup]="form" (ngSubmit)="guardar()">
+  <h2>Formato de cotización</h2>
+  <p class="text-muted">El portal suma estos cargos al precio del catálogo. La movilidad de cada distrito cubre hasta las unidades incluidas; cada pieza de más suma el precio extra.</p>
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <app-form-field label="Utilidad sobre materiales %" inputId="fmt-util">
+    <input id="fmt-util" class="input" type="number" min="0" max="100" step="0.01" formControlName="utilidadPorcentaje" />
+  </app-form-field>
+  <h3>Movilidad por distrito de Trujillo</h3>
+  <div class="table-wrap">
+    <table class="table table-compact">
+      <thead><tr><th>Distrito</th><th>Precio base</th><th>Unidades incluidas</th><th>Precio por pieza extra</th><th>Activa</th></tr></thead>
+      <tbody formArrayName="distritos">
+        @for (item of distritos.controls; track $index) {
+          <tr [formGroupName]="$index">
+            <td><input class="input" formControlName="distrito" /></td>
+            <td><input class="input" type="number" min="0" step="0.01" formControlName="precioBase" /></td>
+            <td><input class="input" type="number" min="0" step="1" formControlName="unidadesIncluidas" /></td>
+            <td><input class="input" type="number" min="0" step="0.01" formControlName="precioUnidadExtra" /></td>
+            <td><input type="checkbox" formControlName="activo" /></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <h3>Otros cargos</h3>
+  <div formArrayName="conceptos">
+    @for (item of conceptos.controls; track $index) {
+      <div class="form-grid" [formGroupName]="$index">
+        <app-form-field label="Nombre" [inputId]="'fmt-nom-' + $index"><input class="input" formControlName="nombre" /></app-form-field>
+        <app-form-field label="Tipo" [inputId]="'fmt-tipo-' + $index">
+          <select class="select" formControlName="tipo"><option value="MONTO">Monto fijo</option><option value="PORCENTAJE">Porcentaje</option></select>
+        </app-form-field>
+        <app-form-field label="Valor" [inputId]="'fmt-val-' + $index"><input class="input" type="number" min="0" step="0.01" formControlName="valor" /></app-form-field>
+        <label class="field"><input type="checkbox" formControlName="activo" /> Activo</label>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="quitarConcepto($index)">Quitar</button>
+      </div>
+    }
+  </div>
+  <div class="filter-actions">
+    <button type="button" class="btn btn-ghost" (click)="agregarConcepto()">Agregar cargo</button>
+    <button type="submit" class="btn btn-primary" [disabled]="form.invalid || guardando || !esAdmin">Guardar formato</button>
+  </div>
+  <p class="text-muted" *ngIf="!esAdmin">Solo un administrador puede cambiar estos valores.</p>
+</form>

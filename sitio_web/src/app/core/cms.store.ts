@@ -9,6 +9,19 @@ export interface CmsPublico {
   themeMode: string;
   aviso: string;
   avisoActivo: boolean;
+  banner?: string;
+  resumen?: string;
+  horarioSemana?: string;
+  horarioSabado?: string;
+  facebook?: string;
+  instagram?: string;
+  linkedin?: string;
+  youtube?: string;
+  correoSoporte?: string;
+  textoPrivacidad?: string;
+  textoTerminos?: string;
+  textoGarantia?: string;
+  textoFaq?: string;
 }
 
 @Injectable({ providedIn: 'root' })

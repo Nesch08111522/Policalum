@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import com.policalum.erp.application.dto.request.AjusteCargoCotizacionRequestDTO;
 import com.policalum.erp.application.dto.request.ConvertirCotizacionRequestDTO;
 import com.policalum.erp.application.dto.request.CotizacionRequestDTO;
 import com.policalum.erp.application.dto.request.RechazarCotizacionRequestDTO;
@@ -97,6 +98,7 @@ public class CotizacionController {
     })
     @PostMapping("/{id}/rechazar") @PreAuthorize("hasAnyRole('ADMIN', 'MULTIFUNCIONAL')") public ResponseEntity<CotizacionResponseDTO> rechazar(@PathVariable UUID id, @Valid @RequestBody RechazarCotizacionRequestDTO request) { return ResponseEntity.ok(cotizacionService.rechazar(id, request)); }
     @PostMapping("/{id}/no-comprada") @PreAuthorize("hasAnyRole('ADMIN', 'MULTIFUNCIONAL')") public ResponseEntity<CotizacionResponseDTO> noComprada(@PathVariable UUID id) { return ResponseEntity.ok(cotizacionService.marcarNoComprada(id)); }
+    @PutMapping("/{id}/cargos") @PreAuthorize("hasAnyRole('ADMIN', 'MULTIFUNCIONAL')") public ResponseEntity<CotizacionResponseDTO> cargos(@PathVariable UUID id, @Valid @RequestBody AjusteCargoCotizacionRequestDTO request) { return ResponseEntity.ok(cotizacionService.ajustarCargos(id, request)); }
     @GetMapping("/{id}/documento") public ResponseEntity<byte[]> documento(@PathVariable UUID id, @RequestParam(defaultValue = "pdf") String formato) { return cotizacionDocumento.descargar(id, formato); }
     /** Converts an accepted quotation to the protected POS flow. */
     @Operation(summary = "Convertir en venta", description = "ACEPTADA → CONVERTIDA: registra la venta con el turno de caja abierto del usuario (mismas reglas que POST /ventas).")
