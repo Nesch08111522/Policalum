@@ -22,6 +22,9 @@ export interface CmsPublico {
   textoTerminos?: string;
   textoGarantia?: string;
   textoFaq?: string;
+  heroKicker?: string;
+  heroTitulo?: string;
+  heroTexto?: string;
 }
 
 @Injectable({ providedIn: 'root' })

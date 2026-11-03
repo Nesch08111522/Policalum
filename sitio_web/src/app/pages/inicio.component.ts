@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FichaProductoComponent } from '../components/ficha-producto.component';
 import { LINEAS_OBRA } from '../core/obras';
+import { CmsStore } from '../core/cms.store';
 import { EmpresaStore } from '../core/empresa.store';
 import { PortalApi, media, pen } from '../core/portal.api';
 import { ProductoPublico, ProyectoPublico, ServicioPublico } from '../core/models';
@@ -14,6 +15,7 @@ import { ProductoPublico, ProyectoPublico, ServicioPublico } from '../core/model
 export class InicioComponent implements OnInit {
   private readonly api = inject(PortalApi);
   readonly marca = inject(EmpresaStore);
+  readonly cms = inject(CmsStore);
   readonly pen = pen;
   readonly ofertas = signal<ProductoPublico[]>([]);
   readonly catalogo = signal<ProductoPublico[]>([]);

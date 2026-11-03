@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ import java.util.UUID;
 
 @Tag(name = "Clientes")
 @RestController
+@PreAuthorize("hasAnyRole('ADMIN','MULTIFUNCIONAL')")
 @RequestMapping("/api/v1/clientes")
 @RequiredArgsConstructor
 @Slf4j

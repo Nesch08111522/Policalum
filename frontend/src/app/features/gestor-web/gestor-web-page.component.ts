@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink, Routes } from '@angular/router';
+import { RoleGuard } from '../../guards/role.guard';
 import { environment } from '../../../environments/environment';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { ToastService } from '../../shared/services/toast.service';
@@ -27,6 +28,9 @@ interface CmsPublico {
   textoTerminos?: string;
   textoGarantia?: string;
   textoFaq?: string;
+  heroKicker?: string;
+  heroTitulo?: string;
+  heroTexto?: string;
 }
 
 interface Empresa {
@@ -58,6 +62,9 @@ interface Empresa {
         <label>Ubigeo <input type="text" formControlName="ubigeo" maxlength="6" /></label>
         <p class="nota">Las sedes y su dirección se cambian en <a routerLink="/modules/sedes">Sedes</a>. La utilidad y la movilidad de la cotización se cambian en <a routerLink="/modules/configuracion">Configuración → Cotización</a>.</p>
         <h2>Portada y pie</h2>
+        <label>Antetítulo de la portada <input type="text" maxlength="80" formControlName="heroKicker" /></label>
+        <label>Título de la portada <input type="text" maxlength="180" formControlName="heroTitulo" /></label>
+        <label>Texto de la portada <textarea rows="3" maxlength="400" formControlName="heroTexto"></textarea></label>
         <label>Franja superior <input type="text" maxlength="180" formControlName="banner" /></label>
         <label>Texto del pie <textarea rows="3" maxlength="500" formControlName="resumen"></textarea></label>
         <label>Horario de lunes a viernes <input type="text" maxlength="80" formControlName="horarioSemana" placeholder="8:00 a. m. – 6:00 p. m." /></label>
@@ -79,7 +86,8 @@ interface Empresa {
         <label>Color primario <input type="color" formControlName="primaryColor" /></label>
         <aside class="preview">
           <p class="franja">{{ forma.controls.banner.value || 'Franja del sitio' }}</p>
-          <strong>{{ forma.controls.nombreComercial.value || 'POLICALUM' }}</strong>
+          <strong>{{ forma.controls.heroTitulo.value || forma.controls.nombreComercial.value || 'POLICALUM' }}</strong>
+          <p>{{ forma.controls.heroTexto.value }}</p>
           <p>{{ forma.controls.resumen.value }}</p>
           <p>{{ forma.controls.telefono.value }} · {{ forma.controls.email.value }}</p>
           <p>RUC {{ forma.controls.ruc.value }}</p>
@@ -132,6 +140,9 @@ export class GestorWebPageComponent implements OnInit {
     textoTerminos: [''],
     textoGarantia: [''],
     textoFaq: [''],
+    heroKicker: ['', Validators.maxLength(80)],
+    heroTitulo: ['', Validators.maxLength(180)],
+    heroTexto: ['', Validators.maxLength(400)],
     primaryColor: ['#1FA2D6', Validators.required],
     secondaryColor: ['#FFFFFF', Validators.required],
     baseFontSize: [16, [Validators.required, Validators.min(14), Validators.max(22)]],
@@ -211,6 +222,9 @@ export class GestorWebPageComponent implements OnInit {
       textoTerminos: valor.textoTerminos,
       textoGarantia: valor.textoGarantia,
       textoFaq: valor.textoFaq,
+      heroKicker: valor.heroKicker,
+      heroTitulo: valor.heroTitulo,
+      heroTexto: valor.heroTexto,
     }).subscribe({
       next: () => {
         this.http.put(`${environment.apiUrl}/api/v1/cms/horario`, {
@@ -250,5 +264,5 @@ export class GestorWebPageComponent implements OnInit {
 }
 
 export const GESTOR_WEB_ROUTES: Routes = [
-  { path: '', component: GestorWebPageComponent, title: 'Sitio web', data: { section: 'Configuración', breadcrumb: 'Sitio web', expectedRoles: ['ROLE_ADMIN'] } },
+  { path: '', component: GestorWebPageComponent, canActivate: [RoleGuard], title: 'Sitio web', data: { section: 'Configuración', breadcrumb: 'Sitio web', expectedRoles: ['ROLE_ADMIN'] } },
 ];

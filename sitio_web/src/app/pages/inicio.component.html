@@ -1,8 +1,8 @@
 <section class="hero-grid">
   <div class="hero-copy">
-    <p class="kicker">Suministro B2B</p>
-    <h1>Policarbonato y cubiertas para obras que necesitan certeza.</h1>
-    <p class="lead">El precio y el stock salen del almacén. Coordinas por WhatsApp o dejas una cotización con RUC, sin pago en línea.</p>
+    <p class="kicker">{{ cms.paquete()?.heroKicker || 'Suministro B2B' }}</p>
+    <h1>{{ cms.paquete()?.heroTitulo || 'Policarbonato y cubiertas para obras que necesitan certeza.' }}</h1>
+    <p class="lead">{{ cms.paquete()?.heroTexto || 'El precio y el stock salen del almacén. Coordinas por WhatsApp o dejas una cotización con RUC, sin pago en línea.' }}</p>
     <div class="hero-actions">
       <a class="btn btn-primary" routerLink="/catalogo">Ver catálogo</a>
       <a class="btn btn-line" routerLink="/contacto">Hablar con un asesor</a>

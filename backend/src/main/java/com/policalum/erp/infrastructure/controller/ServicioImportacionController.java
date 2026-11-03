@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Servicios")
 @RestController
+@PreAuthorize("hasAnyRole('ADMIN','MULTIFUNCIONAL')")
 @RequestMapping("/api/v1/servicios/importar")
 @RequiredArgsConstructor
 public class ServicioImportacionController {

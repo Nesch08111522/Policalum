@@ -22,11 +22,13 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @Tag(name = "Ventas")
 @RestController
+@PreAuthorize("hasAnyRole('ADMIN','MULTIFUNCIONAL')")
 @RequestMapping("/api/v1/ventas")
 @RequiredArgsConstructor
 public class VentaController {

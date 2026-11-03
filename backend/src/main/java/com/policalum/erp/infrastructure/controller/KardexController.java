@@ -42,6 +42,7 @@ import jakarta.validation.Valid;
 
 @Tag(name = "Inventario")
 @RestController
+@PreAuthorize("hasAnyRole('ADMIN','MULTIFUNCIONAL')")
 @RequestMapping("/api/v1/kardex")
 public class KardexController {
 

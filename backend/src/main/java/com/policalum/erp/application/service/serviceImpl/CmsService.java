@@ -46,6 +46,9 @@ public class CmsService {
         fila.setTextoTerminos(limpio(request.textoTerminos(), 4000));
         fila.setTextoGarantia(limpio(request.textoGarantia(), 4000));
         fila.setTextoFaq(limpio(request.textoFaq(), 4000));
+        fila.setHeroKicker(limpio(request.heroKicker(), 80));
+        fila.setHeroTitulo(limpio(request.heroTitulo(), 180));
+        fila.setHeroTexto(limpio(request.heroTexto(), 400));
         ajustes.save(fila);
         publicador.publicar("ajustes");
         return publico();
@@ -115,7 +118,10 @@ public class CmsService {
                 ajuste == null ? null : ajuste.getTextoPrivacidad(),
                 ajuste == null ? null : ajuste.getTextoTerminos(),
                 ajuste == null ? null : ajuste.getTextoGarantia(),
-                ajuste == null ? null : ajuste.getTextoFaq());
+                ajuste == null ? null : ajuste.getTextoFaq(),
+                ajuste == null ? null : ajuste.getHeroKicker(),
+                ajuste == null ? null : ajuste.getHeroTitulo(),
+                ajuste == null ? null : ajuste.getHeroTexto());
     }
 
     private String limpio(String valor, int maximo) {

@@ -2,6 +2,7 @@
 package com.policalum.erp.infrastructure.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +23,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -31,6 +33,9 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @Value("${app.cors.allowed-origins:http://localhost:4200,http://127.0.0.1:4200,http://localhost:4201,http://127.0.0.1:4201}")
+    private String allowedOrigins;
 
 
     @Bean
@@ -42,6 +47,7 @@ public class SecurityConfig {
                         .contentTypeOptions(Customizer.withDefaults())
                         .frameOptions(frame -> frame.deny())
                         .referrerPolicy(referrer -> referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .permissionsPolicy(policy -> policy.policy("camera=(), microphone=(), geolocation=()"))
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
@@ -79,22 +85,11 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         //  Agregamos la IP local (192.168.18.9) y patrones para cualquier IP local
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-                "http://localhost:4200",
-                "http://127.0.0.1:4200",
-                "http://localhost:4201",
-                "http://127.0.0.1:4201",
-                "http://10.189.117.157:4200",
-                "http://10.189.117.157:8080",
-                "https://192.168.18.9:4200",
-                "http://192.168.18.9:4200", // 👈 Tu IP exacta
-                "http://192.168.*:*",       // 👈 Cualquier dispositivo en tu red local
-                "http://localhost:8080",
-                "https://*.ngrok-free.dev",  // 👈 PERMITIR TODOS LOS NGROK
-                "https://quake-spender-taunt.ngrok-free.dev" ,
-                "https://jujitsu-freeway-crying.ngrok-free.dev",  // Tu frontend
-                    "https://otra-url.ngrok-free.dev" // 👈 O EL ESPECÍFICO
-        ));
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList();
+        configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

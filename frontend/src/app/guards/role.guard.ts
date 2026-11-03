@@ -21,7 +21,7 @@ export class RoleGuard {
       return false;
     }
 
-    if (expectedRoles.includes(userRol)) {
+    if (Array.isArray(expectedRoles) && expectedRoles.includes(userRol)) {
       return true;
     }
 

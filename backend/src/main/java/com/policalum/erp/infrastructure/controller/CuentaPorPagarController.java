@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.UUID;
 
 @Tag(name = "Cuentas por pagar")
 @RestController
+@PreAuthorize("hasAnyRole('ADMIN','MULTIFUNCIONAL')")
 @RequestMapping("/api/v1/cuentas-por-pagar")
 @RequiredArgsConstructor
 public class CuentaPorPagarController {

@@ -19,5 +19,8 @@ public record CmsPublicoDTO(
         String textoPrivacidad,
         String textoTerminos,
         String textoGarantia,
-        String textoFaq
+        String textoFaq,
+        String heroKicker,
+        String heroTitulo,
+        String heroTexto
 ) {}

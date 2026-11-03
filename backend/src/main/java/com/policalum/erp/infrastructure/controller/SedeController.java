@@ -26,6 +26,7 @@ import java.util.UUID;
 
 @Tag(name = "Administración")
 @RestController
+@PreAuthorize("hasAnyRole('ADMIN','MULTIFUNCIONAL')")
 @RequestMapping("/api/v1/sedes")
 @RequiredArgsConstructor
 public class SedeController {

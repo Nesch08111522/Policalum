@@ -23,5 +23,8 @@ public record CmsAjusteRequestDTO(
         @Size(max = 4000) String textoPrivacidad,
         @Size(max = 4000) String textoTerminos,
         @Size(max = 4000) String textoGarantia,
-        @Size(max = 4000) String textoFaq
+        @Size(max = 4000) String textoFaq,
+        @Size(max = 80) String heroKicker,
+        @Size(max = 180) String heroTitulo,
+        @Size(max = 400) String heroTexto
 ) {}

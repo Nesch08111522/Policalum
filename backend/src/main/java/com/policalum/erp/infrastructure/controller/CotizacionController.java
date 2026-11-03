@@ -33,6 +33,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @Tag(name = "Cotizaciones")
 @RestController
+@PreAuthorize("hasAnyRole('ADMIN','MULTIFUNCIONAL')")
 @RequestMapping("/api/v1/cotizaciones")
 @RequiredArgsConstructor
 public class CotizacionController {

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
+import { RoleGuard } from '../../guards/role.guard';
 import { environment } from '../../../environments/environment';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { FormFieldComponent } from '../../shared/components/form-field/form-field.component';
@@ -107,5 +108,5 @@ export class PortafolioWebPageComponent implements OnInit {
 }
 
 export const PORTAFOLIO_WEB_ROUTES: Routes = [
-  { path: '', component: PortafolioWebPageComponent, title: 'Portafolio web', data: { section: 'Configuración', breadcrumb: 'Portafolio web' } },
+  { path: '', component: PortafolioWebPageComponent, canActivate: [RoleGuard], title: 'Portafolio web', data: { section: 'Configuración', breadcrumb: 'Portafolio web', expectedRoles: ['ROLE_ADMIN'] } },
 ];

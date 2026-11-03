@@ -71,4 +71,13 @@ public class CmsAjuste {
 
     @Column(name = "texto_faq", columnDefinition = "TEXT")
     private String textoFaq;
+
+    @Column(name = "hero_kicker", length = 80)
+    private String heroKicker;
+
+    @Column(name = "hero_titulo", length = 180)
+    private String heroTitulo;
+
+    @Column(name = "hero_texto", length = 400)
+    private String heroTexto;
 }
