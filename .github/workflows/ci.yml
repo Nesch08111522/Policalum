@@ -13,7 +13,7 @@ jobs:
         env:
           POSTGRES_DB: ERPpoli
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres_local_dev
+          POSTGRES_PASSWORD: postgre
         ports:
           - 5432:5432
         options: >-
@@ -33,7 +33,7 @@ jobs:
         env:
           DB_URL: jdbc:postgresql://localhost:5432/ERPpoli
           DB_USERNAME: postgres
-          DB_PASSWORD: postgres_local_dev
+          DB_PASSWORD: postgre
           JWT_SECRET: ci-only-jwt-secret-please-rotate-32bytes
           TOTP_PUBLIC_SECRET: ci-only-totp-secret
         run: chmod +x mvnw && ./mvnw clean test

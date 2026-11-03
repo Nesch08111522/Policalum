@@ -6,16 +6,19 @@ import com.policalum.erp.application.dto.response.FraccionPublicaDTO;
 import com.policalum.erp.application.dto.response.PaginaPublicaDTO;
 import com.policalum.erp.application.dto.response.ProductoPublicoDTO;
 import com.policalum.erp.application.dto.response.ProyectoPortafolioResponseDTO;
+import com.policalum.erp.application.dto.response.SedePublicaDTO;
 import com.policalum.erp.domain.model.CatalogoFraccion;
 import com.policalum.erp.domain.model.Categoria;
 import com.policalum.erp.domain.model.ConfiguracionEmpresa;
 import com.policalum.erp.domain.model.Producto;
 import com.policalum.erp.domain.model.ProyectoPortafolio;
+import com.policalum.erp.domain.model.Sede;
 import com.policalum.erp.exception.ResourceNotFoundException;
 import com.policalum.erp.infrastructure.repository.CategoriaRepository;
 import com.policalum.erp.infrastructure.repository.ConfiguracionEmpresaRepository;
 import com.policalum.erp.infrastructure.repository.ProductoRepository;
 import com.policalum.erp.infrastructure.repository.ProyectoPortafolioRepository;
+import com.policalum.erp.infrastructure.repository.SedeRepository;
 import com.policalum.erp.infrastructure.repository.StockRepository;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
@@ -42,6 +45,7 @@ public class PortalPublicoService {
     private final StockRepository stockRepository;
     private final ConfiguracionEmpresaRepository empresaRepository;
     private final ProyectoPortafolioRepository portafolioRepository;
+    private final SedeRepository sedeRepository;
 
     public PaginaPublicaDTO<ProductoPublicoDTO> catalogo(UUID categoriaId, String busqueda, boolean soloDestacados, Pageable pageable) {
         int tamano = Math.min(Math.max(pageable.getPageSize(), 1), 48);
@@ -57,6 +61,12 @@ public class PortalPublicoService {
         Producto producto = productoRepository.findActivoParaPortal(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
         return ficha(producto, saldos(List.of(producto)));
+    }
+
+    public List<SedePublicaDTO> sedes() {
+        return sedeRepository.findByActivaTrueOrderByNombreAsc().stream()
+                .map(this::sedePublica)
+                .toList();
     }
 
     public List<CategoriaPublicaDTO> categorias() {
@@ -132,6 +142,10 @@ public class PortalPublicoService {
                 imagen(producto.getImagen()),
                 fracciones,
                 Boolean.TRUE.equals(producto.getOferta()));
+    }
+
+    private SedePublicaDTO sedePublica(Sede sede) {
+        return new SedePublicaDTO(sede.getId(), sede.getNombre(), sede.getCiudad(), sede.getDireccion(), sede.getCelularSede());
     }
 
     private static String imagen(String ruta) {

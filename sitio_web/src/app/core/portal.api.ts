@@ -3,7 +3,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { CategoriaPublica, ContactoCreado, CotizacionCreada, EmpresaPublica, PaginaPublica, ProductoPublico, ProyectoPublico } from './models';
+import { CategoriaPublica, ContactoCreado, CotizacionCreada, EmpresaPublica, PaginaPublica, ProductoPublico, ProyectoPublico, SedePublica } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class PortalApi {
@@ -13,6 +13,10 @@ export class PortalApi {
 
   empresa(): Observable<EmpresaPublica> {
     return this.http.get<EmpresaPublica>(`${this.base}/empresa`);
+  }
+
+  sedes(): Observable<SedePublica[]> {
+    return this.http.get<SedePublica[]>(`${this.base}/sedes`);
   }
 
   categorias(): Observable<CategoriaPublica[]> {
@@ -68,6 +72,7 @@ export function pen(valor: number | null | undefined): string {
 }
 
 export function mensajeError(error: unknown): string {
-  const cuerpo = (error as { error?: { message?: string } })?.error;
-  return cuerpo?.message || 'No se pudo completar la solicitud. Intenta de nuevo.';
+  const fallo = error as { status?: number; error?: { message?: string } };
+  if (fallo?.status === 0) return 'No hay conexión con el ERP. El catálogo sale de la base ERPpoli.';
+  return fallo?.error?.message || 'No se pudo completar la solicitud. Intenta de nuevo.';
 }

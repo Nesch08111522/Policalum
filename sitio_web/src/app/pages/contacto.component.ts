@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmpresaStore } from '../core/empresa.store';
+import { SedePublica } from '../core/models';
 import { PortalApi, mensajeError } from '../core/portal.api';
 
 @Component({
@@ -11,6 +12,7 @@ import { PortalApi, mensajeError } from '../core/portal.api';
 export class ContactoComponent {
   private readonly api = inject(PortalApi);
   readonly marca = inject(EmpresaStore);
+  readonly sedes = signal<SedePublica[]>([]);
   readonly enviado = signal(false);
   readonly error = signal('');
   readonly enviando = signal(false);
@@ -24,10 +26,14 @@ export class ContactoComponent {
     website: [''],
   });
 
-  mapa(): string | null {
-    const direccion = this.marca.empresa().direccion;
-    if (!direccion) return null;
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccion)}`;
+  constructor() {
+    this.api.sedes().subscribe({ next: (lista) => this.sedes.set(lista), error: () => undefined });
+  }
+
+  mapa(direccion?: string | null): string | null {
+    const texto = (direccion || this.marca.empresa().direccion || '').trim();
+    if (!texto) return null;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(texto)}`;
   }
 
   enviar(): void {

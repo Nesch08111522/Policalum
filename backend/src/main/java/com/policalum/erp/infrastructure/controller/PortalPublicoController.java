@@ -5,6 +5,7 @@ import com.policalum.erp.application.dto.response.EmpresaPublicaDTO;
 import com.policalum.erp.application.dto.response.PaginaPublicaDTO;
 import com.policalum.erp.application.dto.response.ProductoPublicoDTO;
 import com.policalum.erp.application.dto.response.ProyectoPortafolioResponseDTO;
+import com.policalum.erp.application.dto.response.SedePublicaDTO;
 import com.policalum.erp.application.service.serviceImpl.PortalPublicoService;
 import com.policalum.erp.application.service.serviceImpl.ProductoImagenService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,6 +44,11 @@ public class PortalPublicoController {
     @GetMapping("/catalogo/categorias")
     public ResponseEntity<List<CategoriaPublicaDTO>> categorias() {
         return ResponseEntity.ok(portal.categorias());
+    }
+
+    @GetMapping("/sedes")
+    public ResponseEntity<List<SedePublicaDTO>> sedes() {
+        return ResponseEntity.ok(portal.sedes());
     }
 
     @GetMapping("/catalogo/destacados")

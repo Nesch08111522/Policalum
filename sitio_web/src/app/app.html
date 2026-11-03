@@ -52,7 +52,15 @@
         Contacto
       </a>
     </nav>
-    <p class="browse-note">{{ marca.empresa().direccion || 'Policarbonato, techos y cerramientos.' }}</p>
+    <p class="browse-note">
+      @if (sedes().length) {
+        @for (sede of sedes(); track sede.id) {
+          <span>{{ sede.nombre }}{{ sede.ciudad ? ' · ' + sede.ciudad : '' }}</span>
+        }
+      } @else {
+        {{ marca.empresa().direccion || 'Policarbonato, techos y cerramientos.' }}
+      }
+    </p>
     <p class="browse-legal">
       <a routerLink="/privacidad">Privacidad</a>
       <a routerLink="/terminos">Términos</a>

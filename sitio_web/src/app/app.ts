@@ -6,7 +6,7 @@ import { AvisoService } from './core/aviso.service';
 import { CarritoService } from './core/carrito.service';
 import { CmsStore } from './core/cms.store';
 import { EmpresaStore } from './core/empresa.store';
-import { CategoriaPublica, ProductoPublico } from './core/models';
+import { CategoriaPublica, ProductoPublico, SedePublica } from './core/models';
 import { PortalApi, media, pen } from './core/portal.api';
 
 @Component({
@@ -28,6 +28,7 @@ export class App implements OnDestroy {
   readonly menu = signal(false);
   readonly ruta = signal(this.router.url);
   readonly categorias = signal<CategoriaPublica[]>([]);
+  readonly sedes = signal<SedePublica[]>([]);
   readonly vitrina = signal<ProductoPublico[]>([]);
   readonly vitrinaVisible = signal(4);
   @ViewChild('caja') caja?: ElementRef<HTMLInputElement>;
@@ -40,6 +41,7 @@ export class App implements OnDestroy {
       this.menu.set(false);
     });
     this.api.categorias().subscribe({ next: (lista) => this.categorias.set(lista), error: () => undefined });
+    this.api.sedes().subscribe({ next: (lista) => this.sedes.set(lista), error: () => undefined });
     this.api.productos({ page: 0 }).subscribe({
       next: (pagina) => this.vitrina.set(pagina.content ?? []),
       error: () => undefined,

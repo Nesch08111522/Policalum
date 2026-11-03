@@ -28,6 +28,14 @@ export interface CategoriaPublica {
   slug: string;
 }
 
+export interface SedePublica {
+  id: string;
+  nombre: string;
+  ciudad?: string;
+  direccion?: string;
+  telefono?: string;
+}
+
 export interface PaginaPublica<T> {
   content: T[];
   page: number;

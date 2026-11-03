@@ -8,11 +8,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 @Repository
 public interface SedeRepository extends JpaRepository< Sede, UUID> {
 
     Page<Sede> findByActiva(Boolean activa, Pageable pageable);
+
+    List<Sede> findByActivaTrueOrderByNombreAsc();
 
     /**
      * La sede tiene almacenes, usuarios o documentos.

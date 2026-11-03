@@ -180,6 +180,7 @@ h3 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.03em; }
 .sort { flex: none; margin-top: 2px; }
 .browse-note, .browse-legal { margin: 8px 12px 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
 .browse-note { margin-top: auto; }
+.browse-note span { display: block; margin-top: 2px; }
 .browse-legal { display: flex; gap: 12px; }
 .sort select {
   appearance: none;

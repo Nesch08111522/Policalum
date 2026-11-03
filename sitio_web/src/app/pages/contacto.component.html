@@ -5,14 +5,22 @@
 </section>
 <div class="contact">
   <aside class="map-card">
-    <p class="kicker" style="color:#f4d7b0">Sede</p>
-    <h2>{{ marca.empresa().nombreComercial }}</h2>
-    <p>{{ marca.empresa().direccion || 'La dirección se toma de la configuración de la empresa.' }}</p>
+    <p class="kicker" style="color:#f4d7b0">Sedes</p>
+    @if (sedes().length) {
+      @for (sede of sedes(); track sede.id) {
+        <h2>{{ sede.nombre }}</h2>
+        <p>{{ sede.direccion || 'Sin dirección publicada' }}{{ sede.ciudad ? ', ' + sede.ciudad : '' }}</p>
+        @if (sede.telefono) { <p>{{ sede.telefono }}</p> }
+        @if (mapa(sede.direccion); as enlace) {
+          <a class="btn btn-sun btn-sm" style="margin:0.4rem 0 1rem; width:fit-content" [href]="enlace" target="_blank" rel="noopener noreferrer">Abrir mapa</a>
+        }
+      }
+    } @else {
+      <h2>{{ marca.empresa().nombreComercial }}</h2>
+      <p>{{ marca.empresa().direccion || 'La dirección se toma de la configuración de la empresa.' }}</p>
+    }
     <p>{{ marca.empresa().telefono }}</p>
     <p>{{ marca.empresa().email }}</p>
-    @if (mapa(); as enlace) {
-      <a class="btn btn-sun btn-sm" style="margin-top:0.8rem; width:fit-content" [href]="enlace" target="_blank" rel="noopener noreferrer">Abrir mapa</a>
-    }
   </aside>
   @if (enviado()) {
     <div class="okbox">Mensaje recibido. Ventas lo verá en la bandeja del ERP.</div>
